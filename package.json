@@ -1,0 +1,23 @@
+{
+  "name": "@ordit/monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "repository": "https://github.com/sadoprotocol/ordit-sdk",
+  "bugs": "https://github.com/sadoprotocol/ordit-sdk/issues",
+  "license": "MIT",
+  "scripts": {
+    "prepare": "husky install && chmod ug+x .husky/*",
+    "publish": "node ./scripts/publish.js",
+    "local": "turbo run local",
+    "build": "turbo run build",
+    "flush": "turbo run flush && rm -rf ./node_modules",
+    "clean": "turbo run clean",
+    "lint": "turbo run lint -- --fix",
+    "test": "turbo run test -- --forceExit"
+  },
+  "devDependencies": {
+    "husky": "8.0.3",
+    "prettier": "2.8.8",
+    "turbo": "1.9.1"
+  }
+}

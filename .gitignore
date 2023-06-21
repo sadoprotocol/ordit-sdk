@@ -1,0 +1,63 @@
+# IDE - VSCode
+
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# IDE - IntelliJ
+
+.idea/*
+!.idea/inspectionProfiles/
+!.idea/dictionaries/
+!.idea/codeStyles/
+!.idea/modules.xml
+!.idea/*.iml
+!.idea/README.md
+
+# Development
+
+.publish
+.turbo
+.docker
+.parcel-cache
+
+# Generated
+
+packages/api
+packages/app
+
+# node_modules
+
+node_modules
+
+# cargo
+
+/target
+Cargo.lock
+
+# dist & pack
+
+.contented
+dist
+*.tgz
+
+# Tests
+
+coverage
+
+# OS
+
+.DS_Store
+
+# TypeScript
+
+tsconfig.*.tsbuildinfo
+
+# Logs
+
+logs
+*.log
+npm-debug.log*
+lerna-debug.log*
