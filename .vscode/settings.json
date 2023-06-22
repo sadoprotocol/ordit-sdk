@@ -24,22 +24,6 @@
     "**/.DS_Store": true,
     "**/Thumbs.db": true
   },
-  "cSpell.words": [
-    "bcrt",
-    "bech32",
-    "clipanion",
-    "ipfs",
-    "orderbooks",
-    "psbt",
-    "regtest",
-    "sado",
-    "sadoprotocol",
-    "satoshi",
-    "satoshis",
-    "txid",
-    "unspendable",
-    "vout"
-  ],
   "typescript.tsdk": "node_modules/typescript/lib",
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
