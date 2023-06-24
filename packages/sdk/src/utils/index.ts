@@ -1,5 +1,5 @@
 import * as ecc from "@bitcoinerlab/secp256k1";
-import bitcoin, { Network as BitcoinNetwork, networks } from "bitcoinjs-lib";
+import bitcoin, { Network as BitcoinNetwork, networks, Payment } from "bitcoinjs-lib";
 
 import { AddressTypes } from "../addresses/formats";
 import { Network } from "../config/types";
@@ -12,12 +12,17 @@ export function getNetwork(value: Network) {
   return networks[value];
 }
 
-export function createTransaction(key: Buffer, type: AddressTypes, network: Network | BitcoinNetwork) {
+export function createTransaction(
+  key: Buffer,
+  type: AddressTypes,
+  network: Network | BitcoinNetwork,
+  paymentOptions?: Payment
+) {
   bitcoin.initEccLib(ecc);
   const networkObj = typeof network === "string" ? getNetwork(network) : network;
 
   if (type === "p2tr") {
-    return bitcoin.payments.p2tr({ internalPubkey: key, network: networkObj });
+    return bitcoin.payments.p2tr({ internalPubkey: key, network: networkObj, ...paymentOptions });
   }
 
   if (type === "p2sh") {

@@ -68,7 +68,7 @@ export async function getWalletWithBalances(options: GetWalletOptions) {
     let wallet_spendables = 0;
     let wallet_unspendables = 0;
 
-    const unspent = await OrditApi.fetch("utxo/unspents", {
+    const unspent = await OrditApi.fetch<{ success: boolean; rdata: Array<any> }>("utxo/unspents", {
       network: options.network,
       data: {
         address,

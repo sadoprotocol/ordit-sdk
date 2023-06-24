@@ -11,7 +11,7 @@ export class OrditApi {
     this.#network = network;
   }
 
-  static async fetch(uri: string, options: FetchOptions) {
+  static async fetch<T>(uri: string, options: FetchOptions): Promise<T> {
     const fullUri = this.#config.apis[options.network].batter + uri;
 
     try {

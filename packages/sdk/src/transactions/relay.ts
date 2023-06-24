@@ -2,7 +2,10 @@ import { OrditApi } from "../api";
 import { Network } from "../config/types";
 
 export async function relayTransaction(hex: string, network: Network) {
-  const txResponse = await OrditApi.fetch("utxo/relay", { data: { hex }, network: network });
+  const txResponse = await OrditApi.fetch<{ success: boolean; rdata: Array<any> }>("utxo/relay", {
+    data: { hex },
+    network: network
+  });
 
   if (txResponse.success && txResponse.rdata) {
     return {

@@ -75,12 +75,14 @@ export function getAddressesFromPublicKey(
       }
     });
   } else {
-    const paymentObj = createTransaction(childNodeXOnlyPubkey, format, network);
+    const key = format === "p2tr" ? childNodeXOnlyPubkey : keys.publicKey;
+    const paymentObj = createTransaction(key, format, network);
 
     addresses.push({
       address: paymentObj.address,
       format: addressTypeToName[format],
-      pub: keys.publicKey.toString("hex")
+      pub: keys.publicKey.toString("hex"),
+      xkey: format === "p2tr" ? childNodeXOnlyPubkey.toString("hex") : undefined
     });
   }
 
@@ -95,14 +97,18 @@ export async function getAddresses({
   format,
   path
 }: GetAddressesOptions): Promise<ReturnType<typeof getAddressesFromPublicKey>> {
+  if (!(seed || bip39 || pubKey)) {
+    throw new Error("Invalid options provided.");
+  }
+
   if (seed || bip39) {
     const seedValue = seed || bip39;
-    const keys = await getWalletKeys(seedValue, network, path);
+    const keys = await getWalletKeys(seedValue!, network, path);
 
     return getAddressesFromPublicKey(keys.pub, network, format);
   }
 
-  return getAddressesFromPublicKey(pubKey, network, format);
+  return getAddressesFromPublicKey(pubKey!, network, format);
 }
 
 type Address = {
@@ -113,9 +119,9 @@ type Address = {
 };
 
 type GetAddressesOptions = {
-  pubKey: string;
-  seed: string;
-  bip39: string;
+  pubKey?: string;
+  seed?: string;
+  bip39?: string;
   network: Network;
   format: AddressTypes | "all";
   path: string;
