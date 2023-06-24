@@ -6,6 +6,19 @@ import { Network } from "../config/types";
 import { getNetwork } from "../utils";
 
 export async function getWalletKeys(seedValue: string, network: Network = "testnet", path: string) {
+  const { parent, mnemonic } = await getDerivedNode(seedValue, network, path);
+
+  const pubKey = Buffer.from(parent.publicKey).toString("hex");
+  const HD = parent.neutered().toBase58();
+
+  return {
+    pub: pubKey,
+    hd: HD,
+    bip39: mnemonic
+  };
+}
+
+export async function getDerivedNode(seedValue: string, network: Network, path: string) {
   const bip32 = BIP32Factory(ecc);
   const isBip39 = validateMnemonic(seedValue);
   const networkObj = getNetwork(network);
@@ -21,12 +34,9 @@ export async function getWalletKeys(seedValue: string, network: Network = "testn
   const root = bip32.fromSeed(seeds, networkObj);
   const parent = root.derivePath(path);
 
-  const pubKey = Buffer.from(parent.publicKey).toString("hex");
-  const HD = parent.neutered().toBase58();
-
   return {
-    pub: pubKey,
-    hd: HD,
-    bip39: !isBip39 ? entropyToMnemonic(seeds, wordlists["english"]) : undefined
+    root,
+    parent,
+    mnemonic: isBip39 ? entropyToMnemonic(seeds, wordlists["english"]) : undefined
   };
 }
