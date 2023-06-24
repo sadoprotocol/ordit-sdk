@@ -43,7 +43,7 @@ export function getAddressesFromPublicKey(
   const networkObj = getNetwork(network);
   const chainCode = Buffer.alloc(32).fill(1);
 
-  const addresses: AddressType[] = [];
+  const addresses: Address[] = [];
 
   let childNodeXOnlyPubkey = pubKey;
 
@@ -83,6 +83,8 @@ export function getAddressesFromPublicKey(
       pub: keys.publicKey.toString("hex")
     });
   }
+
+  return addresses;
 }
 
 export async function getAddresses({
@@ -103,7 +105,7 @@ export async function getAddresses({
   return getAddressesFromPublicKey(pubKey, network, format);
 }
 
-type AddressType = {
+type Address = {
   address: string | undefined;
   xkey?: string;
   format: string;
