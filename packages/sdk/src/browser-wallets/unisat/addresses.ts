@@ -7,6 +7,10 @@ export async function getAddresses(network: Network) {
     throw new Error("Unisat not installed.");
   }
 
+  if (!network) {
+    throw new Error("Invalid options provided.");
+  }
+
   let targetNetwork: UnisatNetwork = "livenet";
   const connectedNetwork = await window.unisat.getNetwork();
 

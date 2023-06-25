@@ -1,5 +1,6 @@
 declare interface Window {
   unisat: Unisat;
+  satsConnect: any;
 }
 
 type Unisat = {
