@@ -1,6 +1,7 @@
 import * as addresses from "./addresses";
 import * as api from "./api";
 import * as unisat from "./browser-wallets/unisat";
+import * as xverse from "./browser-wallets/xverse";
 import * as config from "./config";
 import * as inscription from "./inscription";
 import * as keys from "./keys";
@@ -19,12 +20,14 @@ export const ordit = {
   transactions,
   inscription,
   utils,
-  unisat
+  unisat,
+  xverse
 };
 
 export * from "./addresses";
 export * from "./api";
 export * as unisat from "./browser-wallets/unisat";
+export * as xverse from "./browser-wallets/xverse";
 export * from "./config";
 export * from "./inscription";
 export * from "./keys";
