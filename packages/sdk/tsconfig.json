@@ -1,5 +1,5 @@
 {
-  "extends": "@ordit/typescript",
+  "extends": "@sadoprotocol/typescript",
   "compilerOptions": {
     "rootDir": "./",
     "outDir": "./dist",
