@@ -33,8 +33,8 @@
     "sats-connect": "0.2.0"
   },
   "devDependencies": {
-    "@sadoprotocol/eslint-config": "0.0.2",
-    "@sadoprotocol/typescript": "0.0.2",
+    "@ordit/eslint-config": "workspace:*",
+    "@ordit/typescript": "workspace:*",
     "@types/node": "^20.3.1"
   },
   "eslintConfig": {
