@@ -1,5 +1,5 @@
 {
-  "name": "@ordit/sdk",
+  "name": "@sadoprotocol/ordit-sdk",
   "version": "0.0.0",
   "description": "SDK for simplified interaction with wallet APIs and inscription service",
   "repository": "https://github.com/sadoprotocol/ordit-sdk",
@@ -33,14 +33,14 @@
     "sats-connect": "0.2.0"
   },
   "devDependencies": {
-    "@ordit/eslint-config": "workspace:*",
-    "@ordit/typescript": "workspace:*",
+    "@sadoprotocol/eslint-config": "^0.0.2",
+    "@sadoprotocol/typescript": "^0.0.2",
     "@types/node": "^20.3.1"
   },
   "eslintConfig": {
     "root": true,
     "extends": [
-      "@ordit"
+      "@sadoprotocol"
     ],
     "parserOptions": {
       "project": "./tsconfig.json"
