@@ -4,13 +4,34 @@ import { getAddressFormat } from "../../addresses";
 import { Network } from "../../config/types";
 import { isXverseInstalled, XverseNetwork } from "./utils";
 export async function getAddresses(options: XverseGetAddressOptions) {
+  const result: Array<{
+    pub: string;
+    address: string;
+    format: string;
+  }> = [];
+
   if (!isXverseInstalled()) {
     throw new Error("Xverse not installed.");
   }
+
+  const handleOnFinish = (response: XverseOnFinishResponse, network: Network) => {
+    if (!response || !response.addresses || response.addresses.length !== 2) {
+      throw new Error("Invalid address format");
+    }
+
+    response.addresses.forEach((addressObj) => {
+      result.push({
+        pub: addressObj.publicKey,
+        address: addressObj.address,
+        format: getAddressFormat(addressObj.address, network).format
+      });
+    });
+  };
+
   const xVerseOptions = {
     payload: {
       purposes: ["ordinals", "payment"] as AddressPurposes[],
-      message: options.payload.message ?? "Provide access to 2 address formats",
+      message: options?.payload?.message ?? "Provide access to 2 address formats",
       network: {
         type: (options.network.charAt(0).toUpperCase() + options.network.slice(1)) as XverseNetwork
       }
@@ -20,25 +41,6 @@ export async function getAddresses(options: XverseGetAddressOptions) {
   };
 
   await getAddress(xVerseOptions);
-}
-
-function handleOnFinish(response: XverseOnFinishResponse, network: Network) {
-  if (!response || !response.addresses || response.addresses.length !== 2) {
-    throw new Error("Invalid address format");
-  }
-  const result: Array<{
-    pub: string;
-    address: string;
-    format: string;
-  }> = [];
-
-  response.addresses.forEach((addressObj) => {
-    result.push({
-      pub: addressObj.publicKey,
-      address: addressObj.address,
-      format: getAddressFormat(addressObj.address, network).format
-    });
-  });
 
   return result;
 }
@@ -49,7 +51,7 @@ function handleOnCancel() {
 
 export type XverseGetAddressOptions = {
   network: Network;
-  payload: {
+  payload?: {
     message: string;
   };
 };
