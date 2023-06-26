@@ -91,7 +91,7 @@ export async function createRevealPsbt(options: CreateRevealPsbtOptions) {
           value: options.postage
         });
 
-        if (change) {
+        if (change > 600) {
           let changeAddress = inscribePayTx.address;
           if (options.changeAddress) {
             changeAddress = options.changeAddress;
