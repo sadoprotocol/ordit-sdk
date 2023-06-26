@@ -1,6 +1,6 @@
 import { AddressPurposes, getAddress } from "sats-connect";
 
-import { getAddressFormat } from "../../addresses";
+import { getAddressesFromPublicKey, getAddressFormat } from "../../addresses";
 import { Network } from "../../config/types";
 import { isXverseInstalled, XverseNetwork } from "./utils";
 export async function getAddresses(options: XverseGetAddressOptions) {
@@ -8,6 +8,7 @@ export async function getAddresses(options: XverseGetAddressOptions) {
     pub: string;
     address: string;
     format: string;
+    xKey?: string;
   }> = [];
 
   if (!isXverseInstalled()) {
@@ -20,10 +21,19 @@ export async function getAddresses(options: XverseGetAddressOptions) {
     }
 
     response.addresses.forEach((addressObj) => {
+      const format = getAddressFormat(addressObj.address, network).format;
+
+      let xKey;
+      if (format === "taproot") {
+        const userAddresses = getAddressesFromPublicKey(addressObj.publicKey, options.network, "p2tr");
+        xKey = userAddresses[0].xkey;
+      }
+
       result.push({
         pub: addressObj.publicKey,
         address: addressObj.address,
-        format: getAddressFormat(addressObj.address, network).format
+        format,
+        xKey
       });
     });
   };
