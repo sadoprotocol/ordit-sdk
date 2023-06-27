@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+
+## [0.0.2] - 2023-06-27
+
+### Added
+- Split ordinals content as chunks before building witness
+
 ### Fixed
 
 - Return XVerse browser addresses correctly
@@ -23,4 +29,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Feature to get addresses and balances given PublicKey | seed | bip39 mnemonic.
 - This change log file to highlight notable changes
 
+[0.0.2]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.1...v0.0.2
 [0.0.1]: https://github.com/sadoprotocol/ordit-sdk/releases/tag/v0.0.1
