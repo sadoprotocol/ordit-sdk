@@ -43,7 +43,7 @@ export async function signPsbt(options: SignPsbtOptions) {
     const psbtBase64 = psbt.toBase64();
 
     const psbtHasBeenSigned =
-      (options.hex && psbtHex === options.hex) || (options.base64 && psbtBase64 === options.base64);
+      (options.hex && psbtHex !== options.hex) || (options.base64 && psbtBase64 !== options.base64);
 
     if (psbtHasBeenSigned) {
       try {
