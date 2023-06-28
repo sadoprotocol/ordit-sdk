@@ -4,6 +4,8 @@ import { getAddressesFromPublicKey, getAddressFormat } from "../../addresses";
 import { Network } from "../../config/types";
 import { isXverseInstalled, XverseNetwork } from "./utils";
 export async function getAddresses(options: XverseGetAddressOptions) {
+  options.network = options.network ?? 'testnet'
+  
   const result: Array<{
     pub: string;
     address: string;
