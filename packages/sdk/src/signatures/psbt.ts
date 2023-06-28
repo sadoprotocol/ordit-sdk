@@ -1,5 +1,5 @@
 import * as ecc from "@bitcoinerlab/secp256k1";
-import bitcoin from "bitcoinjs-lib";
+import * as bitcoin from "bitcoinjs-lib";
 
 import { getDerivedNode } from "../keys";
 import { GetWalletOptions } from "../wallet";

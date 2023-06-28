@@ -1,22 +1,24 @@
 import * as ecc from "@bitcoinerlab/secp256k1";
-import bitcoin, { Network as BitcoinNetwork, networks, Payment } from "bitcoinjs-lib";
+import { BIP32Interface } from "bip32";
+import * as bitcoin from "bitcoinjs-lib";
 
-import { AddressTypes } from "../addresses/formats";
+import { AddressFormats, AddressTypes } from "../addresses/formats";
 import { Network } from "../config/types";
+import { DERIVATION_PATHS_WITHOUT_INDEX } from "./constants";
 
 export function getNetwork(value: Network) {
   if (value === "mainnet") {
-    return networks["bitcoin"];
+    return bitcoin.networks["bitcoin"];
   }
 
-  return networks[value];
+  return bitcoin.networks[value];
 }
 
 export function createTransaction(
   key: Buffer,
   type: AddressTypes,
-  network: Network | BitcoinNetwork,
-  paymentOptions?: Payment
+  network: Network | bitcoin.Network,
+  paymentOptions?: bitcoin.Payment
 ) {
   bitcoin.initEccLib(ecc);
   const networkObj = typeof network === "string" ? getNetwork(network) : network;
@@ -33,4 +35,10 @@ export function createTransaction(
   }
 
   return bitcoin.payments[type]({ pubkey: key, network: networkObj });
+}
+
+export function hdNodeToChild(node: BIP32Interface, formatType: AddressFormats = "legacy", index = 0) {
+  const fullDerivationPath = DERIVATION_PATHS_WITHOUT_INDEX[formatType] + index;
+
+  return node.derivePath(fullDerivationPath);
 }

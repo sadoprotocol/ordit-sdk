@@ -37,6 +37,6 @@ export async function getDerivedNode(seedValue: string, network: Network, path: 
   return {
     root,
     parent,
-    mnemonic: isBip39 ? entropyToMnemonic(seeds, wordlists["english"]) : undefined
+    mnemonic: isBip39 ? entropyToMnemonic(seeds.subarray(0, 16), wordlists["english"]) : undefined
   };
 }
