@@ -2,6 +2,7 @@ import * as ecc from "@bitcoinerlab/secp256k1";
 import BIP32Factory from "bip32";
 import { mnemonicToSeedSync } from "bip39";
 import * as bitcoin from "bitcoinjs-lib";
+import { isTaprootInput } from "bitcoinjs-lib/src/psbt/bip371";
 import ECPairFactory, { ECPairInterface } from "ecpair";
 
 import { AddressFormats, getAddressesFromPublicKey, getNetwork, hdNodeToChild } from "..";
@@ -19,9 +20,11 @@ export class Ordit {
   #initialized = false;
   #keyPair: ECPairInterface;
   publicKey: string;
+  taprootPublicKey: string | null = null;
   allAddresses: ReturnType<typeof getAddressesFromPublicKey> = [];
   selectedAddressType: AddressFormats | undefined;
   selectedAddress: string | undefined;
+  #taprootKeypair: ECPairInterface | null = null;
 
   constructor({ wif, seed, privateKey, bip39, network = "testnet" }: WalletOptions) {
     this.#network = network;
@@ -38,14 +41,20 @@ export class Ordit {
       const seedBuffer = Buffer.from(seed, "hex");
       const hdNode = bip32.fromSeed(seedBuffer, networkObj);
       const child = hdNodeToChild(hdNode, "legacy", 0);
+      const taprootChild = hdNodeToChild(hdNode, "taproot", 0);
 
       this.#keyPair = ECPair.fromPrivateKey(child.privateKey!, { network: networkObj });
+      this.#taprootKeypair = ECPair.fromPrivateKey(taprootChild.privateKey!, { network: networkObj });
+      this.taprootPublicKey = this.#taprootKeypair.publicKey.toString("hex");
     } else if (bip39) {
       const seedBuffer = mnemonicToSeedSync(bip39);
       const hdNode = bip32.fromSeed(seedBuffer, networkObj);
       const child = hdNodeToChild(hdNode, "legacy", 0);
+      const taprootChild = hdNodeToChild(hdNode, "taproot", 0);
 
       this.#keyPair = ECPair.fromPrivateKey(child.privateKey!, { network: networkObj });
+      this.#taprootKeypair = ECPair.fromPrivateKey(taprootChild.privateKey!, { network: networkObj });
+      this.taprootPublicKey = this.#taprootKeypair.publicKey.toString("hex");
     } else {
       throw new Error("Invalid options provided.");
     }
@@ -117,7 +126,17 @@ export class Ordit {
 
     for (let i = 0; i < psbt.inputCount; i++) {
       try {
-        psbt.signInput(i, this.#keyPair);
+        const input = psbt.data.inputs[i];
+
+        if (isTaprootInput(input)) {
+          if (!this.#taprootKeypair) {
+            throw new Error("Taproot signer not found.");
+          }
+
+          psbt.signInput(i, this.#taprootKeypair);
+        } else {
+          psbt.signInput(i, this.#keyPair);
+        }
       } catch (e) {
         throw new Error(e.message);
       }

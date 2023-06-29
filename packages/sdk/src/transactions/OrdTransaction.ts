@@ -79,7 +79,7 @@ export class OrdTransaction {
         tapLeafScript: [
           {
             leafVersion: this.#inscribePayTx.redeemVersion!,
-            script: this.#inscribePayTx.output!,
+            script: this.#inscribePayTx.redeem!.output!,
             controlBlock: this.#inscribePayTx.witness![this.#inscribePayTx.witness!.length - 1]
           }
         ]
@@ -178,8 +178,13 @@ export class OrdTransaction {
     }
 
     if (!this.ready) {
-      await this.fetchAndSelectSuitableUnspent();
+      try {
+        await this.fetchAndSelectSuitableUnspent();
+      } catch (error) {
+        return false;
+      }
     }
+
     return this.ready;
   }
 
