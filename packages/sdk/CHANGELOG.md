@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added 
+
+- Support signing PSBT using Ordit class
+- Support TX relay using Ordit class
+- Ability to get address by type ('Legacy' | 'Segwit' | 'Bech32' | 'Taproot')
+- Ability to get all addresses
+- Ability to set default address if a type provided  ('Legacy' | 'Segwit' | 'Bech32' | 'Taproot')
+
 ### Fixed
 
 - validate xverse installed properly
