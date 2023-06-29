@@ -3,7 +3,6 @@ import { AddressTypes } from "../addresses/formats";
 import { OrditApi } from "../api";
 import { Network } from "../config/types";
 import { getWalletKeys } from "../keys";
-import { Ordit } from "./Ordit";
 
 export async function getWallet({
   pubKey,
@@ -186,5 +185,3 @@ export type GetWalletWithBalances = GetWalletReturnType & {
     };
   }>;
 };
-
-export { Ordit };

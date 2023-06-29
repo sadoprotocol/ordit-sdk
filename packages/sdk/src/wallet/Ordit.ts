@@ -7,6 +7,7 @@ import ECPairFactory, { ECPairInterface } from "ecpair";
 import { AddressFormats, getAddressesFromPublicKey, getNetwork, hdNodeToChild } from "..";
 import { OrditApi } from "../api";
 import { Network } from "../config/types";
+import { OrdTransaction, OrdTransactionOptions } from "../transactions";
 
 bitcoin.initEccLib(ecc);
 const ECPair = ECPairFactory(ecc);
@@ -165,6 +166,10 @@ export class Ordit {
       txid: txResponse.rdata
     };
   }
+
+  static inscription = {
+    new: (options: OrdTransactionOptions) => new OrdTransaction(options)
+  };
 
   #initialize() {
     const addresses = this.getAllAddresses();

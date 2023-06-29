@@ -38,3 +38,4 @@ export * from "./signatures";
 export * from "./transactions";
 export * from "./utils";
 export * from "./wallet";
+export { Ordit } from "./wallet/Ordit";
