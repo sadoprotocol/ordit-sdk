@@ -1,5 +1,5 @@
 export function isXverseInstalled() {
-  if (typeof window.satsConnect !== "undefined") {
+  if (typeof window.BitcoinProvider !== "undefined") {
     return true;
   }
 
