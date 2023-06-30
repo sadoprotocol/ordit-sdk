@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+
+## [0.0.6] - 2023-06-30
+
+## Added
+
+- OrditAPI supports fetching all inscriptions of an address
+- OrditAPI supports fetching an inscription details at outpoint
+- Ordit wallet class to implement methods do the same as above
+
 ## Fixed
 
 - Handle float fee values using ceil function
@@ -63,7 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Feature to get addresses and balances given PublicKey | seed | bip39 mnemonic.
 - This change log file to highlight notable changes
 
-[0.0.5]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.3...v0.0.5
+[0.0.6]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.5...v0.0.6
+[0.0.5]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.3...v0.0.4
 [0.0.3]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.1...v0.0.2
