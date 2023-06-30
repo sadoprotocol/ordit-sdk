@@ -186,8 +186,29 @@ export class Ordit {
     };
   }
 
+  async getInscriptions() {
+    if (!this.selectedAddress) {
+      throw new Error("Wallet not fully initialized.");
+    }
+
+    return OrditApi.fetchAllInscriptions({
+      address: this.selectedAddress,
+      network: this.#network
+    });
+  }
+
   static inscription = {
-    new: (options: OrdTransactionOptions) => new OrdTransaction(options)
+    new: (options: OrdTransactionOptions) => new OrdTransaction(options),
+    getInscriptionDetails: (outpoint: string, network: Network = "testnet") => {
+      if (!outpoint) {
+        throw new Error("Outpoint is required.");
+      }
+
+      return OrditApi.fetchInscriptionDetails({
+        outpoint,
+        network
+      });
+    }
   };
 
   #initialize() {
