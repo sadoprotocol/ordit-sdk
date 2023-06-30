@@ -160,7 +160,7 @@ export class OrdTransaction {
 
     const fees = JSON.parse(JSON.stringify((80 + 1 * 180) * this.feeRate));
     const scriptLength = witnessScript.toString("hex").length;
-    const scriptFees = (scriptLength / 10) * this.feeRate + fees;
+    const scriptFees = Math.ceil((scriptLength / 10) * this.feeRate + fees);
 
     this.#feeForWitnessData = scriptFees;
     this.#commitAddress = inscribePayTx.address!;
