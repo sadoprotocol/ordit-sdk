@@ -1,11 +1,11 @@
 import { AddressPurposes, getAddress } from "sats-connect";
 
-import { getAddressesFromPublicKey, getAddressFormat } from "../../addresses";
+import { getAddressFormat } from "../../addresses";
 import { Network } from "../../config/types";
 import { isXverseInstalled, XverseNetwork } from "./utils";
 export async function getAddresses(options: XverseGetAddressOptions) {
-  options.network = options.network ?? 'testnet'
-  
+  options.network = options.network ?? "testnet";
+
   const result: Array<{
     pub: string;
     address: string;
@@ -27,8 +27,7 @@ export async function getAddresses(options: XverseGetAddressOptions) {
 
       let xKey;
       if (format === "taproot") {
-        const userAddresses = getAddressesFromPublicKey(addressObj.publicKey, options.network, "p2tr");
-        xKey = userAddresses[0].xkey;
+        xKey = addressObj.publicKey;
       }
 
       result.push({
