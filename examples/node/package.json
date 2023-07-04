@@ -1,0 +1,16 @@
+{
+  "name": "ordit-nodejs-example",
+  "version": "1.0.0",
+  "description": "## Background",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "inscribe": "node inscribe",
+    "read": "node read"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@sadoprotocol/ordit-sdk": "^0.0.7"
+  }
+}
