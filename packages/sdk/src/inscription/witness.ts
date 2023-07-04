@@ -9,20 +9,28 @@ export function buildWitnessScript(options: WitnessScriptOptions) {
 
   const contentChunks = chunkContent(options.mediaContent);
 
-  const metaStackElements =
-    typeof options.meta === "object"
-      ? [
-          bitcoin.opcodes.OP_FALSE,
-          bitcoin.opcodes.OP_IF,
-          opPush("ord"),
-          1,
-          1,
-          opPush("application/json;charset=utf-8"),
-          bitcoin.opcodes.OP_0,
-          opPush(JSON.stringify(options.meta)),
-          bitcoin.opcodes.OP_ENDIF
-        ]
-      : [];
+  const metaStackElements: (number | Buffer)[] = [];
+
+  if (typeof options.meta === "object") {
+    metaStackElements.push(
+      ...[
+        bitcoin.opcodes.OP_FALSE,
+        bitcoin.opcodes.OP_IF,
+        opPush("ord"),
+        1,
+        1,
+        opPush("application/json;charset=utf-8"),
+        bitcoin.opcodes.OP_0
+      ]
+    );
+    const metaChunks = chunkContent(JSON.stringify(options.meta));
+
+    metaChunks &&
+      metaChunks.forEach((chunk) => {
+        metaStackElements.push(opPush(chunk));
+      });
+    metaChunks && metaStackElements.push(bitcoin.opcodes.OP_ENDIF);
+  }
 
   const baseStackElements = [
     Buffer.from(options.xkey, "hex"),
