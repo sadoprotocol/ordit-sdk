@@ -26,5 +26,12 @@ export const addressTypeToName = {
   p2tr: "taproot"
 } as const;
 
+export const addressNameToType = {
+  legacy: "p2pkh",
+  segwit: "p2sh",
+  bech32: "p2wpkh",
+  taproot: "p2tr"
+} as const;
+
 export type AddressTypes = keyof typeof addressTypeToName;
 export type AddressFormats = (typeof addressTypeToName)[AddressTypes];
