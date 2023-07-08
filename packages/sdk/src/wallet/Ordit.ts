@@ -99,12 +99,13 @@ export class Ordit {
     const result = this.getAddressByType(type);
 
     this.selectedAddress = result.address;
+    this.publicKey = result.pub
     this.selectedAddressType = type;
   }
 
   signPsbt(hex?: string, base64?: string) {
     const networkObj = getNetwork(this.#network);
-    let psbt = null;
+    let psbt: bitcoin.Psbt | null = null;
 
     if (!this.#keyPair || !this.#initialized) {
       throw new Error("Wallet not fully initialized.");
@@ -125,7 +126,33 @@ export class Ordit {
       throw new Error("Invalid PSBT provided.");
     }
 
-    for (let i = 0; i < psbt.inputCount; i++) {
+    const inputsToSign: Input[] = [];
+
+    psbt.data.inputs.forEach((v, index) => {
+      let script: any = null;
+
+      if (v.witnessUtxo) {
+        script = v.witnessUtxo.script;
+      } else if (v.nonWitnessUtxo) {
+        const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo);
+        const output = tx.outs[psbt!.txInputs[index].index];
+
+        script = output.script;
+      }
+      const isSigned = v.finalScriptSig || v.finalScriptWitness;
+      if (script && !isSigned) {
+        const address = bitcoin.address.fromOutputScript(script, networkObj);
+        if (this.selectedAddress === address) {
+          inputsToSign.push({
+            index,
+            publicKey: this.publicKey,
+            sighashTypes: v.sighashType ? [v.sighashType] : undefined
+          });
+        }
+      }
+    });
+
+    for (let i = 0; i < inputsToSign.length; i++) {
       try {
         const input = psbt.data.inputs[i];
 
@@ -133,12 +160,14 @@ export class Ordit {
           if (!this.#taprootKeypair) {
             throw new Error("Taproot signer not found.");
           }
+
           const tweakedSigner = tweakSigner(this.#taprootKeypair, {
             network: networkObj
           });
-          psbt.signInput(i, tweakedSigner);
+
+          psbt.signInput(inputsToSign[i].index, tweakedSigner, inputsToSign[i].sighashTypes);
         } else {
-          psbt.signInput(i, this.#keyPair);
+          psbt.signInput(inputsToSign[i].index, this.#keyPair, inputsToSign[i].sighashTypes);
         }
       } catch (e) {
         throw new Error(e.message);
@@ -263,4 +292,10 @@ function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
 
 function toXOnly(pubkey: Buffer): Buffer {
   return pubkey.subarray(1, 33);
+}
+
+export interface Input {
+  index: number;
+  publicKey: string;
+  sighashTypes?: number[];
 }
