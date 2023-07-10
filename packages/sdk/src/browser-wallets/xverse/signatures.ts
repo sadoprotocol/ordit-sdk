@@ -1,11 +1,29 @@
 import { Psbt } from "bitcoinjs-lib";
-import { InputToSign, sendBtcTransaction, signMessage as _signMessage, signTransaction } from "sats-connect";
+import {
+  InputToSign,
+  sendBtcTransaction,
+  SendBtcTransactionOptions,
+  signMessage as _signMessage,
+  signTransaction
+} from "sats-connect";
 
 import { Network } from "../../config/types";
 import { isXverseInstalled, XverseNetwork } from "./utils";
 
-// This can be used as-is.
-export { sendBtcTransaction };
+// Directly passing the function does not seem to work
+// While the function object declared in the final build, it points to undefined
+// export { sendBtcTransaction }
+export async function sendBitcoin(options: SendBtcTransactionOptions) {
+  if (!isXverseInstalled()) {
+    throw new Error("Xverse not installed.");
+  }
+
+  try {
+    await sendBtcTransaction(options);
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+}
 
 export async function signPsbt(options: XverseSignPsbtOptions) {
   let result = null;
@@ -15,7 +33,7 @@ export async function signPsbt(options: XverseSignPsbtOptions) {
   }
 
   if (!isXverseInstalled()) {
-    throw new Error("xverse not installed.");
+    throw new Error("Xverse not installed.");
   }
 
   const handleFinish = (response: XverseSignPsbtResponse) => {
@@ -76,7 +94,7 @@ export async function signMessage(options: XverseSignMessageOptions) {
   }
 
   if (!isXverseInstalled()) {
-    throw new Error("xverse not installed.");
+    throw new Error("Xverse not installed.");
   }
 
   const handleFinish = (response: string) => {
