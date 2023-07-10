@@ -9,6 +9,9 @@ import {
   Account,
   AddressFormats,
   addressNameToType,
+  generateBuyerPsbt,
+  generateDummyUtxos,
+  generateSellerPsbt,
   getAddressesFromPublicKey,
   getAllAccountsFromHdNode,
   getNetwork,
@@ -173,6 +176,10 @@ export class Ordit {
       }
     });
 
+    if (!inputsToSign.length) {
+      throw new Error("Cannot sign PSBT with no signable inputs.");
+    }
+
     let psbtHasBeenSigned = false;
 
     for (let i = 0; i < inputsToSign.length; i++) {
@@ -257,6 +264,12 @@ export class Ordit {
         network
       });
     }
+  };
+
+  static instantBuy = {
+    generateBuyerPsbt,
+    generateSellerPsbt,
+    generateDummyUtxos
   };
 
   #initialize(addresses: Address[]) {

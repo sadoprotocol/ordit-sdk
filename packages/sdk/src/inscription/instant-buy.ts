@@ -13,8 +13,8 @@ import {
 } from "..";
 import { Network } from "../config/types";
 
-export async function generateSellerInstantBuyPsbt({
-  inscriptionId,
+export async function generateSellerPsbt({
+  inscriptionOutPoint,
   price,
   receiveAddress,
   publicKey,
@@ -22,7 +22,7 @@ export async function generateSellerInstantBuyPsbt({
   network = "testnet"
 }: GenerateSellerInstantBuyPsbtOptions) {
   const { inputs, outputs } = await getSellerInputsOutputs({
-    inscriptionId,
+    inscriptionOutPoint,
     price,
     receiveAddress,
     publicKey,
@@ -39,16 +39,58 @@ export async function generateSellerInstantBuyPsbt({
   return psbt;
 }
 
-export async function generateBuyerInstantBuyPsbt({
+export async function generateBuyerPsbt({
   publicKey,
   pubKeyType = "legacy",
   feeRate = 10,
   network = "testnet",
-  sellerData
+  sellerPsbt,
+  inscriptionOutPoint
 }: GenerateBuyerInstantBuyPsbtOptions) {
   const networkObj = getNetwork(network);
   const format = addressNameToType[pubKeyType];
   const address = getAddressesFromPublicKey(publicKey, network, format)[0];
+  let postage = 10000; // default postage
+  let ordOutNumber = 0;
+  // get postage from outpoint
+
+  try {
+    const [ordTxId, ordOut] = inscriptionOutPoint.split(":");
+    if (!ordTxId || !ordOut) {
+      throw new Error("Invalid outpoint.");
+    }
+
+    ordOutNumber = parseInt(ordOut);
+    const tx = await OrditApi.fetch<{
+      success: boolean;
+      rdata: any;
+      message?: string;
+    }>("utxo/transaction", {
+      data: {
+        txid: ordTxId,
+        options: {
+          noord: false,
+          nohex: false,
+          nowitness: false
+        }
+      },
+      network
+    });
+
+    if (!tx.success) {
+      throw new Error("Failed to get raw transaction for id: " + ordTxId);
+    }
+
+    const output = tx.rdata && tx.rdata.vout[ordOutNumber];
+
+    if (!output) {
+      throw new Error("Outpoint not found.");
+    }
+
+    postage = output.value * 1e8;
+  } catch (error) {
+    throw new Error(error.message);
+  }
 
   const unspentsResponse = await OrditApi.fetch<{
     success: boolean;
@@ -170,19 +212,24 @@ export async function generateBuyerInstantBuyPsbt({
   // Add dummy output
   psbt.addOutput({
     address: address.address!,
-    value: dummyUtxos[0].sats + dummyUtxos[1].sats + 0
+    value: dummyUtxos[0].sats + dummyUtxos[1].sats + ordOutNumber
   });
 
   // Add ordinal output
   psbt.addOutput({
     address: address.address!,
-    value: 1000
+    value: postage
   });
 
-  const { inputs, outputs } = await getSellerInputsOutputs({ ...sellerData, side: "buyer" });
+  // seller psbt merge
 
-  psbt.addInput(inputs[0]);
-  psbt.addOutput(outputs[0]);
+  const decodedSellerPsbt = bitcoin.Psbt.fromHex(sellerPsbt, { network: networkObj });
+  // inputs
+  (psbt.data.globalMap.unsignedTx as any).tx.ins[2] = (decodedSellerPsbt.data.globalMap.unsignedTx as any).tx.ins[0];
+  psbt.data.inputs[2] = decodedSellerPsbt.data.inputs[0];
+  // outputs
+  (psbt.data.globalMap.unsignedTx as any).tx.outs[2] = (decodedSellerPsbt.data.globalMap.unsignedTx as any).tx.outs[0];
+  psbt.data.outputs[2] = decodedSellerPsbt.data.outputs[0];
 
   for (let i = 0; i < spendableUtxos.length; i++) {
     const utxo = spendableUtxos[i];
@@ -255,6 +302,8 @@ export async function generateBuyerInstantBuyPsbt({
 }
 
 export async function generateDummyUtxos({
+  value = 600,
+  count = 2,
   publicKey,
   feeRate = 10,
   pubKeyType = "taproot",
@@ -344,34 +393,34 @@ export async function generateDummyUtxos({
 
     const fees = calculateTxFeeWithRate(
       paymentUtxoCount,
-      2, // 2-dummy outputs
+      count, // 2-dummy outputs
       feeRate
     );
-    if (totalValue >= 600 * 2 + fees) {
+    if (totalValue >= value * count + fees) {
       break;
     }
   }
 
   const finalFees = calculateTxFeeWithRate(
     paymentUtxoCount,
-    2, // 2-dummy outputs
+    count, // 2-dummy outputs
     feeRate
   );
 
-  const changeValue = totalValue - 600 * 2 - finalFees;
+  const changeValue = totalValue - value * count - finalFees;
   // We must have enough value to create a dummy utxo and pay for tx fees
   if (changeValue < 0) {
     throw new Error(`You might have pending transactions or not enough fund`);
   }
 
-  psbt.addOutput({
-    address: address.address!,
-    value: 600
-  });
-  psbt.addOutput({
-    address: address.address!,
-    value: 600
-  });
+  Array(count)
+    .fill(value)
+    .forEach((val) => {
+      psbt.addOutput({
+        address: address.address!,
+        value: val
+      });
+    });
 
   if (changeValue > 580) {
     psbt.addOutput({
@@ -383,20 +432,8 @@ export async function generateDummyUtxos({
   return psbt;
 }
 
-export function mergeSignedBuyerPSBTHex(signedSellerPsbtHex: string, signedBuyerPsbtHex: string): string {
-  const sellerSignedPsbt = bitcoin.Psbt.fromHex(signedSellerPsbtHex);
-  const buyerSignedPsbt = bitcoin.Psbt.fromHex(signedBuyerPsbtHex);
-
-  (buyerSignedPsbt.data.globalMap.unsignedTx as any).tx.ins[2] = (
-    sellerSignedPsbt.data.globalMap.unsignedTx as any
-  ).tx.ins[0];
-  buyerSignedPsbt.data.inputs[2] = sellerSignedPsbt.data.inputs[0];
-
-  return buyerSignedPsbt.toHex();
-}
-
 export async function getSellerInputsOutputs({
-  inscriptionId,
+  inscriptionOutPoint,
   price,
   receiveAddress,
   publicKey,
@@ -450,7 +487,7 @@ export async function getSellerInputsOutputs({
 
   for (let i = 0; i < ordUtxos.length; i++) {
     const ordUtxo: any = ordUtxos[i];
-    if (ordUtxo.inscriptions.find((v: any) => v.id == inscriptionId)) {
+    if (ordUtxo.inscriptions.find((v: any) => v.outpoint == inscriptionOutPoint)) {
       if (ordUtxo.inscriptions.length > 1) {
         throw new Error("Multiple inscriptions! Please split them first.");
       }
@@ -490,6 +527,7 @@ export async function getSellerInputsOutputs({
         index: parseInt(ordUtxo.n),
         nonWitnessUtxo: rawTx.toBuffer()
       };
+      const postage = ordUtxo.sats;
 
       if (side === "seller") {
         options.sighashType = bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY;
@@ -502,7 +540,7 @@ export async function getSellerInputsOutputs({
         data.tapInternalKey = toXOnly(Buffer.from(publicKey, "hex"));
         data.witnessUtxo = {
           script: p2tr.output!,
-          value: ordUtxo.sats
+          value: postage
         };
       }
 
@@ -510,7 +548,7 @@ export async function getSellerInputsOutputs({
         ...data,
         ...options
       });
-      outputs.push({ address: receiveAddress, value: price });
+      outputs.push({ address: receiveAddress, value: price + postage });
 
       found = true;
       break;
@@ -538,7 +576,7 @@ export interface UnspentOutput {
 }
 
 export interface GenerateSellerInstantBuyPsbtOptions {
-  inscriptionId: string;
+  inscriptionOutPoint: string;
   price: number;
   receiveAddress: string;
   publicKey: string;
@@ -552,10 +590,13 @@ export interface GenerateBuyerInstantBuyPsbtOptions {
   pubKeyType?: AddressFormats;
   network?: Network;
   feeRate?: number;
-  sellerData: GenerateSellerInstantBuyPsbtOptions;
+  inscriptionOutPoint: string;
+  sellerPsbt: string;
 }
 
 export interface GenerateDummyUtxos {
+  value: number;
+  count: number;
   publicKey: string;
   pubKeyType?: AddressFormats;
   network?: Network;
