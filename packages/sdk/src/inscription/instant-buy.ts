@@ -8,7 +8,8 @@ import {
   createTransaction,
   getAddressesFromPublicKey,
   getNetwork,
-  OrditApi
+  OrditApi,
+  toXOnly
 } from "..";
 import { Network } from "../config/types";
 
@@ -132,9 +133,7 @@ export async function generateBuyerInstantBuyPsbt({
     const input: any = {
       hash: dummyUtxo.txid,
       index: dummyUtxo.n,
-      nonWitnessUtxo: rawTx.toBuffer(),
-      witnessUtxo: format === "p2tr" ? rawTx.outs[0] : undefined,
-      tapInternalKey: format === "p2tr" ? Buffer.from(address.xkey!, "hex") : undefined
+      nonWitnessUtxo: rawTx.toBuffer()
     };
 
     const p2shInputRedeemScript: any = {};
@@ -147,6 +146,17 @@ export async function generateBuyerInstantBuyPsbt({
         value: dummyUtxo.sats
       };
       p2shInputRedeemScript.redeemScript = p2sh.redeem?.output;
+    }
+
+    if (format === "p2tr") {
+      const xKey = toXOnly(Buffer.from(publicKey, "hex"));
+      const p2tr = createTransaction(xKey, "p2tr", network);
+
+      input.tapInternalKey = toXOnly(Buffer.from(publicKey, "hex"));
+      input.witnessUtxo = {
+        script: p2tr.output!,
+        value: dummyUtxo.sats
+      };
     }
 
     psbt.addInput({
@@ -201,12 +211,23 @@ export async function generateBuyerInstantBuyPsbt({
         } catch {}
       }
     }
+
     const input: any = {
       hash: utxo.txid,
       index: utxo.n,
-      nonWitnessUtxo: rawTx.toBuffer(),
-      witnessUtxo: rawTx.outs[2]
+      nonWitnessUtxo: rawTx.toBuffer()
     };
+
+    if (pubKeyType === "taproot") {
+      const xKey = toXOnly(Buffer.from(publicKey, "hex"));
+      const p2tr = createTransaction(xKey, "p2tr", network);
+
+      input.tapInternalKey = toXOnly(Buffer.from(publicKey, "hex"));
+      input.witnessUtxo = {
+        script: p2tr.output!,
+        value: utxo.sats
+      };
+    }
 
     psbt.addInput({
       ...input
@@ -305,7 +326,19 @@ export async function generateDummyUtxos({
       nonWitnessUtxo: rawTx.toBuffer()
     };
 
+    if (pubKeyType === "taproot") {
+      const xKey = toXOnly(Buffer.from(publicKey, "hex"));
+      const p2tr = createTransaction(xKey, "p2tr", network);
+
+      input.tapInternalKey = toXOnly(Buffer.from(publicKey, "hex"));
+      input.witnessUtxo = {
+        script: p2tr.output!,
+        value: utxo.sats
+      };
+    }
+
     psbt.addInput(input);
+
     totalValue += utxo.sats;
     paymentUtxoCount += 1;
 
@@ -452,11 +485,10 @@ export async function getSellerInputsOutputs({
 
       const options: any = {};
 
-      const data = {
+      const data: any = {
         hash: ordUtxo.txid,
         index: parseInt(ordUtxo.n),
-        nonWitnessUtxo: rawTx.toBuffer(),
-        witnessUtxo: rawTx.outs[0]
+        nonWitnessUtxo: rawTx.toBuffer()
       };
 
       if (side === "seller") {
@@ -464,7 +496,14 @@ export async function getSellerInputsOutputs({
       }
 
       if (format === "p2tr") {
-        options.tapInternalKey = Buffer.from(address.xkey!, "hex");
+        const xKey = toXOnly(Buffer.from(publicKey, "hex"));
+        const p2tr = createTransaction(xKey, "p2tr", network);
+
+        data.tapInternalKey = toXOnly(Buffer.from(publicKey, "hex"));
+        data.witnessUtxo = {
+          script: p2tr.output!,
+          value: ordUtxo.sats
+        };
       }
 
       inputs.push({

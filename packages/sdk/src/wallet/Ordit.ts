@@ -5,7 +5,15 @@ import * as bitcoin from "bitcoinjs-lib";
 import { isTaprootInput } from "bitcoinjs-lib/src/psbt/bip371";
 import ECPairFactory, { ECPairInterface } from "ecpair";
 
-import { AddressFormats, getAddressesFromPublicKey, getNetwork, hdNodeToChild } from "..";
+import {
+  Account,
+  AddressFormats,
+  addressNameToType,
+  getAddressesFromPublicKey,
+  getAllAccountsFromHdNode,
+  getNetwork,
+  tweakSigner
+} from "..";
 import { OrditApi } from "../api";
 import { Network } from "../config/types";
 import { OrdTransaction, OrdTransactionOptions } from "../transactions";
@@ -20,48 +28,59 @@ export class Ordit {
   #initialized = false;
   #keyPair: ECPairInterface;
   publicKey: string;
-  taprootPublicKey: string | null = null;
-  allAddresses: ReturnType<typeof getAddressesFromPublicKey> = [];
+  allAddresses: ReturnType<typeof getAddressesFromPublicKey> | ReturnType<typeof getAllAccountsFromHdNode> = [];
   selectedAddressType: AddressFormats | undefined;
   selectedAddress: string | undefined;
-  #taprootKeypair: ECPairInterface | null = null;
 
-  constructor({ wif, seed, privateKey, bip39, network = "testnet" }: WalletOptions) {
+  constructor({ wif, seed, privateKey, bip39, network = "testnet", type = "legacy" }: WalletOptions) {
     this.#network = network;
     const networkObj = getNetwork(network);
+    const format = addressNameToType[type];
 
     if (wif) {
       const keyPair = ECPair.fromWIF(wif, networkObj);
       this.#keyPair = keyPair;
+
+      this.publicKey = keyPair.publicKey.toString("hex");
+
+      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format);
+      this.#initialize(accounts);
     } else if (privateKey) {
       const pkBuffer = Buffer.from(privateKey, "hex");
       const keyPair = ECPair.fromPrivateKey(pkBuffer, { network: networkObj });
       this.#keyPair = keyPair;
+
+      this.publicKey = keyPair.publicKey.toString("hex");
+
+      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format);
+      this.#initialize(accounts);
     } else if (seed) {
       const seedBuffer = Buffer.from(seed, "hex");
       const hdNode = bip32.fromSeed(seedBuffer, networkObj);
-      const child = hdNodeToChild(hdNode, "legacy", 0);
-      const taprootChild = hdNodeToChild(hdNode, "taproot", 0);
 
-      this.#keyPair = ECPair.fromPrivateKey(child.privateKey!, { network: networkObj });
-      this.#taprootKeypair = ECPair.fromPrivateKey(taprootChild.privateKey!, { network: networkObj });
-      this.taprootPublicKey = this.#taprootKeypair.publicKey.toString("hex");
+      const accounts = getAllAccountsFromHdNode({ hdNode, network });
+
+      const pkBuf = Buffer.from(accounts[0].priv, "hex");
+      this.#keyPair = ECPair.fromPrivateKey(pkBuf, { network: networkObj });
+
+      this.publicKey = this.#keyPair.publicKey.toString("hex");
+
+      this.#initialize(accounts);
     } else if (bip39) {
       const seedBuffer = mnemonicToSeedSync(bip39);
       const hdNode = bip32.fromSeed(seedBuffer, networkObj);
-      const child = hdNodeToChild(hdNode, "legacy", 0);
-      const taprootChild = hdNodeToChild(hdNode, "taproot", 0);
 
-      this.#keyPair = ECPair.fromPrivateKey(child.privateKey!, { network: networkObj });
-      this.#taprootKeypair = ECPair.fromPrivateKey(taprootChild.privateKey!, { network: networkObj });
-      this.taprootPublicKey = this.#taprootKeypair.publicKey.toString("hex");
+      const accounts = getAllAccountsFromHdNode({ hdNode, network });
+
+      const pkBuf = Buffer.from(accounts[0].priv, "hex");
+      this.#keyPair = ECPair.fromPrivateKey(pkBuf, { network: networkObj });
+
+      this.publicKey = this.#keyPair.publicKey.toString("hex");
+
+      this.#initialize(accounts);
     } else {
       throw new Error("Invalid options provided.");
     }
-
-    this.publicKey = this.#keyPair.publicKey.toString("hex");
-
-    this.#initialize();
   }
 
   get network() {
@@ -90,36 +109,38 @@ export class Ordit {
       throw new Error("Keypair not found");
     }
 
-    return getAddressesFromPublicKey(this.publicKey, this.#network, "all");
+    return this.allAddresses;
   }
 
   setDefaultAddress(type: AddressFormats) {
     if (this.selectedAddressType === type) return;
 
-    const result = this.getAddressByType(type);
+    const result = this.getAddressByType(type) as Account;
+    const networkObj = getNetwork(this.#network);
 
     this.selectedAddress = result.address;
-    this.publicKey = result.pub
+    this.publicKey = result.pub;
     this.selectedAddressType = type;
+
+    if (result.priv) {
+      this.#keyPair = ECPair.fromPrivateKey(Buffer.from(result.priv, "hex"), {
+        network: networkObj
+      });
+    }
   }
 
-  signPsbt(hex?: string, base64?: string) {
+  signPsbt(value: string, { finalized = true }: { finalized?: boolean }) {
     const networkObj = getNetwork(this.#network);
     let psbt: bitcoin.Psbt | null = null;
 
     if (!this.#keyPair || !this.#initialized) {
       throw new Error("Wallet not fully initialized.");
     }
-    if (!(hex || base64) || (hex && base64)) {
-      throw new Error("Invalid options provided.");
-    }
 
-    if (hex) {
-      psbt = bitcoin.Psbt.fromHex(hex);
-    }
-
-    if (base64) {
-      psbt = bitcoin.Psbt.fromBase64(base64);
+    try {
+      psbt = bitcoin.Psbt.fromHex(value);
+    } catch (error) {
+      psbt = bitcoin.Psbt.fromBase64(value);
     }
 
     if (!psbt || !psbt.inputCount) {
@@ -152,16 +173,17 @@ export class Ordit {
       }
     });
 
+    let psbtHasBeenSigned = false;
+
     for (let i = 0; i < inputsToSign.length; i++) {
       try {
         const input = psbt.data.inputs[i];
+        psbtHasBeenSigned = input.finalScriptSig || input.finalScriptWitness ? true : false;
+
+        if (psbtHasBeenSigned) continue;
 
         if (isTaprootInput(input)) {
-          if (!this.#taprootKeypair) {
-            throw new Error("Taproot signer not found.");
-          }
-
-          const tweakedSigner = tweakSigner(this.#taprootKeypair, {
+          const tweakedSigner = tweakSigner(this.#keyPair, {
             network: networkObj
           });
 
@@ -175,27 +197,21 @@ export class Ordit {
     }
 
     const psbtHex = psbt.toHex();
-    const psbtBase64 = psbt.toBase64();
 
-    const psbtHasBeenSigned = psbtHex !== hex || psbtBase64 !== base64;
+    //TODO: check if psbt has been signed
 
-    if (psbtHasBeenSigned) {
-      try {
+    try {
+      if (finalized) {
         psbt.finalizeAllInputs();
 
         const signedHex = psbt.extractTransaction().toHex();
 
-        return {
-          hex: signedHex
-        };
-      } catch (error) {
-        return {
-          hex: psbtHex,
-          base64: psbtBase64
-        };
+        return signedHex;
       }
-    } else {
-      throw new Error("Signed PSBT is same as input PSBT.");
+
+      return psbtHex;
+    } catch (error) {
+      throw new Error("Cannot finalize the inputs.", error);
     }
   }
 
@@ -243,8 +259,7 @@ export class Ordit {
     }
   };
 
-  #initialize() {
-    const addresses = this.getAllAddresses();
+  #initialize(addresses: Address[]) {
     this.allAddresses = addresses;
 
     const addressFormat = addresses[0].format as AddressFormats;
@@ -261,38 +276,10 @@ export type WalletOptions = {
   privateKey?: string;
   bip39?: string;
   network?: Network;
+  type?: AddressFormats;
 };
 
 export type Address = ReturnType<typeof getAddressesFromPublicKey>[0];
-
-function tweakSigner(signer: bitcoin.Signer, opts: any = {}): bitcoin.Signer {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  let privateKey: Uint8Array | undefined = signer.privateKey!;
-  if (!privateKey) {
-    throw new Error("Private key is required for tweaking signer!");
-  }
-  if (signer.publicKey[0] === 3) {
-    privateKey = ecc.privateNegate(privateKey);
-  }
-
-  const tweakedPrivateKey = ecc.privateAdd(privateKey, tapTweakHash(toXOnly(signer.publicKey), opts.tweakHash));
-  if (!tweakedPrivateKey) {
-    throw new Error("Invalid tweaked private key!");
-  }
-
-  return ECPair.fromPrivateKey(Buffer.from(tweakedPrivateKey), {
-    network: opts.network
-  });
-}
-
-function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
-  return bitcoin.crypto.taggedHash("TapTweak", Buffer.concat(h ? [pubKey, h] : [pubKey]));
-}
-
-function toXOnly(pubkey: Buffer): Buffer {
-  return pubkey.subarray(1, 33);
-}
 
 export interface Input {
   index: number;
