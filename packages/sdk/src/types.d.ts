@@ -11,6 +11,7 @@ type Unisat = {
   getPublicKey: () => Promise<string>;
   signPsbt: (hex: string) => Promise<string>;
   signMessage: (message: string) => Promise<string>;
+  sendBitcoin: (address: string, satoshis: number, options: { feeRate: number }) => Promise<string>;
 };
 
 type MetaMask = {

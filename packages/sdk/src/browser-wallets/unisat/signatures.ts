@@ -58,3 +58,18 @@ export async function signMessage(message: string) {
     hex: Buffer.from(signature, "base64").toString("hex")
   };
 }
+
+export async function sendBitcoin(toAddress: string, satoshis: number, feeRate: number) {
+  if (!isUnisatInstalled()) {
+    throw new Error("Unisat not installed.");
+  }
+
+  try {
+    const txId = await window.unisat.sendBitcoin(toAddress, satoshis, {
+      feeRate
+    });
+    return txId;
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+}
