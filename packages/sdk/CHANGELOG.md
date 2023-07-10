@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.0.9] - 2023-07-11
+
+## Added
+
+- Add instant buy support to Ordit SDK
+- Improved wallet API
+
+## Fixed
+
+- No Sighash support in signer
+- Signing of all inputs
+- Derivation of addresses from bip39 and seed properly
+
 ## [0.0.8] - 2023-07-04
 
 ## Added
@@ -84,6 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Feature to get addresses and balances given PublicKey | seed | bip39 mnemonic.
 - This change log file to highlight notable changes
 
+[0.0.9]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.5...v0.0.6
