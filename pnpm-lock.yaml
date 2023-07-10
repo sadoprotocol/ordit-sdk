@@ -45,8 +45,8 @@ importers:
         specifier: 6.6.1
         version: 6.6.1
       sats-connect:
-        specifier: 0.2.0
-        version: 0.2.0
+        specifier: 0.4.0-beta.1
+        version: 0.4.0-beta.1
     devDependencies:
       '@sadoprotocol/eslint-config':
         specifier: ^0.0.2
@@ -2064,8 +2064,8 @@ packages:
       is-regex: 1.1.4
     dev: true
 
-  /sats-connect@0.2.0:
-    resolution: {integrity: sha512-PEeqgPmAASPwGnBRmKYAmOey2HRbzW733EOVia067MoDAoai+/Buzx1NzaJ5FXZzpzHbG2YFQDp+43vkFWTQxw==}
+  /sats-connect@0.4.0-beta.1:
+    resolution: {integrity: sha512-L+etd6vTON6gof54+BVQJ4ik3HHOLfvlL07CPc2jzop1x448rAKQTDFPTgaCvfe4JCkdLhM1qZUPj2nilB9Rdg==}
     dependencies:
       jsontokens: 4.0.1
       process: 0.11.10
