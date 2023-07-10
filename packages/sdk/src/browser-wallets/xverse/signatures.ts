@@ -1,8 +1,11 @@
 import { Psbt } from "bitcoinjs-lib";
-import { InputToSign, signMessage as _signMessage, signTransaction } from "sats-connect";
+import { InputToSign, sendBtcTransaction, signMessage as _signMessage, signTransaction } from "sats-connect";
 
 import { Network } from "../../config/types";
 import { isXverseInstalled, XverseNetwork } from "./utils";
+
+// This can be used as-is.
+export { sendBtcTransaction };
 
 export async function signPsbt(options: XverseSignPsbtOptions) {
   let result = null;
