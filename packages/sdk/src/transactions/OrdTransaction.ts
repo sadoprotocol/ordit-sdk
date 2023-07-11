@@ -1,7 +1,15 @@
 import * as ecc from "@bitcoinerlab/secp256k1";
 import * as bitcoin from "bitcoinjs-lib";
+import { Tapleaf } from "bitcoinjs-lib/src/types";
 
-import { buildWitnessScript, createTransaction, getAddressesFromPublicKey, getNetwork, OrditApi } from "..";
+import {
+  buildWitnessScript,
+  calculateTxFeeWithRate,
+  createTransaction,
+  getAddressesFromPublicKey,
+  getNetwork,
+  OrditApi
+} from "..";
 import { Network } from "../config/types";
 
 bitcoin.initEccLib(ecc);
@@ -23,6 +31,7 @@ export class OrdTransaction {
   #commitAddress: string | null = null;
   #inscribePayTx: ReturnType<typeof createTransaction> | null = null;
   #suitableUnspent: any = null;
+  #recovery = false;
 
   constructor({
     feeRate = 10,
@@ -60,7 +69,12 @@ export class OrdTransaction {
       throw new Error("Failed to build PSBT. Transaction not ready.");
     }
 
-    const fees = this.postage + this.#feeForWitnessData!;
+    let fees = this.postage + this.#feeForWitnessData!;
+
+    if (this.#recovery) {
+      fees = calculateTxFeeWithRate(1, 0, this.feeRate, 1);
+    }
+
     const change = this.#suitableUnspent.sats - fees;
 
     const networkObj = getNetwork(this.network);
@@ -85,10 +99,12 @@ export class OrdTransaction {
         ]
       });
 
-      psbt.addOutput({
-        address: this.destinationAddress,
-        value: this.postage
-      });
+      if (!this.#recovery) {
+        psbt.addOutput({
+          address: this.destinationAddress,
+          value: this.postage
+        });
+      }
 
       if (change > 600) {
         let changeAddress = this.#inscribePayTx.address;
@@ -139,14 +155,26 @@ export class OrdTransaction {
       meta: this.meta,
       xkey: this.#xKey
     });
+    const recoverScript = buildWitnessScript({
+      mediaContent: this.mediaContent,
+      mediaType: this.mediaType,
+      meta: this.meta,
+      xkey: this.#xKey,
+      recover: true
+    });
 
-    if (!witnessScript) {
+    if (!witnessScript || !recoverScript) {
       throw new Error("Failed to build createRevealPsbt");
     }
 
-    const scriptTree = {
-      output: witnessScript
-    };
+    const scriptTree: [Tapleaf, Tapleaf] = [
+      {
+        output: witnessScript
+      },
+      {
+        output: recoverScript
+      }
+    ];
 
     const redeemScript = {
       output: witnessScript,
@@ -170,6 +198,52 @@ export class OrdTransaction {
       address: inscribePayTx.address!,
       revealFee: this.postage + scriptFees
     };
+  }
+
+  recover() {
+    if (!this.#inscribePayTx || !this.ready) {
+      throw new Error("Transaction not ready.");
+    }
+
+    const witnessScript = buildWitnessScript({
+      mediaContent: this.mediaContent,
+      mediaType: this.mediaType,
+      meta: this.meta,
+      xkey: this.#xKey
+    });
+    const recoverScript = buildWitnessScript({
+      mediaContent: this.mediaContent,
+      mediaType: this.mediaType,
+      meta: this.meta,
+      xkey: this.#xKey,
+      recover: true
+    });
+
+    if (!witnessScript || !recoverScript) {
+      throw new Error("Failed to build createRevealPsbt");
+    }
+
+    const scriptTree: [Tapleaf, Tapleaf] = [
+      {
+        output: witnessScript
+      },
+      {
+        output: recoverScript
+      }
+    ];
+
+    const redeemScript = {
+      output: recoverScript,
+      redeemVersion: 192
+    };
+
+    const inscribePayTx = createTransaction(Buffer.from(this.#xKey, "hex"), "p2tr", this.network, {
+      scriptTree: scriptTree,
+      redeem: redeemScript
+    });
+
+    this.#inscribePayTx = inscribePayTx;
+    this.#recovery = true;
   }
 
   async isReady() {

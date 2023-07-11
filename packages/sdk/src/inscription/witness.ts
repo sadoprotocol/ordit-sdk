@@ -1,7 +1,7 @@
 import * as ecc from "@bitcoinerlab/secp256k1";
 import * as bitcoin from "bitcoinjs-lib";
 
-export function buildWitnessScript(options: WitnessScriptOptions) {
+export function buildWitnessScript({ recover = false, ...options }: WitnessScriptOptions) {
   bitcoin.initEccLib(ecc);
   if (!options.mediaType || !options.mediaContent || !options.xkey) {
     throw new Error("Failed to build witness script");
@@ -57,14 +57,16 @@ export function buildWitnessScript(options: WitnessScriptOptions) {
   }
 
   try {
-    const witness = bitcoin.script.compile([
+    if (recover) {
+      return bitcoin.script.compile([Buffer.from(options.xkey, "hex"), bitcoin.opcodes.OP_CHECKSIG]);
+    }
+
+    return bitcoin.script.compile([
       ...baseStackElements,
       ...contentStackElements,
       bitcoin.opcodes.OP_ENDIF,
       ...metaStackElements
     ]);
-
-    return witness;
   } catch (error) {
     //fail silently
   }
@@ -89,4 +91,5 @@ export type WitnessScriptOptions = {
   mediaContent: string;
   mediaType: string;
   meta: any;
+  recover?: boolean;
 };
