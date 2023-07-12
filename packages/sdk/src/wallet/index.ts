@@ -71,7 +71,7 @@ export async function getWalletWithBalances(options: GetWalletOptions) {
     const unspent = await OrditApi.fetch<{ success: boolean; rdata: Array<any> }>("utxo/unspents", {
       network: options.network,
       data: {
-        address,
+        address: address.address,
         options: {
           txhex: true,
           notsafetospend: false,
