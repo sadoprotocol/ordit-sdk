@@ -31,7 +31,7 @@ export function getAddressFormat(address: string, network: Network) {
   return format;
 }
 
-export function getAddressType(address: string, network: Network): string | null {
+export function getAddressType(address: string, network: Network): AddressTypes {
   const addressFormat = getAddressFormat(address, network).format;
   return addressNameToType[addressFormat as AddressFormats];
 }
