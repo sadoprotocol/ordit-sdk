@@ -31,6 +31,11 @@ export function getAddressFormat(address: string, network: Network) {
   return format;
 }
 
+export function getAddressType(address: string, network: Network): string | null {
+  const addressFormat = getAddressFormat(address, network).format;
+  return addressNameToType[addressFormat as AddressFormats];
+}
+
 export function getAddressesFromPublicKey(
   pubKey: string | Buffer,
   network: Network = "testnet",
