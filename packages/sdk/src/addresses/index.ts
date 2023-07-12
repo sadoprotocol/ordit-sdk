@@ -4,7 +4,7 @@ import BIP32Factory from "bip32";
 import { Network } from "../config/types";
 import { getWalletKeys } from "../keys";
 import { createTransaction, getNetwork } from "../utils";
-import { addressFormats, AddressTypes, addressTypeToName } from "./formats";
+import { AddressFormats, addressFormats, addressNameToType, AddressTypes, addressTypeToName } from "./formats";
 
 export function getAddressFormat(address: string, network: Network) {
   let format = {
@@ -29,6 +29,11 @@ export function getAddressFormat(address: string, network: Network) {
   }
 
   return format;
+}
+
+export function getAddressType(address: string, network: Network): string | null {
+  const addressFormat = getAddressFormat(address, network).format;
+  return addressNameToType[addressFormat as AddressFormats];
 }
 
 export function getAddressesFromPublicKey(
