@@ -228,7 +228,7 @@ export class Ordit {
   signMessage(message: string) {
     const signature = sign(message, this.#keyPair.privateKey!);
 
-    return signature.toString("hex");
+    return signature.toString("base64");
   }
 
   async relayTx(hex: string, network?: Network) {
