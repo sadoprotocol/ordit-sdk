@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [0.0.10] - 2023-07-13
+
+## Added
+
+- Support for OIP 2, Collections and minting features
+- Support for recoverable deposits in commit address
+- Support for Message signing in Ordit wallet class
+
+## Fixed
+
+- Sign message logic to handle fallback case
+
 ## [0.0.9] - 2023-07-11
 
 ## Added
@@ -97,6 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Feature to get addresses and balances given PublicKey | seed | bip39 mnemonic.
 - This change log file to highlight notable changes
 
+[0.0.10]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.8...v0.0.9
 [0.0.8]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/sadoprotocol/ordit-sdk/compare/v0.0.6...v0.0.7
