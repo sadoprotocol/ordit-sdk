@@ -33,7 +33,30 @@ export async function signMessage(options: SignMessageOptions) {
 }
 
 export function verifyMessage(options: VerifyMessageOptions) {
-  return verify(options.message, options.address, options.signature);
+  let isValid = verify(options.message, options.address, options.signature);
+
+  if (!isValid) {
+    isValid = fallbackVerification(options);
+  }
+
+  return isValid;
+}
+
+function fallbackVerification({ message, address, signature }: VerifyMessageOptions) {
+  let isValid = false;
+  const flags = [...Array(12).keys()].map((i) => i + 31);
+  for (const flag of flags) {
+    const flagByte = Buffer.alloc(1);
+    flagByte.writeInt8(flag);
+    let sigBuffer = Buffer.from(signature, "base64").slice(1);
+    sigBuffer = Buffer.concat([flagByte, sigBuffer]);
+    const candidateSig = sigBuffer.toString("base64");
+    try {
+      isValid = verify(message, address, candidateSig);
+      if (isValid) break;
+    } catch (e) {}
+  }
+  return isValid;
 }
 
 export type SignMessageOptions = Omit<GetWalletOptions, "pubKey" | "format"> & {

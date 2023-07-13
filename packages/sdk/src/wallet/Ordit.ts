@@ -3,6 +3,7 @@ import BIP32Factory from "bip32";
 import { mnemonicToSeedSync } from "bip39";
 import * as bitcoin from "bitcoinjs-lib";
 import { isTaprootInput } from "bitcoinjs-lib/src/psbt/bip371";
+import { sign } from "bitcoinjs-message";
 import ECPairFactory, { ECPairInterface } from "ecpair";
 
 import {
@@ -15,6 +16,8 @@ import {
   getAddressesFromPublicKey,
   getAllAccountsFromHdNode,
   getNetwork,
+  mintFromCollection,
+  publishCollection,
   tweakSigner
 } from "..";
 import { OrditApi } from "../api";
@@ -222,6 +225,12 @@ export class Ordit {
     }
   }
 
+  signMessage(message: string) {
+    const signature = sign(message, this.#keyPair.privateKey!);
+
+    return signature.toString("hex");
+  }
+
   async relayTx(hex: string, network?: Network) {
     if (!hex) {
       throw new Error("Invalid options provided.");
@@ -270,6 +279,11 @@ export class Ordit {
     generateBuyerPsbt,
     generateSellerPsbt,
     generateDummyUtxos
+  };
+
+  static collection = {
+    publish: publishCollection,
+    mint: mintFromCollection
   };
 
   #initialize(addresses: Address[]) {

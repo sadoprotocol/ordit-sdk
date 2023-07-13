@@ -32,6 +32,7 @@ export class OrdTransaction {
   #inscribePayTx: ReturnType<typeof createTransaction> | null = null;
   #suitableUnspent: any = null;
   #recovery = false;
+  #outs: Outputs = [];
 
   constructor({
     feeRate = 10,
@@ -39,6 +40,7 @@ export class OrdTransaction {
     mediaType = "text/plain;charset=utf-8",
     network = "testnet",
     publicKey,
+    outs = [],
     ...otherOptions
   }: OrdTransactionOptions) {
     if (!publicKey || !otherOptions.changeAddress || !otherOptions.destination || !otherOptions.mediaContent) {
@@ -54,6 +56,7 @@ export class OrdTransaction {
     this.mediaContent = otherOptions.mediaContent;
     this.meta = otherOptions.meta;
     this.postage = postage;
+    this.#outs = outs;
 
     const xKey = getAddressesFromPublicKey(publicKey, network, "p2tr")[0].xkey;
 
@@ -62,6 +65,10 @@ export class OrdTransaction {
     }
 
     this.#xKey = xKey;
+  }
+
+  get outs() {
+    return this.#outs;
   }
 
   build() {
@@ -105,6 +112,10 @@ export class OrdTransaction {
           value: this.postage
         });
       }
+
+      this.#outs.forEach((out) => {
+        psbt.addOutput(out);
+      });
 
       if (change > 600) {
         let changeAddress = this.#inscribePayTx.address;
@@ -189,6 +200,9 @@ export class OrdTransaction {
     const fees = JSON.parse(JSON.stringify((80 + 1 * 180) * this.feeRate));
     const scriptLength = witnessScript.toString("hex").length;
     const scriptFees = Math.ceil((scriptLength / 10) * this.feeRate + fees);
+    const customOutsAmount = this.#outs.reduce((acc, cur) => {
+      return acc + cur.value;
+    }, 0);
 
     this.#feeForWitnessData = scriptFees;
     this.#commitAddress = inscribePayTx.address!;
@@ -196,7 +210,7 @@ export class OrdTransaction {
 
     return {
       address: inscribePayTx.address!,
-      revealFee: this.postage + scriptFees
+      revealFee: this.postage + scriptFees + customOutsAmount
     };
   }
 
@@ -288,9 +302,12 @@ export class OrdTransaction {
     }
 
     const unspents = unspentsResponse.rdata;
+    const customOutsAmount = this.#outs.reduce((acc, cur) => {
+      return acc + cur.value;
+    }, 0);
 
     const suitableUnspent = unspents.find((unspent) => {
-      if (unspent.sats >= this.postage + this.#feeForWitnessData! && unspent.safeToSpend === true) {
+      if (unspent.sats >= this.postage + this.#feeForWitnessData! + customOutsAmount && unspent.safeToSpend === true) {
         return true;
       }
     }, this);
@@ -316,4 +333,7 @@ export type OrdTransactionOptions = {
   meta?: object | unknown;
   network?: Network;
   publicKey: string;
+  outs?: Outputs;
 };
+
+type Outputs = Array<{ address: string; value: number }>;
