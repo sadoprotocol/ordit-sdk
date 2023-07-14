@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "inscribe": "node inscribe",
-    "read": "node read"
+    "read": "node read",
+    "send": "node send"
   },
   "author": "",
   "license": "ISC",

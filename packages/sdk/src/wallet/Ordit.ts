@@ -261,7 +261,7 @@ export class Ordit {
       throw new Error("Invalid options provided.");
     }
 
-    const txResponse = await OrditApi.fetch<{ success: boolean; rdata: Array<any> }>("utxo/relay", {
+    const txResponse = await OrditApi.fetch<{ success: boolean; rdata: string }>("utxo/relay", {
       data: { hex },
       network: network ?? this.#network
     });
@@ -270,9 +270,7 @@ export class Ordit {
       throw new Error("Failed to relay transaction.");
     }
 
-    return {
-      txid: txResponse.rdata
-    };
+    return txResponse.rdata;
   }
 
   async getInscriptions() {
