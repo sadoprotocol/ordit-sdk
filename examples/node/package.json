@@ -11,6 +11,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sadoprotocol/ordit-sdk": "^0.0.7"
+    "@sadoprotocol/ordit-sdk": "^0.0.10"
   }
 }

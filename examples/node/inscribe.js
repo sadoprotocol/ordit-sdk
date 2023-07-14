@@ -1,15 +1,14 @@
-import fs from "fs";
 import { Ordit } from "@sadoprotocol/ordit-sdk"; //import Ordit
+import { base64_encode } from "./utils";
 
-const WORDS =
-  "bunker coyote fatal canvas critic despair morning region book method phrase decide"; // Generated HD wallet seed phrase
+const WORDS = "<MNEMONIC WORDS>"; // Generated HD wallet seed phrase
 const IMG_BASE64 = base64_encode("./azuki-small-compressed.png"); // relative path to image
 
 async function main() {
   // Load wallet
   const wallet = new Ordit({
     bip39: WORDS,
-    network: "mainnet",
+    network: "mainnet"
   });
 
   // new ordinal transaction
@@ -27,29 +26,29 @@ async function main() {
       traits: [
         {
           traitType: "Hair",
-          value: "Electrified Long - Black",
+          value: "Electrified Long - Black"
         },
         {
           traitType: "Offhand",
-          value: "Elemental Blade - Lightning",
+          value: "Elemental Blade - Lightning"
         },
         {
           traitType: "Eyes",
-          value: "Enticing",
+          value: "Enticing"
         },
         {
           traitType: "Type",
-          value: "Blue",
-        },
+          value: "Blue"
+        }
       ],
       creator: {
         name: "TheArtist",
         email: "artist@example.org",
-        address: wallet.selectedAddress,
-      },
+        address: wallet.selectedAddress
+      }
     },
     network: "mainnet",
-    postage: 1500,
+    postage: 1500
   });
 
   //   //   Get deposit address and fee for inscription
@@ -79,11 +78,3 @@ async function main() {
 }
 
 main();
-
-//Utility methods
-function base64_encode(file) {
-  // read binary data
-  var bitmap = fs.readFileSync(file);
-  // convert binary data to base64 encoded string
-  return Buffer.from(bitmap).toString("base64");
-}
