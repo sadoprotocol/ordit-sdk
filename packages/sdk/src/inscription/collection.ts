@@ -151,7 +151,7 @@ export type PublishCollectionOptions = {
 export type CollectionInscription = {
   iid: string;
   lim: number;
-  sri: string;
+  sri?: string;
 };
 
 export type MintFromCollectionOptions = {

@@ -90,6 +90,7 @@ export class OrdTransaction {
 
     try {
       psbt.addInput({
+        sequence: 0xfffffffd, // Needs to be at least 2 below max int value to be RBF
         hash: this.#suitableUnspent.txid,
         index: parseInt(this.#suitableUnspent.n),
         tapInternalKey: Buffer.from(this.#xKey, "hex"),

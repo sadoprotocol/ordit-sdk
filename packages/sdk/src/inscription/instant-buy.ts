@@ -175,7 +175,8 @@ export async function generateBuyerPsbt({
     const input: any = {
       hash: dummyUtxo.txid,
       index: dummyUtxo.n,
-      nonWitnessUtxo: rawTx.toBuffer()
+      nonWitnessUtxo: rawTx.toBuffer(),
+      sequence: 0xfffffffd // Needs to be at least 2 below max int value to be RBF
     };
 
     const p2shInputRedeemScript: any = {};
@@ -262,7 +263,8 @@ export async function generateBuyerPsbt({
     const input: any = {
       hash: utxo.txid,
       index: utxo.n,
-      nonWitnessUtxo: rawTx.toBuffer()
+      nonWitnessUtxo: rawTx.toBuffer(),
+      sequence: 0xfffffffd // Needs to be at least 2 below max int value to be RBF
     };
 
     if (pubKeyType === "taproot") {
@@ -372,7 +374,8 @@ export async function generateDummyUtxos({
     const input: any = {
       hash: utxo.txid,
       index: utxo.n,
-      nonWitnessUtxo: rawTx.toBuffer()
+      nonWitnessUtxo: rawTx.toBuffer(),
+      sequence: 0xfffffffd, // Needs to be at least 2 below max int value to be RBF
     };
 
     if (pubKeyType === "taproot") {
@@ -525,7 +528,8 @@ export async function getSellerInputsOutputs({
       const data: any = {
         hash: ordUtxo.txid,
         index: parseInt(ordUtxo.n),
-        nonWitnessUtxo: rawTx.toBuffer()
+        nonWitnessUtxo: rawTx.toBuffer(),
+        sequence: 0xfffffffd // Needs to be at least 2 below max int value to be RBF
       };
       const postage = ordUtxo.sats;
 
