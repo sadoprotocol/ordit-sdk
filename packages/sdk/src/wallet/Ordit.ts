@@ -1,5 +1,5 @@
 import * as ecc from "@bitcoinerlab/secp256k1";
-import BIP32Factory from "bip32";
+import BIP32Factory, { BIP32Interface } from "bip32";
 import { mnemonicToSeedSync } from "bip39";
 import * as bitcoin from "bitcoinjs-lib";
 import { isTaprootInput } from "bitcoinjs-lib/src/psbt/bip371";
@@ -13,6 +13,7 @@ import {
   generateBuyerPsbt,
   generateDummyUtxos,
   generateSellerPsbt,
+  getAccountDataFromHdNode,
   getAddressesFromPublicKey,
   getAllAccountsFromHdNode,
   getNetwork,
@@ -33,6 +34,7 @@ export class Ordit {
   //   #config;
   #initialized = false;
   #keyPair: ECPairInterface;
+  #hdNode: BIP32Interface | null = null;
   publicKey: string;
   allAddresses: ReturnType<typeof getAddressesFromPublicKey> | ReturnType<typeof getAllAccountsFromHdNode> = [];
   selectedAddressType: AddressFormats | undefined;
@@ -64,6 +66,8 @@ export class Ordit {
       const seedBuffer = Buffer.from(seed, "hex");
       const hdNode = bip32.fromSeed(seedBuffer, networkObj);
 
+      this.#hdNode = hdNode;
+
       const accounts = getAllAccountsFromHdNode({ hdNode, network });
 
       const pkBuf = Buffer.from(accounts[0].priv, "hex");
@@ -75,6 +79,8 @@ export class Ordit {
     } else if (bip39) {
       const seedBuffer = mnemonicToSeedSync(bip39);
       const hdNode = bip32.fromSeed(seedBuffer, networkObj);
+
+      this.#hdNode = hdNode;
 
       const accounts = getAllAccountsFromHdNode({ hdNode, network });
 
@@ -101,7 +107,7 @@ export class Ordit {
     if (!this.#initialized || !this.allAddresses.length) {
       throw new Error("Wallet not fully initialized.");
     }
-    const result = this.allAddresses.find((address) => address.format === type);
+    const result = this.allAddresses.filter((address) => address.format === type);
 
     if (!result) {
       throw new Error(`Address of type ${type} not found in the instance.`);
@@ -118,21 +124,40 @@ export class Ordit {
     return this.allAddresses;
   }
 
-  setDefaultAddress(type: AddressFormats) {
+  setDefaultAddress(type: AddressFormats, index = 0) {
     if (this.selectedAddressType === type) return;
 
-    const result = this.getAddressByType(type) as Account;
+    const result = this.getAddressByType(type) as Account[];
+    const addressToSelect = result[index];
+
+    if (!addressToSelect) throw new Error("Address not found. Please add an address with the type and try again.");
+
     const networkObj = getNetwork(this.#network);
 
-    this.selectedAddress = result.address;
-    this.publicKey = result.pub;
+    this.selectedAddress = addressToSelect.address;
+    this.publicKey = addressToSelect.pub;
     this.selectedAddressType = type;
 
-    if (result.priv) {
-      this.#keyPair = ECPair.fromPrivateKey(Buffer.from(result.priv, "hex"), {
+    if (addressToSelect.priv) {
+      this.#keyPair = ECPair.fromPrivateKey(Buffer.from(addressToSelect.priv, "hex"), {
         network: networkObj
       });
     }
+  }
+
+  addAddress(type: AddressFormats, count = 1) {
+    if (!this.#hdNode) throw new Error("No HD node found. Please reinitialize with BIP39 words or seed.");
+
+    const accounts: Account[] = [];
+    for (let i = 0; i < count; i++) {
+      const account = getAccountDataFromHdNode({ hdNode: this.#hdNode, format: type, network: this.#network });
+
+      accounts.push(account);
+    }
+
+    this.allAddresses.push(...accounts);
+
+    return accounts;
   }
 
   signPsbt(value: string, { finalized = true }: { finalized?: boolean }) {
