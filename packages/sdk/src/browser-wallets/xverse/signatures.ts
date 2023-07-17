@@ -4,8 +4,19 @@ import { InputToSign, signMessage as _signMessage, signTransaction } from "sats-
 import { Network } from "../../config/types";
 import { isXverseInstalled, XverseNetwork } from "./utils";
 
+interface XverseSignedPsbt {
+  rawTxHex: string | null;
+  psbt: { hex: string; base64: string };
+}
+
 export async function signPsbt(options: XverseSignPsbtOptions) {
-  let result = null;
+  const result: XverseSignedPsbt = {
+    rawTxHex: null,
+    psbt: {
+      hex: "",
+      base64: ""
+    }
+  };
 
   if (!options.psbt || !options.network || !options.inputs) {
     throw new Error("Invalid options provided.");
@@ -23,27 +34,17 @@ export async function signPsbt(options: XverseSignPsbtOptions) {
     }
 
     const signedPsbt = Psbt.fromBase64(psbtBase64);
-    let rawTxHex = null;
 
     try {
       signedPsbt.finalizeAllInputs();
-      rawTxHex = signedPsbt.extractTransaction().toHex();
+      result.rawTxHex = signedPsbt.extractTransaction().toHex();
     } catch (error) {
-      result = {
-        rawTxHex,
-        psbt: {
-          hex: signedPsbt.toHex(),
-          base64: signedPsbt.toBase64()
-        }
-      };
+      // Do nothing, leave the rawTxHex as null
     }
 
-    result = {
-      rawTxHex,
-      psbt: {
-        hex: signedPsbt.toHex(),
-        base64: signedPsbt.toBase64()
-      }
+    result.psbt = {
+      hex: signedPsbt.toHex(),
+      base64: signedPsbt.toBase64()
     };
   };
 
