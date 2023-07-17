@@ -2,7 +2,7 @@ import { AddressPurposes, getAddress } from "sats-connect";
 
 import { getAddressFormat } from "../../addresses";
 import { Network } from "../../config/types";
-import { isXverseInstalled, XverseNetwork } from "./utils";
+import { fromXOnlyToFullPubkey, isXverseInstalled, XverseNetwork } from "./utils";
 export async function getAddresses(options: XverseGetAddressOptions) {
   options.network = options.network ?? "testnet";
 
@@ -27,7 +27,8 @@ export async function getAddresses(options: XverseGetAddressOptions) {
 
       let xKey;
       if (format === "taproot") {
-        xKey = addressObj.publicKey;
+        xKey = addressObj.publicKey; // tr publicKey returned by XVerse is already xOnlyPubKey
+        addressObj.publicKey = fromXOnlyToFullPubkey(addressObj.publicKey);
       }
 
       result.push({

@@ -6,4 +6,8 @@ export function isXverseInstalled() {
   return false;
 }
 
+export function fromXOnlyToFullPubkey(xOnly: string) {
+  return `03${xOnly}`; // prepend y-coord/tie-breaker to x-only
+}
+
 export type XverseNetwork = "Mainnet" | "Testnet";
