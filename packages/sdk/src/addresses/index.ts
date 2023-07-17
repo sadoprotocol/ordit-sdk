@@ -132,8 +132,6 @@ export function getAccountDataFromHdNode({
   const fullDerivationPath = getDerivationPath(format, accountIndex, index)
   const child = hdNode.derivePath(fullDerivationPath)
 
-  console.log({fullDerivationPath ,pathLevles: getPathLevels(fullDerivationPath)})
-
   const pubKey = format === "taproot" ? toXOnly(child.publicKey) : child.publicKey;
   const paymentObj = createTransaction(pubKey, addressType, network);
 
