@@ -163,6 +163,7 @@ export interface InscriptionsEntity {
   media_type: string;
   media_size: number;
   media_content: string;
+  meta?: Record<string,any>
 }
 
 export interface InscriptionDetailsEntity {
