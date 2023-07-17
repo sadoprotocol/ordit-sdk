@@ -145,10 +145,16 @@ export class Ordit {
     }
   }
 
-  getAddress(type: AddressFormats, accountIndex: number, addressIndex:number) {
+  getAddress(type: AddressFormats, accountIndex: number, addressIndex: number) {
     if (!this.#hdNode) throw new Error("No HD node found. Please reinitialize with BIP39 words or seed.");
 
-    return getAccountDataFromHdNode({ hdNode: this.#hdNode, format: type, network: this.#network, accountIndex, index:addressIndex });
+    return getAccountDataFromHdNode({
+      hdNode: this.#hdNode,
+      format: type,
+      network: this.#network,
+      accountIndex,
+      index: addressIndex
+    });
   }
 
   signPsbt(value: string, { finalized = true }: { finalized?: boolean }) {
