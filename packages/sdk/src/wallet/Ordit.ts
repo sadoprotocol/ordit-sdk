@@ -160,7 +160,7 @@ export class Ordit {
     return accounts;
   }
 
-  signPsbt(value: string, { finalized = true }: { finalized?: boolean }) {
+  signPsbt(value: string, { finalized = true, instantBuy = false }: SignPSBTOptions) {
     const networkObj = getNetwork(this.#network);
     let psbt: bitcoin.Psbt | null = null;
 
@@ -194,7 +194,9 @@ export class Ordit {
       const isSigned = v.finalScriptSig || v.finalScriptWitness;
       if (script && !isSigned) {
         const address = bitcoin.address.fromOutputScript(script, networkObj);
-        if (this.selectedAddress === address) {
+
+        // TODO: improvise the below logic by accepting indexes to sign
+        if (!instantBuy || (instantBuy && this.selectedAddress === address)) {
           inputsToSign.push({
             index,
             publicKey: this.publicKey,
@@ -335,4 +337,9 @@ export interface Input {
   index: number;
   publicKey: string;
   sighashTypes?: number[];
+}
+
+export interface SignPSBTOptions {
+  finalized?: boolean;
+  instantBuy?: boolean;
 }
