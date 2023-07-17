@@ -37,7 +37,6 @@ export class Ordit {
   #hdNode: BIP32Interface | null = null;
   publicKey: string;
   allAddresses: ReturnType<typeof getAddressesFromPublicKey> | ReturnType<typeof getAllAccountsFromHdNode> = [];
-  currentAccountIndex: number | undefined
   selectedAddressType: AddressFormats | undefined;
   selectedAddress: string | undefined;
 
