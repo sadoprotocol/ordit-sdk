@@ -3,7 +3,7 @@ import BIP32Factory, { BIP32Interface } from "bip32";
 
 import { Network } from "../config/types";
 import { getWalletKeys } from "../keys";
-import { createTransaction, getNetwork, hdNodeToChild, toXOnly } from "../utils";
+import {createTransaction, getDerivationPath, getNetwork, getPathLevels, toXOnly} from "../utils";
 import { AddressFormats, addressFormats, addressNameToType, AddressTypes, addressTypeToName } from "./formats";
 
 export function getAddressFormat(address: string, network: Network) {
@@ -119,25 +119,33 @@ export async function getAddresses({
 export function getAccountDataFromHdNode({
   hdNode,
   format = "legacy",
-  network = "testnet"
+  network = "testnet",
+  accountIndex = 0,
+  index = 0
 }: GetAccountDataFromHdNodeOptions) {
   if (!hdNode) {
     throw new Error("Invalid options provided.");
   }
 
   const addressType = addressNameToType[format];
-  //
-  const child = hdNodeToChild(hdNode, format, 0);
+
+  const fullDerivationPath = getDerivationPath(format, accountIndex, index)
+  const child = hdNode.derivePath(fullDerivationPath)
+
+  console.log({fullDerivationPath ,pathLevles: getPathLevels(fullDerivationPath)})
+
   const pubKey = format === "taproot" ? toXOnly(child.publicKey) : child.publicKey;
   const paymentObj = createTransaction(pubKey, addressType, network);
 
   const address = paymentObj.address!;
+
   const account: Account = {
     address,
     pub: child.publicKey.toString("hex"),
     priv: child.privateKey!.toString("hex"),
     format,
-    type: addressType
+    type: addressType,
+    derivationPath: fullDerivationPath
   };
 
   if (format === "taproot") {
@@ -174,6 +182,7 @@ export type Address = {
 export type Account = Address & {
   priv: string;
   type: AddressTypes;
+  derivationPath: string
 };
 
 type GetAddressesOptions = {
@@ -189,6 +198,8 @@ type GetAccountDataFromHdNodeOptions = {
   hdNode: BIP32Interface;
   format?: AddressFormats;
   network?: Network;
+  accountIndex?: number;
+  index?: number;
 };
 
 type GetAllAccountsFromHDNodeOptions = Omit<GetAccountDataFromHdNodeOptions, "format">;

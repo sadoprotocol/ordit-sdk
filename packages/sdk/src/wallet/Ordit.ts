@@ -37,6 +37,7 @@ export class Ordit {
   #hdNode: BIP32Interface | null = null;
   publicKey: string;
   allAddresses: ReturnType<typeof getAddressesFromPublicKey> | ReturnType<typeof getAllAccountsFromHdNode> = [];
+  currentAccountIndex: number | undefined
   selectedAddressType: AddressFormats | undefined;
   selectedAddress: string | undefined;
 
@@ -145,19 +146,10 @@ export class Ordit {
     }
   }
 
-  addAddress(type: AddressFormats, count = 1) {
+  getAddress(type: AddressFormats, accountIndex: number, addressIndex:number) {
     if (!this.#hdNode) throw new Error("No HD node found. Please reinitialize with BIP39 words or seed.");
 
-    const accounts: Account[] = [];
-    for (let i = 0; i < count; i++) {
-      const account = getAccountDataFromHdNode({ hdNode: this.#hdNode, format: type, network: this.#network });
-
-      accounts.push(account);
-    }
-
-    this.allAddresses.push(...accounts);
-
-    return accounts;
+    return getAccountDataFromHdNode({ hdNode: this.#hdNode, format: type, network: this.#network, accountIndex, index:addressIndex });
   }
 
   signPsbt(value: string, { finalized = true }: { finalized?: boolean }) {
