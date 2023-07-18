@@ -120,8 +120,8 @@ export function getAccountDataFromHdNode({
   hdNode,
   format = "legacy",
   network = "testnet",
-  accountIndex = 0,
-  index = 0
+  account = 0,
+  addressIndex = 0
 }: GetAccountDataFromHdNodeOptions) {
   if (!hdNode) {
     throw new Error("Invalid options provided.");
@@ -129,7 +129,7 @@ export function getAccountDataFromHdNode({
 
   const addressType = addressNameToType[format];
 
-  const fullDerivationPath = getDerivationPath(format, accountIndex, index);
+  const fullDerivationPath = getDerivationPath(format, account, addressIndex);
   const child = hdNode.derivePath(fullDerivationPath);
 
   const pubKey = format === "taproot" ? toXOnly(child.publicKey) : child.publicKey;
@@ -137,20 +137,24 @@ export function getAccountDataFromHdNode({
 
   const address = paymentObj.address!;
 
-  const account: Account = {
+  const accountData: Account = {
     address,
     pub: child.publicKey.toString("hex"),
     priv: child.privateKey!.toString("hex"),
     format,
     type: addressType,
-    derivationPath: fullDerivationPath
+    derivationPath: {
+      account,
+      addressIndex,
+      path: fullDerivationPath
+    }
   };
 
   if (format === "taproot") {
-    account.xkey = toXOnly(child.publicKey).toString("hex");
+    accountData.xkey = toXOnly(child.publicKey).toString("hex");
   }
 
-  return account;
+  return accountData;
 }
 
 export function getAllAccountsFromHdNode({ hdNode, network = "testnet" }: GetAllAccountsFromHDNodeOptions) {
@@ -177,10 +181,16 @@ export type Address = {
   pub: string;
 };
 
+export type Derivation = {
+  account: number;
+  addressIndex: number;
+  path: string
+}
+
 export type Account = Address & {
   priv: string;
   type: AddressTypes;
-  derivationPath: string;
+  derivationPath: Derivation;
 };
 
 type GetAddressesOptions = {
@@ -196,8 +206,8 @@ type GetAccountDataFromHdNodeOptions = {
   hdNode: BIP32Interface;
   format?: AddressFormats;
   network?: Network;
-  accountIndex?: number;
-  index?: number;
+  account?: number;
+  addressIndex?: number;
 };
 
 type GetAllAccountsFromHDNodeOptions = Omit<GetAccountDataFromHdNodeOptions, "format">;

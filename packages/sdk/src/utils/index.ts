@@ -38,34 +38,23 @@ export function createTransaction(
   return bitcoin.payments[type]({ pubkey: key, network: networkObj });
 }
 
-export function getDerivationPath(formatType: AddressFormats, accountIndex = 0, index = 0) {
+export function getDerivationPath(formatType: AddressFormats, account = 0, addressIndex = 0) {
   const pathFormat = {
-    legacy: `m/44'/0'/${accountIndex}'/0/${index}`,
-    segwit: `m/49'/0'/${accountIndex}'/0/${index}`,
-    bech32: `m/84'/0'/${accountIndex}'/0/${index}`,
-    taproot: `m/86'/0'/${accountIndex}'/0/${index}`
+    legacy: `m/44'/0'/${account}'/0/${addressIndex}`,
+    segwit: `m/49'/0'/${account}'/0/${addressIndex}`,
+    bech32: `m/84'/0'/${account}'/0/${addressIndex}`,
+    taproot: `m/86'/0'/${account}'/0/${addressIndex}`
   };
   return pathFormat[formatType];
-}
-
-export function getPathLevels(fullDerivationPath: string) {
-  const [, purpose, coinType, account, change, addressIndex] = fullDerivationPath.split("/");
-  return {
-    purpose: purpose.replace("'", ""),
-    coinType: coinType.replace("'", ""),
-    account: account.replace("'", ""),
-    change,
-    addressIndex
-  };
 }
 
 export function hdNodeToChild(
   node: BIP32Interface,
   formatType: AddressFormats = "legacy",
-  index = 0,
-  accountIndex = 0
+  addressIndex = 0,
+  account = 0
 ) {
-  const fullDerivationPath = getDerivationPath(formatType, accountIndex, index);
+  const fullDerivationPath = getDerivationPath(formatType, account, addressIndex);
 
   return node.derivePath(fullDerivationPath);
 }

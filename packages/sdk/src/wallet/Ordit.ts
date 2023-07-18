@@ -145,15 +145,15 @@ export class Ordit {
     }
   }
 
-  getAddress(type: AddressFormats, accountIndex: number, addressIndex: number) {
+  generateAddress(type: AddressFormats, account: number, addressIndex: number) {
     if (!this.#hdNode) throw new Error("No HD node found. Please reinitialize with BIP39 words or seed.");
 
     return getAccountDataFromHdNode({
       hdNode: this.#hdNode,
       format: type,
       network: this.#network,
-      accountIndex,
-      index: addressIndex
+      account,
+      addressIndex
     });
   }
 
