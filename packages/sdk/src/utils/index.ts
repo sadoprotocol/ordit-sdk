@@ -38,8 +38,23 @@ export function createTransaction(
   return bitcoin.payments[type]({ pubkey: key, network: networkObj });
 }
 
-export function hdNodeToChild(node: BIP32Interface, formatType: AddressFormats = "legacy", index = 0) {
-  const fullDerivationPath = DERIVATION_PATHS_WITHOUT_INDEX[formatType] + index;
+export function getDerivationPath(formatType: AddressFormats, account = 0, addressIndex = 0) {
+  const pathFormat = {
+    legacy: `m/44'/0'/${account}'/0/${addressIndex}`,
+    segwit: `m/49'/0'/${account}'/0/${addressIndex}`,
+    bech32: `m/84'/0'/${account}'/0/${addressIndex}`,
+    taproot: `m/86'/0'/${account}'/0/${addressIndex}`
+  };
+  return pathFormat[formatType];
+}
+
+export function hdNodeToChild(
+  node: BIP32Interface,
+  formatType: AddressFormats = "legacy",
+  addressIndex = 0,
+  account = 0
+) {
+  const fullDerivationPath = getDerivationPath(formatType, account, addressIndex);
 
   return node.derivePath(fullDerivationPath);
 }

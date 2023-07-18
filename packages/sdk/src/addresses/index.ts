@@ -3,7 +3,7 @@ import BIP32Factory, { BIP32Interface } from "bip32";
 
 import { Network } from "../config/types";
 import { getWalletKeys } from "../keys";
-import { createTransaction, getNetwork, hdNodeToChild, toXOnly } from "../utils";
+import { createTransaction, getDerivationPath, getNetwork, toXOnly } from "../utils";
 import { AddressFormats, addressFormats, addressNameToType, AddressTypes, addressTypeToName } from "./formats";
 
 export function getAddressFormat(address: string, network: Network) {
@@ -119,32 +119,42 @@ export async function getAddresses({
 export function getAccountDataFromHdNode({
   hdNode,
   format = "legacy",
-  network = "testnet"
+  network = "testnet",
+  account = 0,
+  addressIndex = 0
 }: GetAccountDataFromHdNodeOptions) {
   if (!hdNode) {
     throw new Error("Invalid options provided.");
   }
 
   const addressType = addressNameToType[format];
-  //
-  const child = hdNodeToChild(hdNode, format, 0);
+
+  const fullDerivationPath = getDerivationPath(format, account, addressIndex);
+  const child = hdNode.derivePath(fullDerivationPath);
+
   const pubKey = format === "taproot" ? toXOnly(child.publicKey) : child.publicKey;
   const paymentObj = createTransaction(pubKey, addressType, network);
 
   const address = paymentObj.address!;
-  const account: Account = {
+
+  const accountData: Account = {
     address,
     pub: child.publicKey.toString("hex"),
     priv: child.privateKey!.toString("hex"),
     format,
-    type: addressType
+    type: addressType,
+    derivationPath: {
+      account,
+      addressIndex,
+      path: fullDerivationPath
+    }
   };
 
   if (format === "taproot") {
-    account.xkey = toXOnly(child.publicKey).toString("hex");
+    accountData.xkey = toXOnly(child.publicKey).toString("hex");
   }
 
-  return account;
+  return accountData;
 }
 
 export function getAllAccountsFromHdNode({ hdNode, network = "testnet" }: GetAllAccountsFromHDNodeOptions) {
@@ -171,9 +181,16 @@ export type Address = {
   pub: string;
 };
 
+export type Derivation = {
+  account: number;
+  addressIndex: number;
+  path: string
+}
+
 export type Account = Address & {
   priv: string;
   type: AddressTypes;
+  derivationPath: Derivation;
 };
 
 type GetAddressesOptions = {
@@ -189,6 +206,8 @@ type GetAccountDataFromHdNodeOptions = {
   hdNode: BIP32Interface;
   format?: AddressFormats;
   network?: Network;
+  account?: number;
+  addressIndex?: number;
 };
 
 type GetAllAccountsFromHDNodeOptions = Omit<GetAccountDataFromHdNodeOptions, "format">;
