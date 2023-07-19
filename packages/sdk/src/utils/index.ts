@@ -5,7 +5,6 @@ import ECPairFactory from "ecpair";
 
 import { AddressFormats, AddressTypes } from "../addresses/formats";
 import { Network } from "../config/types";
-import { DERIVATION_PATHS_WITHOUT_INDEX } from "./constants";
 
 export function getNetwork(value: Network) {
   if (value === "mainnet") {
