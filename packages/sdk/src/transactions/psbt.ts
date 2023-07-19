@@ -5,12 +5,15 @@ import { Network, Psbt } from "bitcoinjs-lib";
 import { createTransaction, getNetwork } from "../utils";
 import { GetWalletOptions, getWalletWithBalances } from "../wallet";
 
-export async function createPsbt(options: CreatePsbtOptions) {
-  const { ins, outs, ...otherOptions } = options;
-  const netWorkObj = getNetwork(otherOptions.network);
+export async function createPsbt({ network, format, pubKey, ins, outs }: CreatePsbtOptions) {
+  const netWorkObj = getNetwork(network);
   const bip32 = BIP32Factory(ecc);
 
-  const walletWithBalances = await getWalletWithBalances(otherOptions);
+  const walletWithBalances = await getWalletWithBalances({
+    pubKey,
+    format,
+    network
+  });
 
   let fees = 0;
   let change = 0;
@@ -79,6 +82,10 @@ export async function createPsbt(options: CreatePsbtOptions) {
   }
 
   change = total_cardinals_available - (total_cardinals_to_send + fees);
+
+  if (change < 0) {
+    throw new Error(`Insufficient balance for tx. Deposit ${change * -1} sats or adjust transfer amount to proceed`);
+  }
 
   if (change >= dust) {
     psbt.addOutput({

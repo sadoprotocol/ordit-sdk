@@ -1,8 +1,8 @@
 import * as ecc from "@bitcoinerlab/secp256k1";
 import * as bitcoin from "bitcoinjs-lib";
 
+import { Network } from "../config/types";
 import { getDerivedNode } from "../keys";
-import { GetWalletOptions } from "../wallet";
 
 export async function signPsbt(options: SignPsbtOptions) {
   bitcoin.initEccLib(ecc);
@@ -66,7 +66,11 @@ export async function signPsbt(options: SignPsbtOptions) {
   }
 }
 
-export type SignPsbtOptions = Omit<GetWalletOptions, "pubKey" | "format"> & {
+export type SignPsbtOptions = {
+  seed?: string;
+  bip39?: string;
+  network: Network;
+  path: string;
   hex?: string;
   base64?: string;
 };

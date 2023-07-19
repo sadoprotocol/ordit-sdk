@@ -1,8 +1,8 @@
 import { sign, verify } from "bitcoinjs-message";
 
+import { Network } from "../config/types";
 import { getDerivedNode } from "../keys";
 import { createTransaction, getNetwork } from "../utils";
-import { GetWalletOptions } from "../wallet";
 
 export async function signMessage(options: SignMessageOptions) {
   const network = getNetwork(options.network);
@@ -59,7 +59,11 @@ function fallbackVerification({ message, address, signature }: VerifyMessageOpti
   return isValid;
 }
 
-export type SignMessageOptions = Omit<GetWalletOptions, "pubKey" | "format"> & {
+export type SignMessageOptions = {
+  seed?: string;
+  bip39?: string;
+  network: Network;
+  path: string;
   message: string;
   format: "core";
 };

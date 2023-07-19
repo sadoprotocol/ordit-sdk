@@ -6,31 +6,10 @@ import { getWalletKeys } from "../keys";
 
 export async function getWallet({
   pubKey,
-  seed,
-  bip39,
-  path,
   network = "testnet",
   format = "all"
 }: GetWalletOptions): Promise<GetWalletReturnType> {
-  if (!pubKey && !seed && !bip39) throw new Error("Failed to get wallet. Please provide pubKey | seed | bip39.");
-
-  const seedValue = seed || bip39;
-
-  if (seedValue) {
-    const keys = await getWalletKeys(seedValue, network, path);
-
-    const addresses = getAddressesFromPublicKey(keys.pub, network, format);
-
-    return {
-      counts: {
-        addresses: addresses.length
-      },
-      keys: [keys],
-      addresses
-    };
-  }
-
-  const addresses = getAddressesFromPublicKey(pubKey!, network, format);
+  const addresses = getAddressesFromPublicKey(pubKey, network, format);
 
   return {
     counts: {
@@ -41,8 +20,8 @@ export async function getWallet({
   };
 }
 
-export async function getWalletWithBalances(options: GetWalletOptions) {
-  const wallet = (await getWallet(options)) as GetWalletWithBalances;
+export async function getWalletWithBalances({ pubKey, format, network }: GetWalletOptions) {
+  const wallet = (await getWallet({ pubKey, format, network })) as GetWalletWithBalances;
 
   const ordinals: unknown[] = [];
   const inscriptions: unknown[] = [];
@@ -69,7 +48,7 @@ export async function getWalletWithBalances(options: GetWalletOptions) {
     let wallet_unspendables = 0;
 
     const unspent = await OrditApi.fetch<{ success: boolean; rdata: Array<any> }>("utxo/unspents", {
-      network: options.network,
+      network,
       data: {
         address: address.address,
         options: {
@@ -143,10 +122,7 @@ export async function getWalletWithBalances(options: GetWalletOptions) {
 }
 
 export type GetWalletOptions = {
-  pubKey?: string;
-  seed?: string;
-  bip39?: string;
-  path: string;
+  pubKey: string;
   network: Network;
   format: AddressTypes | "all";
 };

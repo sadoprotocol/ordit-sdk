@@ -2,7 +2,6 @@ import * as ecc from "@bitcoinerlab/secp256k1";
 import BIP32Factory, { BIP32Interface } from "bip32";
 
 import { Network } from "../config/types";
-import { getWalletKeys } from "../keys";
 import { createTransaction, getDerivationPath, getNetwork, toXOnly } from "../utils";
 import { AddressFormats, addressFormats, addressNameToType, AddressTypes, addressTypeToName } from "./formats";
 
@@ -96,24 +95,10 @@ export function getAddressesFromPublicKey(
 
 export async function getAddresses({
   pubKey,
-  seed,
-  bip39,
   network,
-  format,
-  path
+  format
 }: GetAddressesOptions): Promise<ReturnType<typeof getAddressesFromPublicKey>> {
-  if (!(seed || bip39 || pubKey)) {
-    throw new Error("Invalid options provided.");
-  }
-
-  if (seed || bip39) {
-    const seedValue = seed || bip39;
-    const keys = await getWalletKeys(seedValue!, network, path);
-
-    return getAddressesFromPublicKey(keys.pub, network, format);
-  }
-
-  return getAddressesFromPublicKey(pubKey!, network, format);
+  return getAddressesFromPublicKey(pubKey, network, format);
 }
 
 export function getAccountDataFromHdNode({
@@ -185,22 +170,20 @@ export type Address = {
 export type Derivation = {
   account: number;
   addressIndex: number;
-  path: string
-}
+  path: string;
+};
 
 export type Account = Address & {
   priv: string;
   type: AddressTypes;
   derivationPath: Derivation;
+  child: BIP32Interface;
 };
 
 type GetAddressesOptions = {
-  pubKey?: string;
-  seed?: string;
-  bip39?: string;
+  pubKey: string;
   network: Network;
   format: AddressTypes | "all";
-  path: string;
 };
 
 type GetAccountDataFromHdNodeOptions = {

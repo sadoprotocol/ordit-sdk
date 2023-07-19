@@ -4,8 +4,8 @@ import { GetWalletOptions } from "../wallet";
 import { buildWitnessScript } from "./witness";
 
 export async function generateCommitAddress(options: GenerateCommitAddressOptions) {
-  const { satsPerByte = 10, ...rest } = options;
-  const key = (await getAddresses({ ...rest, format: "p2tr" }))[0];
+  const { satsPerByte = 10, network, pubKey } = options;
+  const key = (await getAddresses({ pubKey, network, format: "p2tr" }))[0];
   const xkey = key.xkey;
 
   if (xkey) {
