@@ -147,7 +147,8 @@ export function getAccountDataFromHdNode({
       account,
       addressIndex,
       path: fullDerivationPath
-    }
+    },
+    child
   };
 
   if (format === "taproot") {

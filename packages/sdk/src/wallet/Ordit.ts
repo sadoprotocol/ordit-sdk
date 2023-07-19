@@ -33,7 +33,7 @@ export class Ordit {
   #network: Network = "testnet";
   //   #config;
   #initialized = false;
-  #keyPair: ECPairInterface;
+  #keyPair: ECPairInterface | BIP32Interface;
   #hdNode: BIP32Interface | null = null;
   publicKey: string;
   allAddresses: ReturnType<typeof getAddressesFromPublicKey> | ReturnType<typeof getAllAccountsFromHdNode> = [];
@@ -83,9 +83,7 @@ export class Ordit {
       this.#hdNode = hdNode;
 
       const accounts = getAllAccountsFromHdNode({ hdNode, network });
-
-      const pkBuf = Buffer.from(accounts[0].priv, "hex");
-      this.#keyPair = ECPair.fromPrivateKey(pkBuf, { network: networkObj });
+      this.#keyPair = accounts[0].child;
 
       this.publicKey = this.#keyPair.publicKey.toString("hex");
 
@@ -132,16 +130,12 @@ export class Ordit {
 
     if (!addressToSelect) throw new Error("Address not found. Please add an address with the type and try again.");
 
-    const networkObj = getNetwork(this.#network);
-
     this.selectedAddress = addressToSelect.address;
     this.publicKey = addressToSelect.pub;
     this.selectedAddressType = type;
 
-    if (addressToSelect.priv) {
-      this.#keyPair = ECPair.fromPrivateKey(Buffer.from(addressToSelect.priv, "hex"), {
-        network: networkObj
-      });
+    if (addressToSelect.child) {
+      this.#keyPair = addressToSelect.child;
     }
   }
 
@@ -157,7 +151,7 @@ export class Ordit {
     });
   }
 
-  signPsbt(value: string, { finalized = true, instantBuy = false }: SignPSBTOptions) {
+  signPsbt(value: string, { finalized = true, tweak = false }: SignPSBTOptions) {
     const networkObj = getNetwork(this.#network);
     let psbt: bitcoin.Psbt | null = null;
 
@@ -193,7 +187,7 @@ export class Ordit {
         const address = bitcoin.address.fromOutputScript(script, networkObj);
 
         // TODO: improvise the below logic by accepting indexes to sign
-        if (!instantBuy || (instantBuy && this.selectedAddress === address)) {
+        if (!tweak || (tweak && this.selectedAddress === address)) {
           inputsToSign.push({
             index,
             publicKey: this.publicKey,
@@ -221,7 +215,9 @@ export class Ordit {
             network: networkObj
           });
 
-          psbt.signInput(inputsToSign[i].index, tweakedSigner, inputsToSign[i].sighashTypes);
+          const signer = tweak ? tweakedSigner : this.#keyPair;
+
+          psbt.signInput(inputsToSign[i].index, signer, inputsToSign[i].sighashTypes);
         } else {
           psbt.signInput(inputsToSign[i].index, this.#keyPair, inputsToSign[i].sighashTypes);
         }
@@ -338,5 +334,5 @@ export interface Input {
 
 export interface SignPSBTOptions {
   finalized?: boolean;
-  instantBuy?: boolean;
+  tweak?: boolean;
 }
