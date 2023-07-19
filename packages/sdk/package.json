@@ -1,6 +1,6 @@
 {
   "name": "@sadoprotocol/ordit-sdk",
-  "version": "0.0.11",
+  "version": "0.0.14",
   "description": "SDK for simplified interaction with wallet APIs and inscription service",
   "repository": "https://github.com/sadoprotocol/ordit-sdk",
   "bugs": "https://github.com/sadoprotocol/ordit-sdk/issues",
@@ -16,7 +16,7 @@
     "sdk"
   ],
   "scripts": {
-    "build": "tsc -b ./tsconfig.build.json",
+    "build": "tsc -b ./tsconfig.build.json --watch",
     "flush": "npm run clean && rm -rf ./node_modules",
     "clean": "rm -rf ./.turbo ./dist",
     "lint": "eslint ."
