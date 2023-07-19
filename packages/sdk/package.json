@@ -16,7 +16,7 @@
     "sdk"
   ],
   "scripts": {
-    "build": "tsc -b ./tsconfig.build.json --watch",
+    "build": "tsc -b ./tsconfig.build.json",
     "flush": "npm run clean && rm -rf ./node_modules",
     "clean": "rm -rf ./.turbo ./dist",
     "lint": "eslint ."
