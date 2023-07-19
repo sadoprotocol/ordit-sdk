@@ -6,7 +6,10 @@ import { isXverseInstalled, XverseNetwork } from "./utils";
 
 interface XverseSignedPsbt {
   rawTxHex: string | null;
-  psbt: { hex: string; base64: string };
+  psbt: {
+    hex: string;
+    base64: string;
+  };
 }
 
 export async function signPsbt(options: XverseSignPsbtOptions) {
