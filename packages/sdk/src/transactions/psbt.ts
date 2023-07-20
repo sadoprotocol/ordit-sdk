@@ -43,7 +43,7 @@ export async function createPsbt({ network, format, pubKey, ins, outs }: CreateP
   });
 
   ins.forEach((input, idx) => {
-    if (walletWithBalances.spendables === undefined) {
+    if (walletWithBalances?.spendables === undefined) {
       throw new Error("No spendables available.");
     }
 
