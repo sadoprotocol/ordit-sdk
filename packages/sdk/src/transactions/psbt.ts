@@ -43,6 +43,10 @@ export async function createPsbt({ network, format, pubKey, ins, outs }: CreateP
   });
 
   ins.forEach((input, idx) => {
+    if (walletWithBalances.spendables === undefined) {
+      throw new Error("No spendables available.");
+    }
+
     if (input.address) {
       walletWithBalances.spendables.forEach((spendable: any) => {
         const sats = spendable.sats;
