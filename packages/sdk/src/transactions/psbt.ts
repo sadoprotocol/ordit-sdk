@@ -170,7 +170,7 @@ function addInputToPsbtByType(spendable: any, type: string, psbt: Psbt, bip32: B
     } catch (error) {
       //fail silently
     }
-  } else if (type === "pubkeyshah") {
+  } else if (type === "pubkeyhash") {
     try {
       psbt.addInput({
         hash: spendable.txid,
