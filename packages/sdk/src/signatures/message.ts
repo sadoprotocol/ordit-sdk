@@ -33,13 +33,17 @@ export async function signMessage(options: SignMessageOptions) {
 }
 
 export function verifyMessage(options: VerifyMessageOptions) {
-  let isValid = verify(options.message, options.address, options.signature);
+  try {
+    let isValid = verify(options.message, options.address, options.signature);
 
-  if (!isValid) {
-    isValid = fallbackVerification(options);
+    if (!isValid) {
+      isValid = fallbackVerification(options);
+    }
+
+    return isValid;
+  } catch(error) {
+    return fallbackVerification(options);
   }
-
-  return isValid;
 }
 
 function fallbackVerification({ message, address, signature }: VerifyMessageOptions) {
