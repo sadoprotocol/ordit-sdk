@@ -1,6 +1,6 @@
 {
   "name": "@sadoprotocol/ordit-sdk",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "SDK for simplified interaction with wallet APIs and inscription service",
   "repository": "https://github.com/sadoprotocol/ordit-sdk",
   "bugs": "https://github.com/sadoprotocol/ordit-sdk/issues",
