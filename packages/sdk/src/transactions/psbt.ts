@@ -15,6 +15,12 @@ export async function createPsbt({ network, format, pubKey, ins, outs }: CreateP
     network
   });
 
+  if (walletWithBalances?.spendables === undefined) {
+    throw new Error(
+      "The derived wallet doesn't contain any spendable sats. It may be empty or contain sats that are either linked to inscriptions or tied to ordinals."
+    );
+  }
+
   let fees = 0;
   let change = 0;
   const dust = 600;
