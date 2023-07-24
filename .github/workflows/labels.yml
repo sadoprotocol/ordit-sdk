@@ -61,59 +61,7 @@
 - color: fbca04
   name: area/workflow
 - color: fbca04
-  name: area/api
-- color: fbca04
-  name: area/assets
-- color: fbca04
-  name: area/contexts
-- color: fbca04
-  name: area/hooks
-- color: fbca04
-  name: area/store
-- color: fbca04
-  name: area/translations
-- color: fbca04
-  name: area/e2e
-- color: fbca04
-  name: area/ui-ux
-- color: fbca04
-  name: area/playground
-
-# Area - Contextual
-- color: fbca04
-  name: area/balance
-- color: fbca04
-  name: area/dex
-- color: fbca04
-  name: area/icx
-- color: fbca04
-  name: area/transactions
-- color: fbca04
-  name: area/wallet
-- color: fbca04
-  name: area/settings
-- color: fbca04
-  name: area/loans
-
-# Area - Website
-- color: fbca04
-  name: area/website
-- color: fbca04
-  name: area/website-api
-
-# Area - Contracts
-- color: fbca04
-  name: area/contracts
-
-# Area - Server
-- color: fbca04
-  name: area/server
-
-# Platform
-- color: 0d1d49
-  name: platform/ios
-- color: 0d1d49
-  name: platform/android
+  name: area/docs
 
 # Priority
 - color: da0b0b
@@ -125,14 +73,6 @@
 - color: dad30b
   name: priority/low
   description: Least priority
-
-# Design
-- color: 137fdd
-  name: design/in-progress
-  description: Design in-progress
-- color: 137fdd
-  name: design/ready
-  description: Design is ready
 
 # Triage
 - color: b1f488
