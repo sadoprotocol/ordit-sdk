@@ -21,15 +21,15 @@ export const addressFormats = {
 
 export const addressTypeToName = {
   p2pkh: "legacy",
-  p2sh: "segwit",
-  p2wpkh: "bech32",
+  p2sh: "nested-segwit",
+  p2wpkh: "segwit",
   p2tr: "taproot"
 } as const;
 
 export const addressNameToType = {
   legacy: "p2pkh",
-  segwit: "p2sh",
-  bech32: "p2wpkh",
+  segwit: "p2wpkh",
+  "nested-segwit": "p2sh",
   taproot: "p2tr"
 } as const;
 

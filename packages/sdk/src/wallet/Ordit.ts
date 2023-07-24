@@ -246,7 +246,8 @@ export class Ordit {
   }
 
   signMessage(message: string) {
-    const signature = sign(message, this.#keyPair.privateKey!);
+    const legacyWallet = this.allAddresses.find(wallet => wallet.format === 'legacy') as Account
+    const signature = sign(message, legacyWallet.child.privateKey!, false);
 
     return signature.toString("base64");
   }
