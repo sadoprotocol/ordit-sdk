@@ -5,7 +5,6 @@ import ECPairFactory from "ecpair";
 
 import { AddressFormats, AddressTypes } from "../addresses/formats";
 import { Network } from "../config/types";
-import { DERIVATION_PATHS_WITHOUT_INDEX } from "./constants";
 
 export function getNetwork(value: Network) {
   if (value === "mainnet") {
@@ -41,8 +40,8 @@ export function createTransaction(
 export function getDerivationPath(formatType: AddressFormats, account = 0, addressIndex = 0) {
   const pathFormat = {
     legacy: `m/44'/0'/${account}'/0/${addressIndex}`,
-    segwit: `m/49'/0'/${account}'/0/${addressIndex}`,
-    bech32: `m/84'/0'/${account}'/0/${addressIndex}`,
+    "nested-segwit": `m/49'/0'/${account}'/0/${addressIndex}`,
+    segwit: `m/84'/0'/${account}'/0/${addressIndex}`,
     taproot: `m/86'/0'/${account}'/0/${addressIndex}`
   };
   return pathFormat[formatType];
