@@ -37,22 +37,7 @@ issue:
       list:
         - core
         - workflow
-        - website
-        - api
-        - assets
-        - contexts
-        - hooks
-        - store
-        - translations
-        - e2e
-        - ui-ux
-        - playground
-        - balance
-        - dex
-        - icx
-        - transactions
-        - wallet
-        - settings
+        - docs
       multiple: true
       needs:
         comment: |
@@ -73,14 +58,6 @@ issue:
           @$AUTHOR: Thanks for opening an issue, an appropriate priority will be added soon.
 
           The priority labels can be added by foundation members by writing /priority [type] in a comment.
-      author_association:
-        collaborator: true
-        member: true
-        owner: true
-
-    - prefix: design
-      multiple: false
-      list: ["in-progress", "ready"]
       author_association:
         collaborator: true
         member: true
