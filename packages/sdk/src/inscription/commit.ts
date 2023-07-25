@@ -36,7 +36,7 @@ export async function generateCommitAddress(options: GenerateCommitAddressOption
   }
 }
 
-export type GenerateCommitAddressOptions = Omit<GetWalletOptions, "format"> & {
+export type GenerateCommitAddressOptions = Omit<GetWalletOptions, "format" | "safeMode"> & {
   satsPerByte: number;
   mediaType: string;
   mediaContent: string;

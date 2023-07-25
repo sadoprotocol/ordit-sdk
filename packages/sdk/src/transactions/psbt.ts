@@ -5,14 +5,15 @@ import { Network, Psbt } from "bitcoinjs-lib";
 import { createTransaction, getNetwork } from "../utils";
 import { GetWalletOptions, getWalletWithBalances } from "../wallet";
 
-export async function createPsbt({ network, format, pubKey, ins, outs }: CreatePsbtOptions) {
+export async function createPsbt({ network, format, pubKey, ins, outs, safeMode = "on" }: CreatePsbtOptions) {
   const netWorkObj = getNetwork(network);
   const bip32 = BIP32Factory(ecc);
 
   const walletWithBalances = await getWalletWithBalances({
     pubKey,
     format,
-    network
+    network,
+    safeMode
   });
 
   if (walletWithBalances?.spendables === undefined) {

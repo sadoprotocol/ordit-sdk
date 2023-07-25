@@ -10,6 +10,8 @@ export async function createRevealPsbt(options: CreateRevealPsbtOptions) {
   const networkObj = getNetwork(options.network);
   const key = (await getAddresses({ ...options, format: "p2tr" }))[0];
   const xkey = key.xkey;
+  
+  options.safeMode = !options.safeMode ? "on": options.safeMode
 
   if (!xkey) {
     throw new Error("Failed to build createRevealPsbt");
@@ -58,7 +60,7 @@ export async function createRevealPsbt(options: CreateRevealPsbtOptions) {
     let sutableUnspent: any = null;
 
     unspents.forEach((unspent) => {
-      if (unspent.sats >= options.postage + feesForWitnessData && unspent.safeToSpend === true) {
+      if (unspent.sats >= options.postage + feesForWitnessData && (options.safeMode === "off" || (options.safeMode === "on" && unspent.safeToSpend === true))) {
         sutableUnspent = unspent;
       }
     });

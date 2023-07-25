@@ -8,6 +8,8 @@ import {
   createTransaction,
   getAddressesFromPublicKey,
   getNetwork,
+  GetWalletOptions,
+  OnOffUnion,
   OrditApi
 } from "..";
 import { Network } from "../config/types";
@@ -33,6 +35,7 @@ export class OrdTransaction {
   #suitableUnspent: any = null;
   #recovery = false;
   #outs: Outputs = [];
+  #safeMode: OnOffUnion
 
   constructor({
     feeRate = 10,
@@ -57,6 +60,7 @@ export class OrdTransaction {
     this.meta = otherOptions.meta;
     this.postage = postage;
     this.#outs = outs;
+    this.#safeMode = !otherOptions.safeMode ? "on": otherOptions.safeMode
 
     const xKey = getAddressesFromPublicKey(publicKey, network, "p2tr")[0].xkey;
 
@@ -308,7 +312,7 @@ export class OrdTransaction {
     }, 0);
 
     const suitableUnspent = unspents.find((unspent) => {
-      if (unspent.sats >= this.postage + this.#feeForWitnessData! + customOutsAmount && unspent.safeToSpend === true) {
+      if (unspent.sats >= this.postage + this.#feeForWitnessData! + customOutsAmount && (this.#safeMode === 'off' || (this.#safeMode === 'on' && unspent.safeToSpend === true))) {
         return true;
       }
     }, this);
@@ -324,7 +328,7 @@ export class OrdTransaction {
   }
 }
 
-export type OrdTransactionOptions = {
+export type OrdTransactionOptions = Pick<GetWalletOptions, 'safeMode'> & {
   feeRate?: number;
   postage?: number;
   mediaType?: string;

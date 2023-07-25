@@ -20,7 +20,7 @@ export async function getWallet({
   };
 }
 
-export async function getWalletWithBalances({ pubKey, format, network }: GetWalletOptions) {
+export async function getWalletWithBalances({ pubKey, format, network, safeMode = "on" }: GetWalletOptions) {
   const wallet = (await getWallet({ pubKey, format, network })) as GetWalletWithBalances;
 
   const ordinals: unknown[] = [];
@@ -70,7 +70,7 @@ export async function getWalletWithBalances({ pubKey, format, network }: GetWall
       wallet.counts.satoshis += unspentObj.sats;
       wallet_satoshis += unspentObj.sats;
 
-      if (unspentObj.safeToSpend) {
+      if (safeMode === "off" || (safeMode === "on" && unspentObj.safeToSpend)) {
         wallet.counts.cardinals += unspentObj.sats;
         wallet_cardinals += unspentObj.sats;
 
@@ -121,10 +121,13 @@ export async function getWalletWithBalances({ pubKey, format, network }: GetWall
   return wallet;
 }
 
+export type OnOffUnion = "on" | "off"
+
 export type GetWalletOptions = {
   pubKey: string;
   network: Network;
   format: AddressTypes | "all";
+  safeMode?: OnOffUnion
 };
 
 export type GetWalletReturnType = {
