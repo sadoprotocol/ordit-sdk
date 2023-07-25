@@ -95,7 +95,8 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
       col: options.collectionOutpoint,
       iid: options.inscriptionIid,
       publ: colMeta.publ[options.publisherIndex],
-      nonce: options.nonce
+      nonce: options.nonce,
+      traits: options.traits
     };
 
     const message = options.collectionOutpoint + " " + options.inscriptionIid + " " + options.nonce;
