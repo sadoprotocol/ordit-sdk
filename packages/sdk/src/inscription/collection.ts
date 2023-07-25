@@ -1,4 +1,4 @@
-import { OrditApi, OrdTransaction, verifyMessage } from "..";
+import { GetWalletOptions, OrditApi, OrdTransaction, verifyMessage } from "..";
 import { Network } from "../config/types";
 
 export async function publishCollection({
@@ -125,7 +125,7 @@ function validateInscriptions(inscriptions: CollectionInscription[] = []) {
   return true;
 }
 
-export type PublishCollectionOptions = {
+export type PublishCollectionOptions = Pick<GetWalletOptions, 'safeMode'> & {
   feeRate?: number;
   postage?: number;
   mediaType?: string;
@@ -154,7 +154,7 @@ export type CollectionInscription = {
   sri?: string;
 };
 
-export type MintFromCollectionOptions = {
+export type MintFromCollectionOptions = Pick<GetWalletOptions, 'safeMode'> & {
   feeRate?: number;
   postage?: number;
   mediaType?: string;
