@@ -170,7 +170,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, 'safeMode'> & {
   network?: Network;
   publicKey: string;
   outs?: Outputs;
-  traits: Record<string, string>
+  traits?: Record<string, string>
 };
 
 type Outputs = Array<{ address: string; value: number }>;
