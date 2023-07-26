@@ -18,6 +18,12 @@ importers:
         specifier: 1.9.1
         version: 1.9.1
 
+  examples/node:
+    dependencies:
+      '@sadoprotocol/ordit-sdk':
+        specifier: workspace
+        version: link:../../packages/sdk
+
   packages/sdk:
     dependencies:
       '@bitcoinerlab/secp256k1':
