@@ -3,6 +3,7 @@ import { ordit } from "@sadoprotocol/ordit-sdk"; //import Ordit
 async function main() {
   // Replace accordingly
   const psbtTemplate = {
+    satsPerByte: 1,
     format: "p2wpkh",
     network: "testnet",
     pubKey: "02950611fedb407d34cc845101f2bdfb2e7e3ec075e1424015bbf2db75c8ebe696",

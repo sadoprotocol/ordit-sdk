@@ -5,7 +5,15 @@ import { Network, Psbt } from "bitcoinjs-lib";
 import { createTransaction, getNetwork } from "../utils";
 import { GetWalletOptions, getWalletWithBalances } from "../wallet";
 
-export async function createPsbt({ network, format, pubKey, ins, outs, safeMode = "on" }: CreatePsbtOptions) {
+export async function createPsbt({
+  network,
+  format,
+  pubKey,
+  ins,
+  outs,
+  safeMode = "on",
+  satsPerByte
+}: CreatePsbtOptions) {
   const netWorkObj = getNetwork(network);
   const bip32 = BIP32Factory(ecc);
 
@@ -26,7 +34,7 @@ export async function createPsbt({ network, format, pubKey, ins, outs, safeMode 
   let change = 0;
   const dust = 600;
   let inputs_used = 0;
-  const sats_per_byte = 10;
+  const sats_per_byte = satsPerByte ?? 10;
   let total_cardinals_to_send = 0;
   let total_cardinals_available = 0;
   const unsupported_inputs = [];
@@ -195,6 +203,7 @@ function addInputToPsbtByType(spendable: any, type: string, psbt: Psbt, bip32: B
 }
 
 export type CreatePsbtOptions = GetWalletOptions & {
+  satsPerByte?: number;
   ins: any[];
   outs: any[];
 };
