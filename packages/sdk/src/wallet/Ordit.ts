@@ -228,21 +228,15 @@ export class Ordit {
 
     const psbtHex = psbt.toHex();
 
-    //TODO: check if psbt has been signed
+    if (finalized) {
+      psbt.finalizeAllInputs();
 
-    try {
-      if (finalized) {
-        psbt.finalizeAllInputs();
+      const signedHex = psbt.extractTransaction().toHex();
 
-        const signedHex = psbt.extractTransaction().toHex();
-
-        return signedHex;
-      }
-
-      return psbtHex;
-    } catch (error) {
-      throw new Error("Cannot finalize the inputs.", error);
+      return signedHex;
     }
+
+    return psbtHex;
   }
 
   signMessage(message: string) {
