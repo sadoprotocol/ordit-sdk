@@ -119,11 +119,11 @@ export class OrdTransaction {
           address: this.destinationAddress,
           value: this.postage
         });
-      }
 
-      this.#outs.forEach((out) => {
-        psbt.addOutput(out);
-      });
+        this.#outs.forEach((out) => {
+          psbt.addOutput(out);
+        });
+      }
 
       if (change > 600) {
         let changeAddress = this.#inscribePayTx.address;
