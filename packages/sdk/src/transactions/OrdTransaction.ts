@@ -89,7 +89,7 @@ export class OrdTransaction {
     const customOutsAmount = this.#outs.reduce((acc, cur) => {
       return acc + cur.value;
     }, 0);
-    const change = this.#suitableUnspent.sats - fees - customOutsAmount;
+    const change = this.#suitableUnspent.sats - fees - customOutsAmount - this.postage;
 
     const networkObj = getNetwork(this.network);
 
