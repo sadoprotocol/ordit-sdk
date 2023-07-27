@@ -80,7 +80,7 @@ export class OrdTransaction {
       throw new Error("Failed to build PSBT. Transaction not ready.");
     }
 
-    let fees = this.postage + this.#feeForWitnessData!;
+    let fees = this.#feeForWitnessData!;
 
     if (this.#recovery) {
       fees = calculateTxFeeWithRate(1, 0, this.feeRate, 1);
