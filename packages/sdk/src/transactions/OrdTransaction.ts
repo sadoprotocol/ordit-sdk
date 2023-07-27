@@ -86,7 +86,10 @@ export class OrdTransaction {
       fees = calculateTxFeeWithRate(1, 0, this.feeRate, 1);
     }
 
-    const change = this.#suitableUnspent.sats - fees;
+    const customOutsAmount = this.#outs.reduce((acc, cur) => {
+      return acc + cur.value;
+    }, 0);
+    const change = this.#suitableUnspent.sats - fees - customOutsAmount;
 
     const networkObj = getNetwork(this.network);
 
