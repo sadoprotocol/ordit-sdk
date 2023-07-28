@@ -23,6 +23,7 @@ import {
 } from "..";
 import { OrditApi } from "../api";
 import { Network } from "../config/types";
+import { Inscription } from "../inscription/types";
 import { OrdTransaction, OrdTransactionOptions } from "../transactions";
 
 bitcoin.initEccLib(ecc);
@@ -268,20 +269,28 @@ export class Ordit {
       throw new Error("Wallet not fully initialized.");
     }
 
-    return OrditApi.fetchAllInscriptions({
+    const { unspendableUTXOs }= await OrditApi.fetchUnspentUTXOs({
       address: this.selectedAddress,
       network: this.#network
-    });
+    })
+
+    return unspendableUTXOs.reduce((acc, curr) => {
+      if(curr.inscriptions) {
+        acc.push(...curr.inscriptions)
+      }
+      
+      return acc
+    }, [] as Inscription[])
   }
 
   static inscription = {
     new: (options: OrdTransactionOptions) => new OrdTransaction(options),
-    getInscriptionDetails: (outpoint: string, network: Network = "testnet") => {
+    fetchInscriptions: (outpoint: string, network: Network = "testnet") => {
       if (!outpoint) {
         throw new Error("Outpoint is required.");
       }
 
-      return OrditApi.fetchInscriptionDetails({
+      return OrditApi.fetchInscriptions({
         outpoint,
         network
       });

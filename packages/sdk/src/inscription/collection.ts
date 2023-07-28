@@ -36,14 +36,12 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
     throw new Error("Invalid options supplied.");
   }
 
-  let colTxId = null;
-  let colVOut = null;
+  const [colTxId, colVOut] = options.collectionOutpoint.split(":").map((v, i) => {
+    if(i === 0) return v
 
-  try {
-    [colTxId, colVOut] = options.collectionOutpoint.split(":");
-  } catch (error) {
-    throw new Error(error);
-  }
+    const value = parseInt(v)
+    return isNaN(value) || !value ? false: value
+  }) as [string, number | false]
 
   if (!colTxId || !colVOut) {
     throw new Error("Invalid collection outpoint supplied.");
@@ -56,13 +54,13 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
       throw new Error("Failed to get raw transaction for id: " + colTxId);
     }
 
-    const colMeta = tx.rdata.vout[colVOut].inscriptions[0].meta;
+    const colMeta = tx.vout[colVOut].inscriptions[0].meta;
 
     let validInscription = false;
 
-    for (let i = 0; i < colMeta.insc.length; i++) {
+    for (let i = 0; i < colMeta?.insc.length; i++) {
       if (
-        colMeta.insc[i].iid == options.inscriptionIid &&
+        colMeta?.insc[i].iid == options.inscriptionIid &&
         colMeta.publ[options.publisherIndex] &&
         options.nonce < colMeta.insc[i].lim
       ) {
@@ -80,7 +78,7 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
       ty: "insc",
       col: options.collectionOutpoint,
       iid: options.inscriptionIid,
-      publ: colMeta.publ[options.publisherIndex],
+      publ: colMeta?.publ[options.publisherIndex],
       nonce: options.nonce,
       traits: options.traits
     };

@@ -66,7 +66,7 @@ export async function generateBuyerPsbt({
       throw new Error("Failed to get raw transaction for id: " + ordTxId);
     }
 
-    const output = tx.rdata && tx.rdata.vout[ordOutNumber];
+    const output = tx && tx.vout[ordOutNumber];
 
     if (!output) {
       throw new Error("Outpoint not found.");
@@ -180,7 +180,7 @@ export async function generateBuyerPsbt({
     const { rawTx } = await OrditApi.fetchTx({ txId: utxo.txid, network, hex: true })
 
     if (format !== "p2tr") {
-      for (const output in rawTx.outs) {
+      for (const output in rawTx?.outs) {
         try {
           rawTx.setWitness(parseInt(output), []);
         } catch {}
@@ -190,7 +190,7 @@ export async function generateBuyerPsbt({
     const input: any = {
       hash: utxo.txid,
       index: utxo.n,
-      nonWitnessUtxo: rawTx.toBuffer(),
+      nonWitnessUtxo: rawTx?.toBuffer(),
       sequence: 0xfffffffd // Needs to be at least 2 below max int value to be RBF
     };
 

@@ -3,8 +3,8 @@ import { Inscription, Ordinal } from "../inscription/types"
 export type Vout = {
   value: number
   n: number
-  ordinals: Ordinal
-  inscriptions: Inscription
+  ordinals: Ordinal[]
+  inscriptions: Inscription[]
   spent: string | false
   scriptPubKey: {
     asm: string
