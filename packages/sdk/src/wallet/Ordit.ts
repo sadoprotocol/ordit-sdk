@@ -152,7 +152,7 @@ export class Ordit {
     });
   }
 
-  signPsbt(value: string, { finalized = true, tweak = false }: SignPSBTOptions) {
+  signPsbt(value: string, { finalized = true, tweak = false }: SignPSBTOptions = {}) {
     const networkObj = getNetwork(this.#network);
     let psbt: bitcoin.Psbt | null = null;
 
