@@ -15,7 +15,7 @@ export class OrditApi {
     this.#network = network;
   }
 
-  static async fetchUnspentUTXOs({ address, network = 'testnet', type = "spendable", txHex = false, rarity = ["common"] }: FetchUnspentUTXOsOptions): Promise<FetchUnspentUTXOsResponse> {
+  static async fetchUnspentUTXOs({ address, network = 'testnet', type = "spendable", rarity = ["common"] }: FetchUnspentUTXOsOptions): Promise<FetchUnspentUTXOsResponse> {
     if(!address) {
       throw new Error('Invalid address')
     }
@@ -24,8 +24,7 @@ export class OrditApi {
       address, 
       options: {
         allowedrarity: rarity,
-        notsafetospend: type !== "all",
-        txhex: txHex,
+        safetospend: type === "spendable",
       }
     }, rpc.id)
 

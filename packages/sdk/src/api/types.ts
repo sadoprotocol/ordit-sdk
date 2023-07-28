@@ -24,7 +24,6 @@ export interface FetchUnspentUTXOsOptions {
   network?: Network
   type?: "all" | "spendable"
   rarity?: Rarity[]
-  txHex?: boolean
 }
 
 export interface FetchUnspentUTXOsResponse {
