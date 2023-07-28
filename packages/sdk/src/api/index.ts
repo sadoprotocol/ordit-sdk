@@ -3,9 +3,9 @@ import * as bitcoin from "bitcoinjs-lib";
 import { apiConfig } from "../config";
 import { Network } from "../config/types";
 import { Inscription } from "../inscription/types";
-import { Transaction } from "../transactions/types";
+import { Transaction, UTXO } from "../transactions/types";
 import { rpc } from "./jsonrpc";
-import { FetchInscriptionsOptions, FetchTxOptions, FetchTxResponse, FetchUnspentUTXOsOptions, FetchUnspentUTXOsResponse, RelayTxOptions, UTXO } from "./types";
+import { FetchInscriptionsOptions, FetchTxOptions, FetchTxResponse, FetchUnspentUTXOsOptions, FetchUnspentUTXOsResponse, RelayTxOptions } from "./types";
 
 export class OrditApi {
   static readonly #config = apiConfig;
