@@ -49,3 +49,9 @@ export interface FetchInscriptionsOptions {
   outpoint: string
   network?: Network
 }
+
+export interface RelayTxOptions {
+  hex: string
+  maxFeeRate?: number
+  network?: Network
+}

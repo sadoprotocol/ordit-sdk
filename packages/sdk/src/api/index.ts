@@ -5,7 +5,7 @@ import { Network } from "../config/types";
 import { Inscription } from "../inscription/types";
 import { Transaction } from "../transactions/types";
 import { rpc } from "./jsonrpc";
-import { FetchInscriptionsOptions, FetchTxOptions, FetchTxResponse, FetchUnspentUTXOsOptions, FetchUnspentUTXOsResponse, UTXO } from "./types";
+import { FetchInscriptionsOptions, FetchTxOptions, FetchTxResponse, FetchUnspentUTXOsOptions, FetchUnspentUTXOsResponse, RelayTxOptions, UTXO } from "./types";
 
 export class OrditApi {
   static readonly #config = apiConfig;
@@ -87,14 +87,3 @@ export class OrditApi {
     }, rpc.id)
   }
 }
-
-export interface RelayTxOptions {
-  hex: string
-  maxFeeRate?: number
-  network?: Network
-}
-
-export type FetchOptions = {
-  data: any;
-  network: Network;
-};
