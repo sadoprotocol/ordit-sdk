@@ -1,23 +1,8 @@
 import { Transaction as BTCTransaction } from 'bitcoinjs-lib'
 
 import { Network } from "../config/types";
-import { Inscription, Ordinal, Rarity } from "../inscription/types";
-import { ScriptPubKey, Transaction } from "../transactions/types";
-
-export interface UTXO {
-  n: number;
-  txHash: string;
-  blockHash: string;
-  blockN: number;
-  sats: number;
-  scriptPubKey: ScriptPubKey;
-  txid: string;
-  value: number;
-  ordinals?: Ordinal[] | null;
-  inscriptions?: Inscription[] | null;
-  safeToSpend: boolean;
-  confirmation: number;
-}
+import { Rarity } from "../inscription/types";
+import { Transaction, UTXO } from "../transactions/types";
 
 export interface FetchUnspentUTXOsOptions {
   address: string

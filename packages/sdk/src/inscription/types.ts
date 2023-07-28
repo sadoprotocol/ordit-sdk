@@ -19,7 +19,7 @@ export interface Ordinal {
   epoch: number;
   period: number;
   offset: number;
-  rarity: string;
+  rarity: Rarity;
   output: string;
   start: number;
   size: number;
