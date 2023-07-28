@@ -3,6 +3,8 @@ import { fetch as _fetch } from "cross-fetch";
 
 import { apiConfig } from "../config";
 import { Network } from "../config/types";
+import { Inscription, Ordinal } from "../inscription/types";
+import { Transaction } from "../transactions/types";
 import { rpc } from "./jsonrpc";
 import { FetchTxOptions, FetchUnspentUTXOsOptions, FetchUnspentUTXOsResponse, UTXO } from "./types";
 
@@ -73,13 +75,13 @@ export class OrditApi {
       throw new Error("Invalid txId")
     }
 
-    const tx = await rpc[network].call<any>('GetTransaction', {
+    const tx = await rpc[network].call<Transaction>('GetTransaction', {
       txid: txId, ord: ordinals, hex, witness
     }, rpc.id);
 
     return {
       tx,
-      rawTx: hex ? bitcoin.Transaction.fromHex(tx.hex): undefined
+      rawTx: hex && tx.hex ? bitcoin.Transaction.fromHex(tx.hex): undefined
     }
   }
 
@@ -126,8 +128,8 @@ export interface RdataEntity {
   scriptPubKey: ScriptPubKey;
   txid: string;
   value: number;
-  ordinals?: OrdinalsEntity[] | null;
-  inscriptions?: InscriptionsEntity[] | null;
+  ordinals?: Ordinal[] | null;
+  inscriptions?: Inscription[] | null;
   safeToSpend: boolean;
   confirmation: number;
 }
@@ -138,38 +140,9 @@ export interface ScriptPubKey {
   address: string;
   type: string;
 }
-export interface OrdinalsEntity {
-  number: number;
-  decimal: string;
-  degree: string;
-  name: string;
-  height: number;
-  cycle: number;
-  epoch: number;
-  period: number;
-  offset: number;
-  rarity: string;
-  output: string;
-  start: number;
-  size: number;
-}
-export interface InscriptionsEntity {
-  id: string;
-  outpoint: string;
-  owner: string;
-  fee: number;
-  height: number;
-  number: number;
-  sat: number;
-  timestamp: number;
-  media_type: string;
-  media_size: number;
-  media_content: string;
-  meta?: Record<string, any>;
-}
 
 export interface InscriptionDetailsEntity {
   success: boolean;
   message: string;
-  rdata?: InscriptionsEntity[] | null;
+  rdata?: Inscription[] | null;
 }
