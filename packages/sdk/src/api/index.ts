@@ -63,12 +63,12 @@ export class OrditApi {
     }
   }
 
-  static async fetchInscriptions({ outpoint, network = "testnet" }: FetchInscriptionsOptions): Promise<Inscription[]> {
+  static async fetchInscriptions({ outpoint, network = "testnet" }: FetchInscriptionsOptions) {
     if (!outpoint) {
       throw new Error("Invalid options provided.");
     }
 
-    return rpc[network].call<any>('GetInscriptions', {
+    return rpc[network].call<Inscription[]>('GetInscriptions', {
       outpoint, network
     }, rpc.id);
   }
