@@ -1,6 +1,6 @@
 import fetch from "cross-fetch";
 
-import { apiConfig } from "..";
+import { apiConfig } from "../config";
 
 class JsonRpc {
   constructor(readonly url: string) {}
@@ -34,6 +34,7 @@ class JsonRpc {
     } else {
       params = paramsOrId;
     }
+
     const response = await fetch(`${this.url}/rpc`, {
       method: "POST",
       headers: {

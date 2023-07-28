@@ -73,4 +73,29 @@ export class OrditApi {
       outpoint, network
     }, rpc.id);
   }
+
+  static async relayTx({ hex, network = "testnet", maxFeeRate }: RelayTxOptions): Promise<string> {
+    if (!hex) {
+      throw new Error("Invalid tx hex");
+    }
+
+    if(maxFeeRate && (maxFeeRate < 0 || isNaN(maxFeeRate))) {
+      throw new Error("Invalid max fee rate")
+    }
+
+    return rpc[network].call<string>('SendRawTransaction', {
+      hex, maxFeeRate 
+    }, rpc.id)
+  }
 }
+
+export interface RelayTxOptions {
+  hex: string
+  maxFeeRate?: number
+  network?: Network
+}
+
+export type FetchOptions = {
+  data: any;
+  network: Network;
+};
