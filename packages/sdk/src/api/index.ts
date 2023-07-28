@@ -1,12 +1,11 @@
 import * as bitcoin from "bitcoinjs-lib";
-import { fetch as _fetch } from "cross-fetch";
 
 import { apiConfig } from "../config";
 import { Network } from "../config/types";
-import { Inscription, Ordinal } from "../inscription/types";
+import { Inscription } from "../inscription/types";
 import { Transaction } from "../transactions/types";
 import { rpc } from "./jsonrpc";
-import { FetchTxOptions, FetchUnspentUTXOsOptions, FetchUnspentUTXOsResponse, UTXO } from "./types";
+import { FetchInscriptionsOptions, FetchTxOptions, FetchTxResponse, FetchUnspentUTXOsOptions, FetchUnspentUTXOsResponse, UTXO } from "./types";
 
 export class OrditApi {
   static readonly #config = apiConfig;
@@ -14,26 +13,6 @@ export class OrditApi {
 
   constructor(network: Network) {
     this.#network = network;
-  }
-
-  static async fetch<T>(uri: string, options: FetchOptions): Promise<T> {
-    const fullUri = this.#config.apis[options.network].batter + uri;
-
-    try {
-      const response = await _fetch(fullUri, {
-        method: "POST",
-        body: JSON.stringify(options.data),
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json"
-        }
-      });
-      const data = await response.json();
-
-      return data;
-    } catch (error: any) {
-      throw new Error(error);
-    }
   }
 
   static async fetchUnspentUTXOs({ address, network = 'testnet', type = "spendable", txHex = false, rarity = ["common"] }: FetchUnspentUTXOsOptions): Promise<FetchUnspentUTXOsResponse> {
@@ -70,7 +49,7 @@ export class OrditApi {
     }
   }
 
-  static async fetchTx({ txId, network = "testnet", ordinals = true, hex = false, witness = true }: FetchTxOptions): Promise<any> {
+  static async fetchTx({ txId, network = "testnet", ordinals = true, hex = false, witness = true }: FetchTxOptions): Promise<FetchTxResponse> {
     if(txId) {
       throw new Error("Invalid txId")
     }
@@ -85,64 +64,13 @@ export class OrditApi {
     }
   }
 
-  static async fetchInscriptionDetails({ outpoint, network = "testnet" }: FetchInscriptionDetailsOptions) {
+  static async fetchInscriptions({ outpoint, network = "testnet" }: FetchInscriptionsOptions): Promise<Inscription[]> {
     if (!outpoint) {
       throw new Error("Invalid options provided.");
     }
 
-    const fullUri = `${this.#config.apis[network].batter}/utxo/inscriptions/${outpoint}`;
-
-    try {
-      const response = await _fetch(fullUri);
-
-      const data: InscriptionDetailsEntity = await response.json();
-
-      return data;
-    } catch (error: any) {
-      throw new Error(error.message);
-    }
+    return rpc[network].call<any>('GetInscriptions', {
+      outpoint, network
+    }, rpc.id);
   }
-}
-
-export type FetchOptions = {
-  data: any;
-  network: Network;
-};
-
-export type FetchInscriptionsOptions = {
-  address: string;
-  network?: Network;
-};
-
-export type FetchInscriptionDetailsOptions = {
-  outpoint: string;
-  network?: Network;
-};
-
-export interface RdataEntity {
-  n: number;
-  txHash: string;
-  blockHash: string;
-  blockN: number;
-  sats: number;
-  scriptPubKey: ScriptPubKey;
-  txid: string;
-  value: number;
-  ordinals?: Ordinal[] | null;
-  inscriptions?: Inscription[] | null;
-  safeToSpend: boolean;
-  confirmation: number;
-}
-export interface ScriptPubKey {
-  asm: string;
-  desc: string;
-  hex: string;
-  address: string;
-  type: string;
-}
-
-export interface InscriptionDetailsEntity {
-  success: boolean;
-  message: string;
-  rdata?: Inscription[] | null;
 }

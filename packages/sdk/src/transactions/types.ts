@@ -46,3 +46,11 @@ export type Transaction = {
   fee: number
   blockheight: number
 }
+
+export interface ScriptPubKey {
+  asm: string;
+  desc: string;
+  hex: string;
+  address: string;
+  type: string;
+}
