@@ -50,23 +50,9 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
   }
 
   try {
-    const tx = await OrditApi.fetch<{
-      success: boolean;
-      rdata: any;
-      message?: string;
-    }>("utxo/transaction", {
-      data: {
-        txid: colTxId,
-        options: {
-          noord: false,
-          nohex: false,
-          nowitness: false
-        }
-      },
-      network: options.network || "testnet"
-    });
+    const { tx } = await OrditApi.fetchTx({ txId: colTxId, network: options.network })
 
-    if (!tx.success) {
+    if (!tx) {
       throw new Error("Failed to get raw transaction for id: " + colTxId);
     }
 

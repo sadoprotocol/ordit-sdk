@@ -61,23 +61,8 @@ export async function generateBuyerPsbt({
     }
 
     ordOutNumber = parseInt(ordOut);
-    const tx = await OrditApi.fetch<{
-      success: boolean;
-      rdata: any;
-      message?: string;
-    }>("utxo/transaction", {
-      data: {
-        txid: ordTxId,
-        options: {
-          noord: false,
-          nohex: false,
-          nowitness: false
-        }
-      },
-      network
-    });
-
-    if (!tx.success) {
+    const { tx } = await OrditApi.fetchTx({ txId: ordTxId, network })
+    if (!tx) {
       throw new Error("Failed to get raw transaction for id: " + ordTxId);
     }
 
@@ -117,27 +102,11 @@ export async function generateBuyerPsbt({
 
   for (let i = 0; i < 2; i++) {
     const dummyUtxo = dummyUtxos[i];
-    const tx = await OrditApi.fetch<{
-      success: boolean;
-      rdata: any;
-      message?: string;
-    }>("utxo/transaction", {
-      data: {
-        txid: dummyUtxo.txid,
-        options: {
-          noord: false,
-          nohex: false,
-          nowitness: false
-        }
-      },
-      network
-    });
-
-    if (!tx.success) {
+    const { rawTx } = await OrditApi.fetchTx({ txId: dummyUtxo.txid, network, hex: true })
+    if (!rawTx) {
       throw new Error("Failed to get raw transaction for id: " + dummyUtxo.txid);
     }
 
-    const rawTx = bitcoin.Transaction.fromHex(tx.rdata?.hex);
     if (format !== "p2tr") {
       for (const output in rawTx.outs) {
         try {
@@ -208,23 +177,8 @@ export async function generateBuyerPsbt({
   for (let i = 0; i < spendableUTXOs.length; i++) {
     const utxo = spendableUTXOs[i];
 
-    const tx = await OrditApi.fetch<{
-      success: boolean;
-      rdata: any;
-      message?: string;
-    }>("utxo/transaction", {
-      data: {
-        txid: utxo.txid,
-        options: {
-          noord: false,
-          nohex: false,
-          nowitness: false
-        }
-      },
-      network
-    });
+    const { rawTx } = await OrditApi.fetchTx({ txId: utxo.txid, network, hex: true })
 
-    const rawTx = bitcoin.Transaction.fromHex(tx.rdata?.hex);
     if (format !== "p2tr") {
       for (const output in rawTx.outs) {
         try {
@@ -299,27 +253,10 @@ export async function generateDummyUtxos({
 
   for (let i = 0; i < spendableUTXOs.length; i++) {
     const utxo = spendableUTXOs[i];
-    const tx = await OrditApi.fetch<{
-      success: boolean;
-      rdata: any;
-      message?: string;
-    }>("utxo/transaction", {
-      data: {
-        txid: utxo.txid,
-        options: {
-          noord: false,
-          nohex: false,
-          nowitness: false
-        }
-      },
-      network
-    });
-
-    if (!tx.success) {
+    const { rawTx } = await OrditApi.fetchTx({ txId: utxo.txid, network, hex: true })
+    if (!rawTx) {
       throw new Error("Failed to get raw transaction for id: " + utxo.txid);
     }
-
-    const rawTx = bitcoin.Transaction.fromHex(tx.rdata?.hex);
 
     const input: any = {
       hash: utxo.txid,
@@ -413,27 +350,11 @@ export async function getSellerInputsOutputs({
       if (unspendableUTXO.inscriptions!.length > 1) {
         throw new Error("Multiple inscriptions! Please split them first.");
       }
-      const tx = await OrditApi.fetch<{
-        success: boolean;
-        rdata: any;
-        message?: string;
-      }>("utxo/transaction", {
-        data: {
-          txid: unspendableUTXO.txid,
-          options: {
-            noord: false,
-            nohex: false,
-            nowitness: false
-          }
-        },
-        network
-      });
-
-      if (!tx.success) {
+      const { rawTx } = await OrditApi.fetchTx({ txId: unspendableUTXO.txid, network, hex: true })
+      if (!rawTx) {
         throw new Error("Failed to get raw transaction for id: " + unspendableUTXO.txid);
       }
 
-      const rawTx = bitcoin.Transaction.fromHex(tx.rdata?.hex);
       if (format !== "p2tr") {
         for (const output in rawTx.outs) {
           try {

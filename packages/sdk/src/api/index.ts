@@ -1,9 +1,10 @@
+import * as bitcoin from "bitcoinjs-lib";
 import { fetch as _fetch } from "cross-fetch";
 
 import { apiConfig } from "../config";
 import { Network } from "../config/types";
 import { rpc } from "./jsonrpc";
-import { FetchUnspentUTXOsOptions, FetchUnspentUTXOsResponse, UTXO } from "./types";
+import { FetchTxOptions, FetchUnspentUTXOsOptions, FetchUnspentUTXOsResponse, UTXO } from "./types";
 
 export class OrditApi {
   static readonly #config = apiConfig;
@@ -64,6 +65,21 @@ export class OrditApi {
       totalUTXOs: utxos.length,
       spendableUTXOs,
       unspendableUTXOs
+    }
+  }
+
+  static async fetchTx({ txId, network = "testnet", ordinals = true, hex = false, witness = true }: FetchTxOptions): Promise<any> {
+    if(txId) {
+      throw new Error("Invalid txId")
+    }
+
+    const tx = await rpc[network].call<any>('GetTransaction', {
+      txid: txId, ord: ordinals, hex, witness
+    }, rpc.id);
+
+    return {
+      tx,
+      rawTx: hex ? bitcoin.Transaction.fromHex(tx.hex): undefined
     }
   }
 

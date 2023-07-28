@@ -68,3 +68,11 @@ export interface FetchUnspentUTXOsResponse {
   spendableUTXOs: UTXO[]
   unspendableUTXOs: UTXO[]
 }
+
+export interface FetchTxOptions {
+  txId: string
+  network?: Network
+  ordinals?: boolean
+  hex?: boolean
+  witness?: boolean
+}
