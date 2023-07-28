@@ -40,16 +40,15 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
     if(i === 0) return v
 
     const value = parseInt(v)
-    return isNaN(value) || !value ? false: value
+    return isNaN(value) || (!value && value !== 0) ? false: value
   }) as [string, number | false]
 
-  if (!colTxId || !colVOut) {
+  if (!colTxId || colVOut === false) {
     throw new Error("Invalid collection outpoint supplied.");
   }
 
   try {
     const { tx } = await OrditApi.fetchTx({ txId: colTxId, network: options.network })
-
     if (!tx) {
       throw new Error("Failed to get raw transaction for id: " + colTxId);
     }
