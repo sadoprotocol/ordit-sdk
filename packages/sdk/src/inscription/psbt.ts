@@ -37,87 +37,60 @@ export async function createRevealPsbt(options: CreateRevealPsbtOptions) {
     redeem: redeemScript
   });
 
-  const unspentsResponse = await OrditApi.fetch<{
-    success: boolean;
-    rdata: Array<any>;
-    message?: string;
-  }>("utxo/unspents", {
-    data: {
-      address: inscribePayTx.address!,
-      options: {
-        txhex: true,
-        notsafetospend: false,
-        allowedrarity: ["common"]
-      }
-    },
-    network: options.network
+  const { spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({ 
+    address: inscribePayTx.address!, network: options.network,
   });
 
-  if (unspentsResponse.success) {
-    const unspents = unspentsResponse.rdata;
+  const feesForWitnessData = options.fees;
+  const suitableUTXO = spendableUTXOs.find((utxo) => {
+    return utxo.sats >= options.postage + feesForWitnessData 
+    && (options.safeMode === "off" || (options.safeMode === "on" && utxo.safeToSpend === true))
+  });
 
-    const feesForWitnessData = options.fees;
-    let sutableUnspent: any = null;
-
-    unspents.forEach((unspent) => {
-      if (unspent.sats >= options.postage + feesForWitnessData && (options.safeMode === "off" || (options.safeMode === "on" && unspent.safeToSpend === true))) {
-        sutableUnspent = unspent;
-      }
-    });
-
-    if (sutableUnspent) {
-      const fees = options.postage + feesForWitnessData;
-      const change = sutableUnspent.sats - fees;
-
-      const psbt = new Psbt({ network: networkObj });
-      try {
-        psbt.addInput({
-          hash: sutableUnspent.txid,
-          index: parseInt(sutableUnspent.n),
-          tapInternalKey: Buffer.from(xkey, "hex"),
-          witnessUtxo: {
-            script: inscribePayTx.output!,
-            value: parseInt(sutableUnspent.sats)
-          },
-          tapLeafScript: [
-            {
-              leafVersion: redeemScript.redeemVersion,
-              script: redeemScript.output,
-              controlBlock: inscribePayTx.witness![inscribePayTx.witness!.length - 1]
-            }
-          ]
-        });
-
-        psbt.addOutput({
-          address: options.destination,
-          value: options.postage
-        });
-
-        if (change > 600) {
-          let changeAddress = inscribePayTx.address;
-          if (options.changeAddress) {
-            changeAddress = options.changeAddress;
-          }
-
-          psbt.addOutput({
-            address: changeAddress!,
-            value: change
-          });
-        }
-
-        return {
-          hex: psbt.toHex(),
-          base64: psbt.toBase64()
-        };
-      } catch (error) {
-        throw new Error(error.message);
-      }
-    } else {
-      throw new Error("No suitable unspent found for reveal");
-    }
-  } else {
-    throw new Error(unspentsResponse.message);
+  if(!suitableUTXO) {
+    throw new Error('No suitable unspent found for reveal')
   }
+
+  const fees = options.postage + feesForWitnessData;
+  const change = suitableUTXO.sats - fees;
+
+  const psbt = new Psbt({ network: networkObj });
+  psbt.addInput({
+    hash: suitableUTXO.txid,
+    index: suitableUTXO.n,
+    tapInternalKey: Buffer.from(xkey, "hex"),
+    witnessUtxo: {
+      script: inscribePayTx.output!,
+      value: suitableUTXO.sats
+    },
+    tapLeafScript: [{
+      leafVersion: redeemScript.redeemVersion,
+      script: redeemScript.output,
+      controlBlock: inscribePayTx.witness![inscribePayTx.witness!.length - 1]
+    }]
+  });
+
+  psbt.addOutput({
+    address: options.destination,
+    value: options.postage
+  });
+
+  if (change > 600) {
+    let changeAddress = inscribePayTx.address;
+    if (options.changeAddress) {
+      changeAddress = options.changeAddress;
+    }
+
+    psbt.addOutput({
+      address: changeAddress!,
+      value: change
+    });
+  }
+
+  return {
+    hex: psbt.toHex(),
+    base64: psbt.toBase64()
+  };
 }
 
 export type CreateRevealPsbtOptions = Omit<GetWalletOptions, "format"> & {

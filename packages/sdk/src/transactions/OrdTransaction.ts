@@ -289,45 +289,28 @@ export class OrdTransaction {
       throw new Error("No commit address found. Please generate a commit address.");
     }
 
-    const unspentsResponse = await OrditApi.fetch<{
-      success: boolean;
-      rdata: Array<any>;
-      message?: string;
-    }>("utxo/unspents", {
-      data: {
-        address: this.#commitAddress,
-        options: {
-          txhex: true,
-          notsafetospend: false,
-          allowedrarity: ["common"]
-        }
-      },
-      network: this.network
-    });
+    const { spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({ 
+      address: this.#commitAddress, network: this.network,
+    })
 
-    if (!unspentsResponse.success) {
-      throw new Error(unspentsResponse.message);
-    }
-
-    const unspents = unspentsResponse.rdata;
     const customOutsAmount = this.#outs.reduce((acc, cur) => {
       return acc + cur.value;
     }, 0);
 
-    const suitableUnspent = unspents.find((unspent) => {
-      if (unspent.sats >= this.postage + this.#feeForWitnessData! + customOutsAmount && (this.#safeMode === 'off' || (this.#safeMode === 'on' && unspent.safeToSpend === true))) {
+    const suitableUTXO = spendableUTXOs.find((utxo) => {
+      if (utxo.sats >= this.postage + this.#feeForWitnessData! + customOutsAmount && (this.#safeMode === 'off' || (this.#safeMode === 'on' && utxo.safeToSpend === true))) {
         return true;
       }
     }, this);
 
-    if (!suitableUnspent) {
+    if (!suitableUTXO) {
       throw new Error("No suitable unspent found for reveal.");
     }
 
-    this.#suitableUnspent = suitableUnspent;
+    this.#suitableUnspent = suitableUTXO;
     this.ready = true;
 
-    return suitableUnspent;
+    return suitableUTXO;
   }
 }
 

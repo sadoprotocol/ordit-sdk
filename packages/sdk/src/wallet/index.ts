@@ -47,22 +47,12 @@ export async function getWalletWithBalances({ pubKey, format, network, safeMode 
     let wallet_spendables = 0;
     let wallet_unspendables = 0;
 
-    const unspent = await OrditApi.fetch<{ success: boolean; rdata: Array<any> }>("utxo/unspents", {
-      network,
-      data: {
-        address: address.address,
-        options: {
-          txhex: true,
-          notsafetospend: false,
-          allowedrarity: ["common"]
-        }
-      }
+    const { totalUTXOs, spendableUTXOs, unspendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
+      address: address.address!, network, type: "all"
     });
 
-    if (unspent.success) {
-      address.unspents = unspent.rdata;
-      wallet_unspents += unspent.rdata.length;
-    }
+    address.unspents = spendableUTXOs.concat(unspendableUTXOs)
+    wallet_unspents += totalUTXOs
 
     for (let j = 0; j < address.unspents!.length; j++) {
       const unspentObj = address.unspents![j];

@@ -1,4 +1,7 @@
-export interface UnspentsEntity {
+import { Network } from "../config/types";
+import { Rarity } from "../inscription/types";
+
+export interface UTXO {
   n: number;
   txHash: string;
   blockHash: string;
@@ -50,4 +53,18 @@ export interface InscriptionsEntity {
   media_size: number;
   media_content: string;
   meta?: Record<string, any>;
+}
+
+export interface FetchUnspentUTXOsOptions {
+  address: string
+  network?: Network
+  type?: "all" | "spendable"
+  rarity?: Rarity[]
+  txHex?: boolean
+}
+
+export interface FetchUnspentUTXOsResponse {
+  totalUTXOs: number
+  spendableUTXOs: UTXO[]
+  unspendableUTXOs: UTXO[]
 }

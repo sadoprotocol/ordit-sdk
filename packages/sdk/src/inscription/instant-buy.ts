@@ -92,51 +92,24 @@ export async function generateBuyerPsbt({
     throw new Error(error.message);
   }
 
-  const unspentsResponse = await OrditApi.fetch<{
-    success: boolean;
-    rdata: Array<any>;
-    message?: string;
-  }>("utxo/unspents", {
-    data: {
-      address: address.address,
-      options: {
-        txhex: true,
-        notsafetospend: false,
-        allowedrarity: ["common"]
-      }
-    },
-    network
-  });
-
-  if (!unspentsResponse.success) {
-    throw new Error(unspentsResponse.message);
-  }
-
-  if (!unspentsResponse.rdata.length) {
+  const { totalUTXOs, spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({ address: address.address!, network })
+  if (!totalUTXOs) {
     throw new Error("No UTXOs found.");
   }
 
   const psbt = new bitcoin.Psbt({ network: networkObj });
-  const utxos = unspentsResponse.rdata;
   const dummyUtxos = [];
-  const spendableUtxos = [];
 
   //find dummy utxos
-  for (let i = 0; i < utxos.length; i++) {
-    const utxo = utxos[i];
-
-    if (utxo.inscriptions.length > 0) {
-      continue;
-    }
+  for (let i = 0; i < spendableUTXOs.length; i++) {
+    const utxo = spendableUTXOs[i];
 
     if (utxo.sats >= 580 && utxo.sats <= 1000) {
       dummyUtxos.push(utxo);
-    } else {
-      spendableUtxos.push(utxo);
     }
   }
 
-  if (dummyUtxos.length < 2 || !spendableUtxos.length) {
+  if (dummyUtxos.length < 2 || !spendableUTXOs.length) {
     throw new Error("No suitable UTXOs found.");
   }
 
@@ -232,8 +205,8 @@ export async function generateBuyerPsbt({
   (psbt.data.globalMap.unsignedTx as any).tx.outs[2] = (decodedSellerPsbt.data.globalMap.unsignedTx as any).tx.outs[0];
   psbt.data.outputs[2] = decodedSellerPsbt.data.outputs[0];
 
-  for (let i = 0; i < spendableUtxos.length; i++) {
-    const utxo = spendableUtxos[i];
+  for (let i = 0; i < spendableUTXOs.length; i++) {
+    const utxo = spendableUTXOs[i];
 
     const tx = await OrditApi.fetch<{
       success: boolean;
@@ -315,40 +288,17 @@ export async function generateDummyUtxos({
   const format = addressNameToType[pubKeyType];
   const address = getAddressesFromPublicKey(publicKey, network, format)[0];
 
-  const unspentsResponse = await OrditApi.fetch<{
-    success: boolean;
-    rdata: Array<any>;
-    message?: string;
-  }>("utxo/unspents", {
-    data: {
-      address: address.address,
-      options: {
-        txhex: true,
-        notsafetospend: false,
-        allowedrarity: ["common"]
-      }
-    },
-    network
-  });
-
-  if (!unspentsResponse.success) {
-    throw new Error(unspentsResponse.message);
-  }
-
-  if (!unspentsResponse.rdata.length) {
+  const { totalUTXOs, spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({ address: address.address!, network })
+  if (!totalUTXOs) {
     throw new Error("No UTXOs found.");
   }
 
   const psbt = new bitcoin.Psbt({ network: networkObj });
-  const utxos = unspentsResponse.rdata;
   let totalValue = 0;
   let paymentUtxoCount = 0;
 
-  for (let i = 0; i < utxos.length; i++) {
-    const utxo = utxos[i];
-
-    if (utxo.inscriptions.length > 0) continue;
-
+  for (let i = 0; i < spendableUTXOs.length; i++) {
+    const utxo = spendableUTXOs[i];
     const tx = await OrditApi.fetch<{
       success: boolean;
       rdata: any;
@@ -450,48 +400,17 @@ export async function getSellerInputsOutputs({
   const inputs = [];
   const outputs = [];
 
-  const unspentsResponse = await OrditApi.fetch<{
-    success: boolean;
-    rdata: Array<any>;
-    message?: string;
-  }>("utxo/unspents", {
-    data: {
-      address: address.address,
-      options: {
-        txhex: true,
-        notsafetospend: false,
-        allowedrarity: ["common"]
-      }
-    },
-    network
-  });
-
-  if (!unspentsResponse.success) {
-    throw new Error(unspentsResponse.message);
-  }
-
-  if (!unspentsResponse.rdata.length) {
+  const { totalUTXOs, unspendableUTXOs } = await OrditApi.fetchUnspentUTXOs({ address: address.address!, network, type: "all" })
+  if (!totalUTXOs) {
     throw new Error("No UTXOs found.");
   }
 
-  const utxos = unspentsResponse.rdata;
-  const ordUtxos: any = [];
-  const nonOrdUtxos: any = [];
-
-  utxos.forEach((utxo) => {
-    if (utxo.inscriptions.length > 0) {
-      ordUtxos.push(utxo);
-    } else {
-      nonOrdUtxos.push(utxo);
-    }
-  });
-
   let found = false;
 
-  for (let i = 0; i < ordUtxos.length; i++) {
-    const ordUtxo: any = ordUtxos[i];
-    if (ordUtxo.inscriptions.find((v: any) => v.outpoint == inscriptionOutPoint)) {
-      if (ordUtxo.inscriptions.length > 1) {
+  for (let i = 0; i < unspendableUTXOs.length; i++) {
+    const unspendableUTXO = unspendableUTXOs[i];
+    if (unspendableUTXO.inscriptions!.find((v: any) => v.outpoint == inscriptionOutPoint)) {
+      if (unspendableUTXO.inscriptions!.length > 1) {
         throw new Error("Multiple inscriptions! Please split them first.");
       }
       const tx = await OrditApi.fetch<{
@@ -500,7 +419,7 @@ export async function getSellerInputsOutputs({
         message?: string;
       }>("utxo/transaction", {
         data: {
-          txid: ordUtxo.txid,
+          txid: unspendableUTXO.txid,
           options: {
             noord: false,
             nohex: false,
@@ -511,7 +430,7 @@ export async function getSellerInputsOutputs({
       });
 
       if (!tx.success) {
-        throw new Error("Failed to get raw transaction for id: " + ordUtxo.txid);
+        throw new Error("Failed to get raw transaction for id: " + unspendableUTXO.txid);
       }
 
       const rawTx = bitcoin.Transaction.fromHex(tx.rdata?.hex);
@@ -526,12 +445,12 @@ export async function getSellerInputsOutputs({
       const options: any = {};
 
       const data: any = {
-        hash: ordUtxo.txid,
-        index: parseInt(ordUtxo.n),
+        hash: unspendableUTXO.txid,
+        index: unspendableUTXO.n,
         nonWitnessUtxo: rawTx.toBuffer(),
         sequence: 0xfffffffd // Needs to be at least 2 below max int value to be RBF
       };
-      const postage = ordUtxo.sats;
+      const postage = unspendableUTXO.sats;
 
       if (side === "seller") {
         options.sighashType = bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY;

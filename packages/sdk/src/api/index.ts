@@ -2,6 +2,8 @@ import { fetch as _fetch } from "cross-fetch";
 
 import { apiConfig } from "../config";
 import { Network } from "../config/types";
+import { rpc } from "./jsonrpc";
+import { FetchUnspentUTXOsOptions, FetchUnspentUTXOsResponse, UTXO } from "./types";
 
 export class OrditApi {
   static readonly #config = apiConfig;
@@ -31,48 +33,37 @@ export class OrditApi {
     }
   }
 
-  static async fetchAllInscriptions({ address, network = "testnet" }: FetchInscriptionsOptions) {
-    if (!address) {
-      throw new Error("Invalid options provided.");
+  static async fetchUnspentUTXOs({ address, network = 'testnet', type = "spendable", txHex = false, rarity = ["common"] }: FetchUnspentUTXOsOptions): Promise<FetchUnspentUTXOsResponse> {
+    if(!address) {
+      throw new Error('Invalid address')
     }
 
-    const fullUri = `${this.#config.apis[network].batter}/utxo/unspents`;
-    const payload = {
-      address,
+    const utxos = await rpc[network].call<UTXO[]>('GetUnspents', { 
+      address, 
       options: {
-        txhex: true,
-        notsafetospend: false,
-        allowedrarity: ["common"]
+        allowedrarity: rarity,
+        notsafetospend: type !== "all",
+        txhex: txHex,
       }
-    };
+    }, rpc.id)
 
-    try {
-      const response = await _fetch(fullUri, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json"
-        }
-      });
-
-      const data: UTXO = await response.json();
-
-      if (data && data.success && data.rdata && data.rdata.length) {
-        const inscriptions: InscriptionsEntity[] = [];
-
-        data.rdata.forEach((utxo: RdataEntity) => {
-          if (utxo.inscriptions && utxo.inscriptions.length) {
-            inscriptions.push(...utxo.inscriptions);
-          }
-        });
-
-        return inscriptions;
+    const { spendableUTXOs, unspendableUTXOs } = utxos.reduce((acc, utxo) => {
+      if(utxo.inscriptions?.length && !utxo.safeToSpend) {
+        acc.unspendableUTXOs.push(utxo)
       } else {
-        throw new Error("No data found.");
+        acc.spendableUTXOs.push(utxo)
       }
-    } catch (error: any) {
-      throw new Error(error.message);
+
+      return acc
+    }, {
+      spendableUTXOs: [],
+      unspendableUTXOs: [],
+    } as Record<string, UTXO[]>)
+    
+    return {
+      totalUTXOs: utxos.length,
+      spendableUTXOs,
+      unspendableUTXOs
     }
   }
 
@@ -110,11 +101,6 @@ export type FetchInscriptionDetailsOptions = {
   network?: Network;
 };
 
-export interface UTXO {
-  success: boolean;
-  message: string;
-  rdata?: RdataEntity[] | null;
-}
 export interface RdataEntity {
   n: number;
   txHash: string;
