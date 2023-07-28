@@ -11,9 +11,6 @@
   },
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
-  "material-icon-theme.files.associations": {
-    "index.ts": "tree",
-  },
   "files.exclude": {
     "**/.turbo": true,
     "**/node_modules": true,
@@ -24,7 +21,6 @@
     "**/.DS_Store": true,
     "**/Thumbs.db": true
   },
-  "typescript.tsdk": "node_modules/typescript/lib",
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   }

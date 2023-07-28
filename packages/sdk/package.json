@@ -17,6 +17,7 @@
   ],
   "scripts": {
     "build": "tsc -b ./tsconfig.build.json",
+    "build:watch": "tsc -b ./tsconfig.build.json --watch",
     "flush": "npm run clean && rm -rf ./node_modules",
     "clean": "rm -rf ./.turbo ./dist",
     "lint": "eslint ."

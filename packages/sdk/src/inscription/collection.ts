@@ -36,47 +36,30 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
     throw new Error("Invalid options supplied.");
   }
 
-  let colTxId = null;
-  let colVOut = null;
+  const [colTxId, colVOut] = options.collectionOutpoint.split(":").map((v, i) => {
+    if(i === 0) return v
 
-  try {
-    [colTxId, colVOut] = options.collectionOutpoint.split(":");
-  } catch (error) {
-    throw new Error(error);
-  }
+    const value = parseInt(v)
+    return isNaN(value) || (!value && value !== 0) ? false: value
+  }) as [string, number | false]
 
-  if (!colTxId || !colVOut) {
+  if (!colTxId || colVOut === false) {
     throw new Error("Invalid collection outpoint supplied.");
   }
 
   try {
-    const tx = await OrditApi.fetch<{
-      success: boolean;
-      rdata: any;
-      message?: string;
-    }>("utxo/transaction", {
-      data: {
-        txid: colTxId,
-        options: {
-          noord: false,
-          nohex: false,
-          nowitness: false
-        }
-      },
-      network: options.network || "testnet"
-    });
-
-    if (!tx.success) {
+    const { tx } = await OrditApi.fetchTx({ txId: colTxId, network: options.network })
+    if (!tx) {
       throw new Error("Failed to get raw transaction for id: " + colTxId);
     }
 
-    const colMeta = tx.rdata.vout[colVOut].inscriptions[0].meta;
+    const colMeta = tx.vout[colVOut].inscriptions[0].meta;
 
     let validInscription = false;
 
-    for (let i = 0; i < colMeta.insc.length; i++) {
+    for (let i = 0; i < colMeta?.insc.length; i++) {
       if (
-        colMeta.insc[i].iid == options.inscriptionIid &&
+        colMeta?.insc[i].iid == options.inscriptionIid &&
         colMeta.publ[options.publisherIndex] &&
         options.nonce < colMeta.insc[i].lim
       ) {
@@ -94,7 +77,7 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
       ty: "insc",
       col: options.collectionOutpoint,
       iid: options.inscriptionIid,
-      publ: colMeta.publ[options.publisherIndex],
+      publ: colMeta?.publ[options.publisherIndex],
       nonce: options.nonce,
       traits: options.traits
     };
