@@ -49,12 +49,17 @@ export class OrditApi {
   }
 
   static async fetchTx({ txId, network = "testnet", ordinals = true, hex = false, witness = true }: FetchTxOptions): Promise<FetchTxResponse> {
-    if(txId) {
+    if(!txId) {
       throw new Error("Invalid txId")
     }
 
     const tx = await rpc[network].call<Transaction>('GetTransaction', {
-      txid: txId, ord: ordinals, hex, witness
+      txid: txId, 
+      options: {
+        ord: ordinals, 
+        hex, 
+        witness
+      }
     }, rpc.id);
 
     return {
