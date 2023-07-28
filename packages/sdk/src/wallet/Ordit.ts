@@ -247,21 +247,8 @@ export class Ordit {
     return signature.toString("base64");
   }
 
-  async relayTx(hex: string, network?: Network) {
-    if (!hex) {
-      throw new Error("Invalid options provided.");
-    }
-
-    const txResponse = await OrditApi.fetch<{ success: boolean; rdata: string }>("utxo/relay", {
-      data: { hex },
-      network: network ?? this.#network
-    });
-
-    if (!txResponse.success || !txResponse.rdata) {
-      throw new Error("Failed to relay transaction.");
-    }
-
-    return txResponse.rdata;
+  async relayTx(hex: string, network?: Network, maxFeeRate?: number) {
+    return OrditApi.relayTx({ hex, network, maxFeeRate })
   }
 
   async getInscriptions() {
