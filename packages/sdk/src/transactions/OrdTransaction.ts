@@ -201,7 +201,7 @@ export class OrdTransaction {
       redeem: redeemScript
     })
 
-    const fees = JSON.parse(JSON.stringify((80 + 1 * 180) * this.feeRate))
+    const fees = (80 + 1 * 180) * this.feeRate
     const scriptLength = witnessScript.toString("hex").length
     const scriptFees = Math.ceil((scriptLength / 10) * this.feeRate + fees)
     const customOutsAmount = this.#outs.reduce((acc, cur) => {

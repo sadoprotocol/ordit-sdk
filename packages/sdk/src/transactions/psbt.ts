@@ -65,7 +65,7 @@ export async function createPsbt({
         const scriptPubKeyType = spendable.scriptPubKey.type as string
         let addedInputSuccessfully = false
 
-        fees = JSON.parse(JSON.stringify((80 + (inputs_used + 1) * 180) * sats_per_byte))
+        fees = (80 + (inputs_used + 1) * 180) * sats_per_byte
 
         if (input.address === "any") {
           ins[idx].address = scriptPubKeyAddress

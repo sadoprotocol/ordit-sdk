@@ -23,7 +23,7 @@ export async function generateCommitAddress(options: GenerateCommitAddressOption
       scriptTree
     })
 
-    const fees = JSON.parse(JSON.stringify((80 + 1 * 180) * satsPerByte))
+    const fees = (80 + 1 * 180) * satsPerByte
     const scriptLength = witnessScript.toString("hex").length
     const scriptFees = (scriptLength / 10) * satsPerByte + fees
 
