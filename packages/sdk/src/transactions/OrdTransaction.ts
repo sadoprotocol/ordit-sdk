@@ -95,52 +95,48 @@ export class OrdTransaction {
 
     const psbt = new bitcoin.Psbt({ network: networkObj })
 
-    try {
-      psbt.addInput({
-        sequence: 0xfffffffd, // Needs to be at least 2 below max int value to be RBF
-        hash: this.#suitableUnspent.txid,
-        index: parseInt(this.#suitableUnspent.n),
-        tapInternalKey: Buffer.from(this.#xKey, "hex"),
-        witnessUtxo: {
-          script: this.#inscribePayTx.output!,
-          value: parseInt(this.#suitableUnspent.sats)
-        },
-        tapLeafScript: [
-          {
-            leafVersion: this.#inscribePayTx.redeemVersion!,
-            script: this.#inscribePayTx.redeem!.output!,
-            controlBlock: this.#inscribePayTx.witness![this.#inscribePayTx.witness!.length - 1]
-          }
-        ]
+    psbt.addInput({
+      sequence: 0xfffffffd, // Needs to be at least 2 below max int value to be RBF
+      hash: this.#suitableUnspent.txid,
+      index: parseInt(this.#suitableUnspent.n),
+      tapInternalKey: Buffer.from(this.#xKey, "hex"),
+      witnessUtxo: {
+        script: this.#inscribePayTx.output!,
+        value: parseInt(this.#suitableUnspent.sats)
+      },
+      tapLeafScript: [
+        {
+          leafVersion: this.#inscribePayTx.redeemVersion!,
+          script: this.#inscribePayTx.redeem!.output!,
+          controlBlock: this.#inscribePayTx.witness![this.#inscribePayTx.witness!.length - 1]
+        }
+      ]
+    })
+
+    if (!this.#recovery) {
+      psbt.addOutput({
+        address: this.destinationAddress,
+        value: this.postage
       })
 
-      if (!this.#recovery) {
-        psbt.addOutput({
-          address: this.destinationAddress,
-          value: this.postage
-        })
-
-        this.#outs.forEach((out) => {
-          psbt.addOutput(out)
-        })
-      }
-
-      if (change > 600) {
-        let changeAddress = this.#inscribePayTx.address
-        if (this.changeAddress) {
-          changeAddress = this.changeAddress
-        }
-
-        psbt.addOutput({
-          address: changeAddress!,
-          value: change
-        })
-      }
-
-      this.psbt = psbt
-    } catch (error) {
-      throw new Error(error.message)
+      this.#outs.forEach((out) => {
+        psbt.addOutput(out)
+      })
     }
+
+    if (change > 600) {
+      let changeAddress = this.#inscribePayTx.address
+      if (this.changeAddress) {
+        changeAddress = this.changeAddress
+      }
+
+      psbt.addOutput({
+        address: changeAddress!,
+        value: change
+      })
+    }
+
+    this.psbt = psbt
   }
 
   toPsbt() {
