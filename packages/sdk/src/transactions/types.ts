@@ -24,7 +24,7 @@ export type Vin = {
     asm: string
     hex: string
   }
-  txinwitness: string[]
+  txinwitness?: string[]
   sequence: number
 }
 
