@@ -1,8 +1,10 @@
-import { getAddressesFromPublicKey } from "../addresses";
-import { AddressTypes } from "../addresses/formats";
-import { OrditApi } from "../api";
-import { Network } from "../config/types";
-import { getWalletKeys } from "../keys";
+import { getAddressesFromPublicKey } from "../addresses"
+import { AddressTypes } from "../addresses/formats"
+import { OrditApi } from "../api"
+import { Network } from "../config/types"
+import { Inscription, Ordinal } from "../inscription/types"
+import { getWalletKeys } from "../keys"
+import { UTXO } from "../transactions/types"
 
 export async function getWallet({
   pubKey,
@@ -23,10 +25,10 @@ export async function getWallet({
 export async function getWalletWithBalances({ pubKey, format, network, safeMode = "on" }: GetWalletOptions) {
   const wallet = (await getWallet({ pubKey, format, network })) as GetWalletWithBalances;
 
-  const ordinals: unknown[] = [];
-  const inscriptions: unknown[] = [];
-  const spendables: unknown[] = [];
-  const unspendables: unknown[] = [];
+  const ordinals: Ordinal[] = []
+  const inscriptions: Inscription[] = []
+  const spendables: UTXO[] = []
+  const unspendables: UTXO[] = []
 
   wallet.counts.unspents = 0;
   wallet.counts.satoshis = 0;
@@ -129,10 +131,10 @@ export type GetWalletReturnType = {
 };
 
 export type GetWalletWithBalances = GetWalletReturnType & {
-  spendables: unknown[];
-  unspendables: unknown[];
-  ordinals: unknown[];
-  inscriptions: unknown[];
+  spendables: UTXO[]
+  unspendables: UTXO[]
+  ordinals: Ordinal[]
+  inscriptions: Inscription[]
 
   counts: {
     unspents: number;
