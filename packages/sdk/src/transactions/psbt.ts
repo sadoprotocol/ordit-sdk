@@ -2,6 +2,7 @@ import * as ecc from "@bitcoinerlab/secp256k1";
 import BIP32Factory, { BIP32API } from "bip32";
 import { Network, Psbt } from "bitcoinjs-lib";
 
+import { OrditApi } from "../api";
 import { createTransaction, getNetwork } from "../utils";
 import { GetWalletOptions, getWalletWithBalances } from "../wallet";
 
@@ -57,13 +58,12 @@ export async function createPsbt({
     }
   });
 
-  ins.forEach((input, idx) => {
+  for (const [idx, input] of ins.entries()) {
     if (input.address) {
-      walletWithBalances.spendables.forEach((spendable: any) => {
+      for (const spendable of walletWithBalances.spendables) {
         const sats = spendable.sats;
         const scriptPubKeyAddress = spendable.scriptPubKey.address;
         const scriptPubKeyType = spendable.scriptPubKey.type as string;
-        let addedInputSuccessfully = false;
 
         fees = JSON.parse(JSON.stringify((80 + (inputs_used + 1) * 180) * sats_per_byte));
 
@@ -72,7 +72,13 @@ export async function createPsbt({
         }
 
         if (input.address === scriptPubKeyAddress) {
-          addedInputSuccessfully = addInputToPsbtByType(spendable, scriptPubKeyType, psbt, bip32, netWorkObj);
+          const addedInputSuccessfully = await addInputToPsbtByType(
+            spendable,
+            scriptPubKeyType,
+            psbt,
+            bip32,
+            netWorkObj
+          );
 
           if (addedInputSuccessfully) {
             unspents_to_use.push(spendable);
@@ -86,9 +92,9 @@ export async function createPsbt({
             unsupported_inputs.push(spendable);
           }
         }
-      });
+      }
     }
-  });
+  }
 
   if (!unspents_to_use.length) {
     throw new Error(
@@ -118,7 +124,7 @@ export async function createPsbt({
   };
 }
 
-function addInputToPsbtByType(spendable: any, type: string, psbt: Psbt, bip32: BIP32API, network: Network) {
+async function addInputToPsbtByType(spendable: any, type: string, psbt: Psbt, bip32: BIP32API, network: Network) {
   if (type === "witness_v1_taproot") {
     const chainCode = Buffer.alloc(32);
     chainCode.fill(1);
@@ -186,11 +192,12 @@ function addInputToPsbtByType(spendable: any, type: string, psbt: Psbt, bip32: B
       //fail silently
     }
   } else if (type === "pubkeyhash") {
+    const { tx } = await OrditApi.fetchTx({ txId: spendable.txid, hex: true, ordinals: false });
     try {
       psbt.addInput({
         hash: spendable.txid,
-        index: parseInt(spendable.n),
-        nonWitnessUtxo: Buffer.from(spendable.txhex, "hex")
+        index: spendable.n,
+        nonWitnessUtxo: Buffer.from(tx.hex!, "hex")
       });
 
       return true;
