@@ -2,8 +2,9 @@ import * as ecc from "@bitcoinerlab/secp256k1"
 import BIP32Factory, { BIP32API } from "bip32"
 import { Network, Psbt } from "bitcoinjs-lib"
 
+import { addressTypeToName } from "../addresses/formats"
 import { OrditApi } from "../api"
-import { createTransaction, getNetwork } from "../utils"
+import { calculateTxFee, createTransaction, getNetwork } from "../utils"
 import { GetWalletOptions, getWalletWithBalances } from "../wallet"
 
 export async function createPsbt({
@@ -13,7 +14,7 @@ export async function createPsbt({
   ins,
   outs,
   safeMode = "on",
-  satsPerByte
+  satsPerByte = 10
 }: CreatePsbtOptions) {
   const netWorkObj = getNetwork(network)
   const bip32 = BIP32Factory(ecc)
@@ -31,11 +32,9 @@ export async function createPsbt({
     )
   }
 
-  let fees = 0
   let change = 0
   const dust = 600
   let inputs_used = 0
-  const sats_per_byte = satsPerByte ?? 10
   let total_cardinals_to_send = 0
   let total_cardinals_available = 0
   const unsupported_inputs = []
@@ -65,8 +64,6 @@ export async function createPsbt({
         const scriptPubKeyAddress = spendable.scriptPubKey.address
         const scriptPubKeyType = spendable.scriptPubKey.type as string
 
-        fees = (80 + (inputs_used + 1) * 180) * sats_per_byte
-
         if (input.address === "any") {
           ins[idx].address = scriptPubKeyAddress
         }
@@ -95,6 +92,14 @@ export async function createPsbt({
       }
     }
   }
+
+  // incorrect output: missing witness-script
+  const fees = calculateTxFee({
+    totalInputs: unspents_to_use.length,
+    totalOutputs: outs.length,
+    satsPerByte: satsPerByte!,
+    type: addressTypeToName[format]
+  })
 
   if (!unspents_to_use.length) {
     throw new Error(
@@ -210,6 +215,7 @@ async function addInputToPsbtByType(spendable: any, type: string, psbt: Psbt, bi
 }
 
 export type CreatePsbtOptions = GetWalletOptions & {
+  format: Exclude<GetWalletOptions["format"], "all">
   satsPerByte?: number
   ins: any[]
   outs: any[]
