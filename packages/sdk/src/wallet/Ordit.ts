@@ -324,6 +324,7 @@ export interface Input {
 }
 
 export interface SignPSBTOptions {
-  finalized?: boolean;
-  tweak?: boolean;
+  extractTx?: boolean
+  finalize?: boolean
+  isRevealTx?: boolean
 }
