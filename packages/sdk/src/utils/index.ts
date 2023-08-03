@@ -3,8 +3,7 @@ import { BIP32Interface } from "bip32";
 import * as bitcoin from "bitcoinjs-lib";
 import ECPairFactory from "ecpair";
 
-import { AddressFormats, AddressTypes } from "../addresses/formats";
-import { Network } from "../config/types";
+import { CalculateTxFeeOptions, CalculateTxWeightOptions } from "./types"
 
 export function getNetwork(value: Network) {
   if (value === "mainnet") {
@@ -101,5 +100,48 @@ export function tweakSigner(signer: bitcoin.Signer, opts: any = {}): bitcoin.Sig
 }
 
 export function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
-  return bitcoin.crypto.taggedHash("TapTweak", Buffer.concat(h ? [pubKey, h] : [pubKey]));
+
+export function calculateTxFee({
+  totalInputs,
+  totalOutputs,
+  satsPerByte,
+  type,
+  additional = {}
+}: CalculateTxFeeOptions): number {
+  const txWeight = calculateTxWeight({ totalInputs, totalOutputs, type, additional })
+  return txWeight * satsPerByte
+}
+
+export function calculateTxWeight({ totalInputs, totalOutputs, type, additional }: CalculateTxWeightOptions) {
+  const baseWeight = getInputOutputBaseWeightByType(type)
+
+  const inputVBytes = baseWeight.input * totalInputs
+  const outputVBytes = baseWeight.output * totalOutputs
+  const baseVBytes = inputVBytes + outputVBytes + baseWeight.txHeader
+  const additionalVBytes =
+    additional && Buffer.isBuffer(additional?.witnessScript) ? additional.witnessScript.byteLength : 0
+  const weight = 3 * baseVBytes + (baseVBytes + additionalVBytes)
+  const vSize = Math.ceil(weight / 4)
+  console.log("weight >>", inputVBytes, outputVBytes, baseVBytes, additionalVBytes, weight, vSize)
+
+  return vSize
+}
+
+export function getInputOutputBaseWeightByType(type: AddressFormats) {
+  switch (type) {
+    case "taproot":
+      return { input: 57.5, output: 43, txHeader: 10.5 }
+
+    case "segwit":
+      return { input: 68, output: 31, txHeader: 10.5 }
+
+    case "nested-segwit":
+      return { input: 68, output: 32, txHeader: 10.5 }
+
+    case "legacy":
+      return { input: 147.5, output: 34, txHeader: 10.5 }
+
+    default:
+      throw new Error("Invalid type")
+  }
 }

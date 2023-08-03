@@ -4,6 +4,7 @@ import { Tapleaf } from "bitcoinjs-lib/src/types"
 
 import {
   buildWitnessScript,
+  calculateTxFee,
   calculateTxFeeWithRate,
   createTransaction,
   getAddressesFromPublicKey,
@@ -201,20 +202,25 @@ export class OrdTransaction {
       redeem: redeemScript
     })
 
-    const fees = (80 + 1 * 180) * this.feeRate
-    const scriptLength = witnessScript.toString("hex").length
-    const scriptFees = Math.ceil((scriptLength / 10) * this.feeRate + fees)
+    const fees = calculateTxFee({
+      totalInputs: 1,
+      totalOutputs: 1,
+      satsPerByte: this.feeRate,
+      type: "taproot",
+      additional: { witnessScript }
+    })
+
     const customOutsAmount = this.#outs.reduce((acc, cur) => {
       return acc + cur.value
     }, 0)
 
-    this.#feeForWitnessData = scriptFees
+    this.#feeForWitnessData = fees
     this.#commitAddress = inscribePayTx.address!
     this.#inscribePayTx = inscribePayTx
 
     return {
       address: inscribePayTx.address!,
-      revealFee: this.postage + scriptFees + customOutsAmount
+      revealFee: this.postage + fees + customOutsAmount
     }
   }
 
