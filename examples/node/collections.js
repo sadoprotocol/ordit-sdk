@@ -58,7 +58,7 @@ async function publish() {
 
     // sign transaction
     const psbtHex = transaction.toHex();
-    const sig = wallet.signPsbt(psbtHex, { finalized: true });
+    const sig = wallet.signPsbt(psbtHex, { isRevealTx: true });
     // console.log(JSON.stringify(sig, null, 2))
     // Broadcast transaction
     const submittedTx = await wallet.relayTx(sig, "testnet");
@@ -117,7 +117,7 @@ async function mint() {
 
     // sign transaction
     const psbtHex = transaction.toHex();
-    const sig = userWallet.signPsbt(psbtHex, { finalized: true });
+    const sig = userWallet.signPsbt(psbtHex, { isRevealTx: true });
     // console.log(JSON.stringify(sig, null, 2))
     // Broadcast transaction
     const submittedTx = await userWallet.relayTx(sig, "testnet");

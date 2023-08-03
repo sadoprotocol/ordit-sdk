@@ -47,7 +47,7 @@ async function createBuyOrder({ sellerPSBT }) {
         inscriptionOutPoint: '0f3891f61b944c31fb48b0d9e770dc9e66a4b49097027be53b078be67aca72d4:0'
     })
     
-    const signature = buyerWallet.signPsbt(buyerPSBT.toHex(), { finalized: true, extractTx: true })
+    const signature = buyerWallet.signPsbt(buyerPSBT.toHex())
     const tx = await buyerWallet.relayTx(signature, 'testnet')
 
     return tx

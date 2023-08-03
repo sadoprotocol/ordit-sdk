@@ -21,7 +21,7 @@ async function main() {
 
     wallet.setDefaultAddress('taproot')
 
-    const signature = await wallet.signPsbt(psbt.hex, { finalized: true, tweak: true })
+    const signature = await wallet.signPsbt(psbt.hex)
     const txResponse = await wallet.relayTx(signature, 'testnet')
 
     console.log("tx >>", txResponse)
