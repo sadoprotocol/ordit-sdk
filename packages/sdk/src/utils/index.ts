@@ -5,7 +5,7 @@ import ECPairFactory from "ecpair"
 
 import { AddressFormats, AddressTypes } from "../addresses/formats"
 import { Network } from "../config/types"
-import { CalculateTxFeeOptions, CalculateTxWeightOptions } from "./types"
+import { CalculateTxFeeOptions, CalculateTxVirtualSizeOptions } from "./types"
 
 export function getNetwork(value: Network) {
   if (value === "mainnet") {
@@ -112,11 +112,11 @@ export function calculateTxFee({
   type,
   additional = {}
 }: CalculateTxFeeOptions): number {
-  const txWeight = calculateTxWeight({ totalInputs, totalOutputs, type, additional })
+  const txWeight = calculateTxVirtualSize({ totalInputs, totalOutputs, type, additional })
   return txWeight * satsPerByte
 }
 
-export function calculateTxWeight({ totalInputs, totalOutputs, type, additional }: CalculateTxWeightOptions) {
+export function calculateTxVirtualSize({ totalInputs, totalOutputs, type, additional }: CalculateTxVirtualSizeOptions) {
   const baseWeight = getInputOutputBaseWeightByType(type)
 
   const inputVBytes = baseWeight.input * totalInputs
@@ -126,7 +126,6 @@ export function calculateTxWeight({ totalInputs, totalOutputs, type, additional 
     additional && Buffer.isBuffer(additional?.witnessScript) ? additional.witnessScript.byteLength : 0
   const weight = 3 * baseVBytes + (baseVBytes + additionalVBytes)
   const vSize = Math.ceil(weight / 4)
-  console.log("weight >>", inputVBytes, outputVBytes, baseVBytes, additionalVBytes, weight, vSize)
 
   return vSize
 }

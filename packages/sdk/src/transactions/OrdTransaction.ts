@@ -202,6 +202,7 @@ export class OrdTransaction {
       redeem: redeemScript
     })
 
+    // inscription tx always have 1 input and 1 output
     const fees = calculateTxFee({
       totalInputs: 1,
       totalOutputs: 1,

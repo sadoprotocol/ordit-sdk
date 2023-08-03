@@ -10,4 +10,4 @@ export interface CalculateTxFeeOptions {
   }
 }
 
-export type CalculateTxWeightOptions = Omit<CalculateTxFeeOptions, "satsPerByte">
+export type CalculateTxVirtualSizeOptions = Omit<CalculateTxFeeOptions, "satsPerByte">
