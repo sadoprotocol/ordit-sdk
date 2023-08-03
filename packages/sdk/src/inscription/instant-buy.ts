@@ -30,7 +30,7 @@ export async function generateSellerPsbt({
     network
   });
 
-  const networkObj = getNetwork("testnet");
+  const networkObj = getNetwork(network)
   const psbt = new bitcoin.Psbt({ network: networkObj });
 
   psbt.addInput(inputs[0]);
