@@ -1,6 +1,6 @@
 import { Ordit } from "@sadoprotocol/ordit-sdk"
 
-const MNEMONIC = "caution curtain there off know kit market gather slim april dutch sister"
+const MNEMONIC = "<MNEMONIC>"
 
 async function main() {
   // init wallet

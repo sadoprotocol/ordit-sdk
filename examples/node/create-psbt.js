@@ -13,9 +13,9 @@ async function main() {
         network: 'testnet'
     })
 
-    const WORDS = "caution curtain there off know kit market gather slim april dutch sister"; // Generated HD wallet seed phrase
+    const MNEMONIC = "<MNEMONIC>"; // Generated HD wallet seed phrase
     const wallet = new Ordit({
-        bip39: WORDS,
+        bip39: MNEMONIC,
         network: "testnet"
     });
 
