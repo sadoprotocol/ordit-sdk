@@ -72,7 +72,7 @@ export async function generateBuyerPsbt({
       throw new Error("Outpoint not found.");
     }
 
-    postage = output.value * 1e8;
+    postage = parseInt((output.value * 1e8).toString());
   } catch (error) {
     throw new Error(error.message);
   }
@@ -155,7 +155,7 @@ export async function generateBuyerPsbt({
   // Add dummy output
   psbt.addOutput({
     address: address.address!,
-    value: dummyUtxos[0].sats + dummyUtxos[1].sats + ordOutNumber
+    value: dummyUtxos[0].sats + dummyUtxos[1].sats
   });
 
   // Add ordinal output
