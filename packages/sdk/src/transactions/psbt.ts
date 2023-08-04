@@ -1,222 +1,238 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
-import BIP32Factory, { BIP32API } from "bip32"
-import { Network, Psbt } from "bitcoinjs-lib"
+import { BIP32Factory } from "bip32"
+import { Psbt } from "bitcoinjs-lib"
 
+import { getAddressType } from "../addresses"
 import { addressTypeToName } from "../addresses/formats"
 import { OrditApi } from "../api"
-import { calculateTxFee, createTransaction, getNetwork } from "../utils"
-import { GetWalletOptions, getWalletWithBalances } from "../wallet"
+import { Network } from "../config/types"
+import { calculateTxFee, createTransaction, getNetwork, toXOnly } from "../utils"
+import { GetWalletOptions } from "../wallet"
+import { UTXO } from "./types"
+
+const bip32 = BIP32Factory(ecc)
 
 export async function createPsbt({
   network,
-  format,
   pubKey,
   ins,
   outs,
+  satsPerByte = 10,
   safeMode = "on",
-  satsPerByte = 10
+  enableRBF = true
 }: CreatePsbtOptions) {
-  const netWorkObj = getNetwork(network)
-  const bip32 = BIP32Factory(ecc)
-
-  const walletWithBalances = await getWalletWithBalances({
-    pubKey,
-    format,
+  if (!ins.length || !outs.length) {
+    throw new Error("Invalid request")
+  }
+  const { address } = ins[0]
+  const { spendableUTXOs, unspendableUTXOs, totalUTXOs } = await OrditApi.fetchUnspentUTXOs({
+    address,
     network,
-    safeMode
+    type: safeMode === "off" ? "all" : "spendable"
   })
 
-  if (walletWithBalances?.spendables === undefined) {
-    throw new Error(
-      "The derived wallet doesn't contain any spendable sats. It may be empty or contain sats that are either linked to inscriptions or tied to ordinals."
-    )
+  if (!totalUTXOs) {
+    throw new Error("No spendable UTXOs")
   }
 
-  let change = 0
-  const dust = 600
-  let inputs_used = 0
-  let total_cardinals_to_send = 0
-  let total_cardinals_available = 0
-  const unsupported_inputs = []
-  const unspents_to_use = []
-  const xverse_inputs = []
+  const nativeNetwork = getNetwork(network)
+  const psbt = new Psbt({ network: nativeNetwork })
+  const inputSats = spendableUTXOs
+    .concat(safeMode === "off" ? unspendableUTXOs : [])
+    .reduce((acc, utxo) => (acc += utxo.sats), 0)
+  const outputSats = outs.reduce((acc, utxo) => (acc += utxo.cardinals), 0)
 
-  const psbt = new Psbt({ network: netWorkObj })
+  // add inputs
+  const witnessScripts: Buffer[] = []
+  for (const utxo of spendableUTXOs) {
+    if (utxo.scriptPubKey.address !== address) continue
 
-  outs.forEach((output) => {
-    try {
-      if (!output.cardinals) throw new Error("No cardinals in output.")
-
-      total_cardinals_to_send = +parseInt(output.cardinals)
-      psbt.addOutput({
-        address: output.address,
-        value: parseInt(output.cardinals)
-      })
-    } catch (error) {
-      //handle error
-    }
-  })
-
-  for (const [idx, input] of ins.entries()) {
-    if (input.address) {
-      for (const spendable of walletWithBalances.spendables) {
-        const sats = spendable.sats
-        const scriptPubKeyAddress = spendable.scriptPubKey.address
-        const scriptPubKeyType = spendable.scriptPubKey.type as string
-
-        if (input.address === "any") {
-          ins[idx].address = scriptPubKeyAddress
-        }
-
-        if (input.address === scriptPubKeyAddress) {
-          const addedInputSuccessfully = await addInputToPsbtByType(
-            spendable,
-            scriptPubKeyType,
-            psbt,
-            bip32,
-            netWorkObj
-          )
-
-          if (addedInputSuccessfully) {
-            unspents_to_use.push(spendable)
-            total_cardinals_available += sats
-            xverse_inputs.push({
-              address: scriptPubKeyAddress,
-              signingIndexes: [inputs_used]
-            })
-            inputs_used++
-          } else {
-            unsupported_inputs.push(spendable)
-          }
-        }
-      }
-    }
+    const payload = await processInput(utxo, pubKey, network, enableRBF)
+    payload.witnessUtxo?.script && witnessScripts.push(payload.witnessUtxo?.script)
+    psbt.addInput(payload)
   }
 
-  // incorrect output: missing witness-script
   const fees = calculateTxFee({
-    totalInputs: unspents_to_use.length,
+    totalInputs: totalUTXOs, // select only relevant utxos to spend. NOT ALL!
     totalOutputs: outs.length,
-    satsPerByte: satsPerByte!,
-    type: addressTypeToName[format]
+    satsPerByte,
+    type: addressTypeToName[getAddressType(address, network)],
+    additional: { witnessScripts }
   })
 
-  if (!unspents_to_use.length) {
-    throw new Error(
-      `Not enough input value to cover outputs and fees. Total cardinals available: '${total_cardinals_available}'. Cardinals to send: '${total_cardinals_to_send}'. Estimated fees: '${fees}'.`
-    )
+  const remainingBalance = inputSats - outputSats - fees
+  if (remainingBalance < 0) {
+    throw new Error(`Insufficient balance. Available: ${inputSats}. Attemping to spend: ${outputSats}. Fees: ${fees}`)
   }
 
-  change = total_cardinals_available - (total_cardinals_to_send + fees)
-
-  if (change < 0) {
-    throw new Error(`Insufficient balance for tx. Deposit ${change * -1} sats or adjust transfer amount to proceed`)
-  }
-
-  if (change >= dust) {
-    psbt.addOutput({
-      address: ins[0].address,
-      value: change
+  const isChangeOwed = remainingBalance > 600
+  if (isChangeOwed) {
+    outs.push({
+      address,
+      cardinals: remainingBalance
     })
   }
 
-  const psbtHex = psbt.toHex()
-  const psbtBase64 = psbt.toBase64()
+  // add outputs
+  outs.forEach((out) => {
+    psbt.addOutput({
+      address: out.address,
+      value: out.cardinals
+    })
+  })
 
   return {
-    hex: psbtHex,
-    base64: psbtBase64
+    hex: psbt.toHex(),
+    base64: psbt.toBase64()
   }
 }
 
-async function addInputToPsbtByType(spendable: any, type: string, psbt: Psbt, bip32: BIP32API, network: Network) {
-  if (type === "witness_v1_taproot") {
-    const chainCode = Buffer.alloc(32)
-    chainCode.fill(1)
+export async function processInput(utxo: UTXO, pubKey: string, network: Network, enableRBF = true): Promise<InputType> {
+  switch (utxo.scriptPubKey.type) {
+    case "witness_v1_taproot":
+      return generateTaprootInput(utxo, pubKey, network, enableRBF)
 
-    let childNodeXOnlyPubkey = Buffer.from(spendable.pub, "hex")
-    try {
-      const key = bip32.fromPublicKey(Buffer.from(spendable.pub, "hex"), chainCode, network)
-      childNodeXOnlyPubkey = key.publicKey.subarray(1, 33)
-    } catch (error) {
-      // fail silently
-    }
+    case "witness_v0_scripthash":
+      return generateSegwitInput(utxo, pubKey, network, enableRBF)
 
-    const p2tr = createTransaction(childNodeXOnlyPubkey, "p2tr", network)
+    case "scripthash":
+      return generateNestedSegwitInput(utxo, pubKey, network, enableRBF)
 
-    if (p2tr && p2tr.output) {
-      psbt.addInput({
-        hash: spendable.txid,
-        index: parseInt(spendable.n),
-        tapInternalKey: childNodeXOnlyPubkey,
-        witnessUtxo: {
-          script: p2tr.output,
-          value: parseInt(spendable.sats)
-        }
-      })
+    case "pubkeyhash":
+      return generateLegacyInput(utxo, network, enableRBF)
 
-      return true
-    }
-  } else if (type === "witness_v0_keyhash") {
-    try {
-      const p2wpkh = createTransaction(Buffer.from(spendable.pub, "hex"), "p2wpkh", network)
+    default:
+      throw new Error("invalid script pub type")
+  }
+}
 
-      if (p2wpkh && p2wpkh.output) {
-        psbt.addInput({
-          hash: spendable.txid,
-          index: parseInt(spendable.n),
-          witnessUtxo: {
-            script: p2wpkh.output,
-            value: parseInt(spendable.sats)
-          }
-        })
-      }
+function generateTaprootInput(utxo: UTXO, pubKey: string, network: Network, enableRPF = true): TaprootInputType {
+  const chainCode = Buffer.alloc(32)
+  chainCode.fill(1)
 
-      return true
-    } catch (e) {
-      //fail silently
-    }
-  } else if (type === "scripthash") {
-    try {
-      const p2sh = createTransaction(Buffer.from(spendable.pub, "hex"), "p2sh", network)
+  const key = bip32.fromPublicKey(Buffer.from(pubKey, "hex"), chainCode, getNetwork(network))
+  const childNodeXOnlyPubkey = toXOnly(key.publicKey)
 
-      if (p2sh && p2sh.output && p2sh.redeem) {
-        psbt.addInput({
-          hash: spendable.txid,
-          index: parseInt(spendable.n),
-          redeemScript: p2sh.redeem.output,
-          witnessUtxo: {
-            script: p2sh.output,
-            value: parseInt(spendable.sats)
-          }
-        })
-
-        return true
-      }
-    } catch (error) {
-      //fail silently
-    }
-  } else if (type === "pubkeyhash") {
-    const { tx } = await OrditApi.fetchTx({ txId: spendable.txid, hex: true, ordinals: false })
-    try {
-      psbt.addInput({
-        hash: spendable.txid,
-        index: spendable.n,
-        nonWitnessUtxo: Buffer.from(tx.hex!, "hex")
-      })
-
-      return true
-    } catch (e) {
-      //fail silently
-    }
+  const p2tr = createTransaction(childNodeXOnlyPubkey, "p2tr", network)
+  if (!p2tr || !p2tr.output) {
+    throw new Error("Unable to process p2tr input")
   }
 
-  return false
+  return {
+    hash: utxo.txid,
+    index: utxo.n,
+    sequence: enableRPF ? 0xfffffffd : undefined,
+    tapInternalKey: childNodeXOnlyPubkey,
+    witnessUtxo: {
+      script: p2tr.output,
+      value: utxo.sats
+    }
+  }
 }
+
+function generateSegwitInput(utxo: UTXO, pubKey: string, network: Network, enableRPF = true): SegwitInputType {
+  const p2wpkh = createTransaction(Buffer.from(pubKey, "hex"), "p2wpkh", network)
+  if (!p2wpkh || !p2wpkh.output) {
+    throw new Error("Unable to process Segwit input")
+  }
+
+  return {
+    hash: utxo.txid,
+    index: utxo.n,
+    sequence: enableRPF ? 0xfffffffd : undefined,
+    witnessUtxo: {
+      script: p2wpkh.output,
+      value: utxo.sats
+    }
+  }
+}
+
+function generateNestedSegwitInput(
+  utxo: UTXO,
+  pubKey: string,
+  network: Network,
+  enableRPF = true
+): NestedSegwitInputType {
+  const p2sh = createTransaction(Buffer.from(pubKey, "hex"), "p2sh", network)
+  if (!p2sh || !p2sh.output || !p2sh.redeem) {
+    throw new Error("Unable to process Segwit input")
+  }
+
+  return {
+    hash: utxo.txid,
+    index: utxo.n,
+    sequence: enableRPF ? 0xfffffffd : undefined,
+    redeemScript: p2sh.redeem.output,
+    witnessUtxo: {
+      script: p2sh.output,
+      value: utxo.sats
+    }
+  }
+}
+
+async function generateLegacyInput(utxo: UTXO, network: Network, enableRPF = true): Promise<LegacyInputType> {
+  const { tx } = await OrditApi.fetchTx({ txId: utxo.txid, hex: true, ordinals: false, network })
+  if (!tx) {
+    throw new Error("Unable to process Legacy input")
+  }
+
+  return {
+    hash: utxo.txid,
+    index: utxo.n,
+    sequence: enableRPF ? 0xfffffffd : undefined,
+    nonWitnessUtxo: Buffer.from(tx.hex!, "hex")
+  }
+}
+
+// TODO: replace below interfaces and custom types w/ PsbtInputExtended from bitcoinjs-lib
+interface TaprootInputType {
+  hash: string
+  index: number
+  sequence?: number
+  tapInternalKey?: Buffer
+  witnessUtxo?: {
+    script: Buffer
+    value: number
+  }
+  nonWitnessUtxo?: never
+}
+
+interface SegwitInputType {
+  hash: string
+  index: number
+  sequence?: number
+  witnessUtxo?: {
+    script: Buffer
+    value: number
+  }
+  nonWitnessUtxo?: never
+}
+
+interface NestedSegwitInputType {
+  hash: string
+  index: number
+  sequence?: number
+  redeemScript?: Buffer | undefined
+  witnessUtxo?: {
+    script: Buffer
+    value: number
+  }
+  nonWitnessUtxo?: never
+}
+
+interface LegacyInputType {
+  hash: string
+  index: number
+  sequence?: number
+  nonWitnessUtxo?: Buffer
+  witnessUtxo?: never
+}
+
+type InputType = TaprootInputType | SegwitInputType | NestedSegwitInputType | LegacyInputType
 
 export type CreatePsbtOptions = GetWalletOptions & {
-  format: Exclude<GetWalletOptions["format"], "all">
   satsPerByte?: number
   ins: any[]
   outs: any[]
+  enableRBF: boolean
 }
