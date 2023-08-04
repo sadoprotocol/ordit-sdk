@@ -20,13 +20,21 @@ export class OrditApi {
       throw new Error('Invalid address')
     }
 
-    const utxos = await rpc[network].call<UTXO[]>('GetUnspents', { 
-      address, 
-      options: {
-        allowedrarity: rarity,
-        safetospend: type === "spendable",
-      }
-    }, rpc.id)
+    const utxos = await rpc[network].call<UTXO[]>(
+      "GetUnspents",
+      {
+        address,
+        options: {
+          allowedrarity: rarity,
+          safetospend: type === "spendable"
+        },
+        pagination: {
+          page: 1,
+          limit: 25
+        }
+      },
+      rpc.id
+    )
 
     const { spendableUTXOs, unspendableUTXOs } = utxos.reduce((acc, utxo) => {
       if(utxo.inscriptions?.length && !utxo.safeToSpend) {
