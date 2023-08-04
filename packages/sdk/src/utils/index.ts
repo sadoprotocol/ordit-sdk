@@ -117,20 +117,20 @@ export function calculateTxFee({
 }
 
 export function calculateTxVirtualSize({ totalInputs, totalOutputs, type, additional }: CalculateTxVirtualSizeOptions) {
-  const baseWeight = getInputOutputBaseWeightByType(type)
+  const baseWeight = getInputOutputBaseSizeByType(type)
 
   const inputVBytes = baseWeight.input * totalInputs
   const outputVBytes = baseWeight.output * totalOutputs
   const baseVBytes = inputVBytes + outputVBytes + baseWeight.txHeader
-  const additionalVBytes =
-    additional && Buffer.isBuffer(additional?.witnessScript) ? additional.witnessScript.byteLength : 0
+  const additionalVBytes = additional?.witnessScripts?.reduce((acc, script) => (acc += script.byteLength), 0) || 0
+
   const weight = 3 * baseVBytes + (baseVBytes + additionalVBytes)
   const vSize = Math.ceil(weight / 4)
 
   return vSize
 }
 
-export function getInputOutputBaseWeightByType(type: AddressFormats) {
+export function getInputOutputBaseSizeByType(type: AddressFormats) {
   switch (type) {
     case "taproot":
       return { input: 57.5, output: 43, txHeader: 10.5 }

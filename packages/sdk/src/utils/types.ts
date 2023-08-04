@@ -6,7 +6,7 @@ export interface CalculateTxFeeOptions {
   satsPerByte: number
   type: AddressFormats
   additional?: {
-    witnessScript?: Buffer
+    witnessScripts?: Buffer[]
   }
 }
 

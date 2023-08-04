@@ -208,7 +208,7 @@ export class OrdTransaction {
       totalOutputs: 1,
       satsPerByte: this.feeRate,
       type: "taproot",
-      additional: { witnessScript }
+      additional: { witnessScripts: [witnessScript] }
     })
 
     const customOutsAmount = this.#outs.reduce((acc, cur) => {
