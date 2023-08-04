@@ -6,12 +6,11 @@ import {
   AddressTypes,
   calculateTxFee,
   calculateTxFeeWithRate,
-  createTransaction,
   getAddressesFromPublicKey,
   getNetwork,
+  InputType,
   OrditApi,
-  processInput,
-  toXOnly
+  processInput
 } from ".."
 import { Network } from "../config/types"
 
@@ -102,31 +101,16 @@ export async function generateBuyerPsbt({
 
   let totalInput = 0
 
+  const witnessScripts: Buffer[] = []
+  const usedUTXOTxIds: string[] = []
   for (let i = 0; i < 2; i++) {
     const dummyUtxo = dummyUtxos[i]
-    const { rawTx } = await OrditApi.fetchTx({ txId: dummyUtxo.txid, network, hex: true })
-    if (!rawTx) {
-      throw new Error("Failed to get raw transaction for id: " + dummyUtxo.txid)
-    }
+    if (usedUTXOTxIds.includes(dummyUtxo.txid)) continue
 
-    if (format !== "p2tr") {
-      for (const output in rawTx.outs) {
-        try {
-          rawTx.setWitness(parseInt(output), [])
-        } catch {}
-      }
-    }
+    const input = await processInput({ utxo: dummyUtxo, pubKey: publicKey, network })
 
-    const p2shInputRedeemScript: any = {}
-    const p2shInputWitnessUTXO: any = {}
-
-    const input = processInput(dummyUtxo, publicKey, network)
-
-    psbt.addInput({
-      ...input,
-      ...p2shInputWitnessUTXO,
-      ...p2shInputRedeemScript
-    })
+    usedUTXOTxIds.push(input.hash)
+    psbt.addInput(input)
     totalInput += dummyUtxo.sats
   }
 
@@ -154,48 +138,23 @@ export async function generateBuyerPsbt({
 
   for (let i = 0; i < spendableUTXOs.length; i++) {
     const utxo = spendableUTXOs[i]
+    if (usedUTXOTxIds.includes(utxo.txid)) continue
 
-    const { rawTx } = await OrditApi.fetchTx({ txId: utxo.txid, network, hex: true })
+    const input = await processInput({ utxo, pubKey: publicKey, network })
+    input.witnessUtxo?.script && witnessScripts.push(input.witnessUtxo?.script)
 
-    if (format !== "p2tr") {
-      for (const output in rawTx?.outs) {
-        try {
-          rawTx.setWitness(parseInt(output), [])
-        } catch {}
-      }
-    }
+    usedUTXOTxIds.push(input.hash)
 
-    const input: any = {
-      hash: utxo.txid,
-      index: utxo.n,
-      nonWitnessUtxo: rawTx?.toBuffer(),
-      sequence: 0xfffffffd // Needs to be at least 2 below max int value to be RBF
-    }
-
-    if (pubKeyType === "taproot") {
-      const xKey = toXOnly(Buffer.from(publicKey, "hex"))
-      const p2tr = createTransaction(xKey, "p2tr", network)
-
-      input.tapInternalKey = toXOnly(Buffer.from(publicKey, "hex"))
-      input.witnessUtxo = {
-        script: p2tr.output!,
-        value: utxo.sats
-      }
-    }
-
-    psbt.addInput({
-      ...input
-    })
-
+    psbt.addInput(input)
     totalInput += utxo.sats
   }
 
-  // const fee = calculateTxFeeWithRate(psbt.txInputs.length, psbt.txOutputs.length, feeRate);
   const fee = calculateTxFee({
     totalInputs: psbt.txInputs.length,
     totalOutputs: psbt.txOutputs.length,
     satsPerByte: feeRate,
-    type: pubKeyType
+    type: pubKeyType,
+    additional: { witnessScripts }
   })
 
   const totalOutput = psbt.txOutputs.reduce((partialSum, a) => partialSum + a.value, 0)
@@ -238,28 +197,7 @@ export async function generateDummyUtxos({
 
   for (let i = 0; i < spendableUTXOs.length; i++) {
     const utxo = spendableUTXOs[i]
-    const { rawTx } = await OrditApi.fetchTx({ txId: utxo.txid, network, hex: true })
-    if (!rawTx) {
-      throw new Error("Failed to get raw transaction for id: " + utxo.txid)
-    }
-
-    const input: any = {
-      hash: utxo.txid,
-      index: utxo.n,
-      nonWitnessUtxo: rawTx.toBuffer(),
-      sequence: 0xfffffffd // Needs to be at least 2 below max int value to be RBF
-    }
-
-    if (pubKeyType === "taproot") {
-      const xKey = toXOnly(Buffer.from(publicKey, "hex"))
-      const p2tr = createTransaction(xKey, "p2tr", network)
-
-      input.tapInternalKey = toXOnly(Buffer.from(publicKey, "hex"))
-      input.witnessUtxo = {
-        script: p2tr.output!,
-        value: utxo.sats
-      }
-    }
+    const input = await processInput({ utxo, pubKey: publicKey, network })
 
     psbt.addInput(input)
 
@@ -313,13 +251,11 @@ export async function getSellerInputsOutputs({
   receiveAddress,
   publicKey,
   pubKeyType = "taproot",
-  network = "testnet",
-  side = "seller"
+  network = "testnet"
 }: GenerateSellerInstantBuyPsbtOptions) {
   const format = addressNameToType[pubKeyType]
   const address = getAddressesFromPublicKey(publicKey, network, format)[0]
-
-  const inputs = []
+  const inputs: InputType[] = []
   const outputs = []
 
   const { totalUTXOs, unspendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
@@ -328,69 +264,23 @@ export async function getSellerInputsOutputs({
     type: "all"
   })
   if (!totalUTXOs) {
-    throw new Error("No UTXOs found.")
+    throw new Error("No UTXOs found")
   }
 
-  let found = false
-
-  for (let i = 0; i < unspendableUTXOs.length; i++) {
-    const unspendableUTXO = unspendableUTXOs[i]
-    if (unspendableUTXO.inscriptions!.find((v: any) => v.outpoint == inscriptionOutPoint)) {
-      if (unspendableUTXO.inscriptions!.length > 1) {
-        throw new Error("Multiple inscriptions! Please split them first.")
-      }
-      const { rawTx } = await OrditApi.fetchTx({ txId: unspendableUTXO.txid, network, hex: true })
-      if (!rawTx) {
-        throw new Error("Failed to get raw transaction for id: " + unspendableUTXO.txid)
-      }
-
-      if (format !== "p2tr") {
-        for (const output in rawTx.outs) {
-          try {
-            rawTx.setWitness(parseInt(output), [])
-          } catch {}
-        }
-      }
-
-      const options: any = {}
-
-      const data: any = {
-        hash: unspendableUTXO.txid,
-        index: unspendableUTXO.n,
-        nonWitnessUtxo: rawTx.toBuffer(),
-        sequence: 0xfffffffd // Needs to be at least 2 below max int value to be RBF
-      }
-      const postage = unspendableUTXO.sats
-
-      if (side === "seller") {
-        options.sighashType = bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY
-      }
-
-      if (format === "p2tr") {
-        const xKey = toXOnly(Buffer.from(publicKey, "hex"))
-        const p2tr = createTransaction(xKey, "p2tr", network)
-
-        data.tapInternalKey = toXOnly(Buffer.from(publicKey, "hex"))
-        data.witnessUtxo = {
-          script: p2tr.output!,
-          value: postage
-        }
-      }
-
-      inputs.push({
-        ...data,
-        ...options
-      })
-      outputs.push({ address: receiveAddress, value: price + postage })
-
-      found = true
-      break
-    }
+  const utxo = unspendableUTXOs.find((utxo) => utxo.inscriptions?.find((i) => i.outpoint === inscriptionOutPoint))
+  if (!utxo) {
+    throw new Error("Inscription not found")
   }
 
-  if (!found) {
-    throw new Error("inscription not found.")
-  }
+  const input = await processInput({
+    utxo,
+    pubKey: publicKey,
+    network,
+    sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY
+  })
+
+  inputs.push(input)
+  outputs.push({ address: receiveAddress, value: price + utxo.sats })
 
   return { inputs, outputs }
 }
@@ -415,7 +305,6 @@ export interface GenerateSellerInstantBuyPsbtOptions {
   publicKey: string
   pubKeyType?: AddressFormats
   network?: Network
-  side?: "seller" | "buyer"
 }
 
 export interface GenerateBuyerInstantBuyPsbtOptions {
