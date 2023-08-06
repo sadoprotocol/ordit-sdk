@@ -90,7 +90,8 @@ export async function generateBuyerPsbt({
   for (let i = 0; i < spendableUTXOs.length; i++) {
     const utxo = spendableUTXOs[i]
 
-    if (utxo.sats >= 580 && utxo.sats <= 1000) {
+    // TODO: move hardcoded value to constants
+    if (utxo.sats >= 600) {
       refundableUTXOs.push(utxo)
     }
   }
