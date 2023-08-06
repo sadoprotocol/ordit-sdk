@@ -14,6 +14,7 @@ import {
   OrditApi
 } from ".."
 import { Network } from "../config/types"
+import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 
 bitcoin.initEccLib(ecc)
 
@@ -125,7 +126,7 @@ export class OrdTransaction {
       })
     }
 
-    if (change > 600) {
+    if (change > MINIMUM_AMOUNT_IN_SATS) {
       let changeAddress = this.#inscribePayTx.address
       if (this.changeAddress) {
         changeAddress = this.changeAddress

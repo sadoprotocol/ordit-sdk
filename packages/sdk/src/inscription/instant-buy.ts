@@ -13,6 +13,7 @@ import {
   processInput
 } from ".."
 import { Network } from "../config/types"
+import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 
 export async function generateSellerPsbt({
   inscriptionOutPoint,
@@ -90,8 +91,7 @@ export async function generateBuyerPsbt({
   for (let i = 0; i < spendableUTXOs.length; i++) {
     const utxo = spendableUTXOs[i]
 
-    // TODO: move hardcoded value to constants
-    if (utxo.sats >= 600) {
+    if (utxo.sats >= MINIMUM_AMOUNT_IN_SATS) {
       refundableUTXOs.push(utxo)
     }
   }
@@ -176,7 +176,7 @@ export async function generateBuyerPsbt({
 }
 
 export async function generateRefundableUTXOs({
-  value = 600,
+  value = MINIMUM_AMOUNT_IN_SATS,
   count = 2,
   publicKey,
   feeRate = 10,

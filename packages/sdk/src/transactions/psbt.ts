@@ -6,6 +6,7 @@ import { getAddressType } from "../addresses"
 import { addressTypeToName } from "../addresses/formats"
 import { OrditApi } from "../api"
 import { Network } from "../config/types"
+import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { calculateTxFee, createTransaction, getNetwork, toXOnly } from "../utils"
 import { GetWalletOptions } from "../wallet"
 import { UTXO } from "./types"
@@ -65,7 +66,7 @@ export async function createPsbt({
     throw new Error(`Insufficient balance. Available: ${inputSats}. Attemping to spend: ${outputSats}. Fees: ${fees}`)
   }
 
-  const isChangeOwed = remainingBalance > 600
+  const isChangeOwed = remainingBalance > MINIMUM_AMOUNT_IN_SATS
   if (isChangeOwed) {
     outs.push({
       address,
