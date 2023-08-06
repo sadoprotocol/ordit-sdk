@@ -95,19 +95,24 @@ export function calculateTxFee({
   totalOutputs,
   satsPerByte,
   type,
-  additional = {}
+  additional: { witnessScripts = [] } = {}
 }: CalculateTxFeeOptions): number {
-  const txWeight = calculateTxVirtualSize({ totalInputs, totalOutputs, type, additional })
+  const txWeight = calculateTxVirtualSize({ totalInputs, totalOutputs, type, additional: { witnessScripts } })
   return txWeight * satsPerByte
 }
 
-export function calculateTxVirtualSize({ totalInputs, totalOutputs, type, additional }: CalculateTxVirtualSizeOptions) {
+export function calculateTxVirtualSize({
+  totalInputs,
+  totalOutputs,
+  type,
+  additional: { witnessScripts = [] } = {}
+}: CalculateTxVirtualSizeOptions) {
   const baseWeight = getInputOutputBaseSizeByType(type)
 
   const inputVBytes = baseWeight.input * totalInputs
   const outputVBytes = baseWeight.output * totalOutputs
   const baseVBytes = inputVBytes + outputVBytes + baseWeight.txHeader
-  const additionalVBytes = additional?.witnessScripts?.reduce((acc, script) => (acc += script.byteLength), 0) || 0
+  const additionalVBytes = witnessScripts.reduce((acc, script) => (acc += script.byteLength), 0) || 0
 
   const weight = 3 * baseVBytes + (baseVBytes + additionalVBytes)
   const vSize = Math.ceil(weight / 4)
