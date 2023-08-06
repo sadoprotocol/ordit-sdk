@@ -19,7 +19,7 @@ export async function generateSellerPsbt({
   price,
   receiveAddress,
   publicKey,
-  pubKeyType = "taproot",
+  pubKeyType,
   network = "testnet"
 }: GenerateSellerInstantBuyPsbtOptions) {
   const { inputs, outputs } = await getSellerInputsOutputs({
@@ -42,7 +42,7 @@ export async function generateSellerPsbt({
 
 export async function generateBuyerPsbt({
   publicKey,
-  pubKeyType = "legacy",
+  pubKeyType,
   feeRate = 10,
   network = "testnet",
   sellerPsbt,
@@ -309,7 +309,7 @@ export interface GenerateSellerInstantBuyPsbtOptions {
 
 export interface GenerateBuyerInstantBuyPsbtOptions {
   publicKey: string
-  pubKeyType?: AddressFormats
+  pubKeyType: AddressFormats
   network?: Network
   feeRate?: number
   inscriptionOutPoint: string
@@ -320,7 +320,7 @@ export interface GenerateRefundableUTXOsOptions {
   value: number
   count: number
   publicKey: string
-  pubKeyType?: AddressFormats
+  pubKeyType: AddressFormats
   network?: Network
   feeRate?: number
 }
