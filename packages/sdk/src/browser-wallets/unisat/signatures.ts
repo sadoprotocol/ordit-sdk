@@ -1,6 +1,6 @@
 import { Psbt } from "bitcoinjs-lib";
 
-import { isUnisatInstalled } from "./utils";
+import { UnisatSignPSBTOptions } from "./types"
 
 export async function signPsbt(psbt: Psbt, { finalize = true }: UnisatSignPSBTOptions = {}) {
   if (!isUnisatInstalled()) {
