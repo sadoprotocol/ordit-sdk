@@ -11,7 +11,7 @@ import {
   AddressFormats,
   addressNameToType,
   generateBuyerPsbt,
-  generateDummyUtxos,
+  generateRefundableUTXOs,
   generateSellerPsbt,
   getAccountDataFromHdNode,
   getAddressesFromPublicKey,
@@ -287,8 +287,8 @@ export class Ordit {
   static instantBuy = {
     generateBuyerPsbt,
     generateSellerPsbt,
-    generateDummyUtxos
-  };
+    generateRefundableUTXOs
+  }
 
   static collection = {
     publish: publishCollection,

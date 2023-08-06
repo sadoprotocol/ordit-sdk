@@ -84,18 +84,18 @@ export async function generateBuyerPsbt({
   }
 
   const psbt = new bitcoin.Psbt({ network: networkObj })
-  const dummyUtxos = []
+  const refundableUTXOs = []
 
-  //find dummy utxos
+  // find refundableUTXOs utxos
   for (let i = 0; i < spendableUTXOs.length; i++) {
     const utxo = spendableUTXOs[i]
 
     if (utxo.sats >= 580 && utxo.sats <= 1000) {
-      dummyUtxos.push(utxo)
+      refundableUTXOs.push(utxo)
     }
   }
 
-  if (dummyUtxos.length < 2 || !spendableUTXOs.length) {
+  if (refundableUTXOs.length < 2 || !spendableUTXOs.length) {
     throw new Error("No suitable UTXOs found.")
   }
 
@@ -104,20 +104,20 @@ export async function generateBuyerPsbt({
   const witnessScripts: Buffer[] = []
   const usedUTXOTxIds: string[] = []
   for (let i = 0; i < 2; i++) {
-    const dummyUtxo = dummyUtxos[i]
-    if (usedUTXOTxIds.includes(dummyUtxo.txid)) continue
+    const refundableUTXO = refundableUTXOs[i]
+    if (usedUTXOTxIds.includes(refundableUTXO.txid)) continue
 
-    const input = await processInput({ utxo: dummyUtxo, pubKey: publicKey, network })
+    const input = await processInput({ utxo: refundableUTXO, pubKey: publicKey, network })
 
     usedUTXOTxIds.push(input.hash)
     psbt.addInput(input)
-    totalInput += dummyUtxo.sats
+    totalInput += refundableUTXO.sats
   }
 
-  // Add dummy output
+  // Add refundable output
   psbt.addOutput({
     address: address.address!,
-    value: dummyUtxos[0].sats + dummyUtxos[1].sats
+    value: refundableUTXOs[0].sats + refundableUTXOs[1].sats
   })
 
   // Add ordinal output
@@ -174,14 +174,14 @@ export async function generateBuyerPsbt({
   return psbt
 }
 
-export async function generateDummyUtxos({
+export async function generateRefundableUTXOs({
   value = 600,
   count = 2,
   publicKey,
   feeRate = 10,
   pubKeyType = "taproot",
   network = "testnet"
-}: GenerateDummyUtxos) {
+}: GenerateRefundableUTXOsOptions) {
   const networkObj = getNetwork(network)
   const format = addressNameToType[pubKeyType]
   const address = getAddressesFromPublicKey(publicKey, network, format)[0]
@@ -206,7 +206,7 @@ export async function generateDummyUtxos({
 
     const fees = calculateTxFeeWithRate(
       paymentUtxoCount,
-      count, // 2-dummy outputs
+      count, // 2-refundable outputs
       feeRate
     )
     if (totalValue >= value * count + fees) {
@@ -216,12 +216,12 @@ export async function generateDummyUtxos({
 
   const finalFees = calculateTxFeeWithRate(
     paymentUtxoCount,
-    count, // 2-dummy outputs
+    count, // 2-refundable outputs
     feeRate
   )
 
   const changeValue = totalValue - value * count - finalFees
-  // We must have enough value to create a dummy utxo and pay for tx fees
+  // We must have enough value to create a refundable utxo and pay for tx fees
   if (changeValue < 0) {
     throw new Error(`You might have pending transactions or not enough fund`)
   }
@@ -316,7 +316,7 @@ export interface GenerateBuyerInstantBuyPsbtOptions {
   sellerPsbt: string
 }
 
-export interface GenerateDummyUtxos {
+export interface GenerateRefundableUTXOsOptions {
   value: number
   count: number
   publicKey: string
