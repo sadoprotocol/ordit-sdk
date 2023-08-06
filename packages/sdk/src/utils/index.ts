@@ -59,21 +59,6 @@ export function hdNodeToChild(
   return node.derivePath(fullDerivationPath)
 }
 
-export function calculateTxFeeWithRate(
-  inputsLength: number,
-  outputsLength: number,
-  feeRate = 10,
-  hasChangeOutput: 0 | 1 = 1
-): number {
-  const baseTxSize = 10
-  const inSize = 180
-  const outSize = 34
-
-  const txSize = baseTxSize + inputsLength * inSize + outputsLength * outSize + hasChangeOutput * outSize
-  const fee = txSize * feeRate
-  return fee
-}
-
 export function toXOnly(pubkey: Buffer): Buffer {
   return pubkey.subarray(1, 33)
 }

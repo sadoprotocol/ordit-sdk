@@ -5,7 +5,6 @@ import {
   addressNameToType,
   AddressTypes,
   calculateTxFee,
-  calculateTxFeeWithRate,
   getAddressesFromPublicKey,
   getNetwork,
   InputType,
@@ -177,10 +176,10 @@ export async function generateBuyerPsbt({
 
 export async function generateRefundableUTXOs({
   value = MINIMUM_AMOUNT_IN_SATS,
-  count = 2,
   publicKey,
+  pubKeyType,
   feeRate = 10,
-  pubKeyType = "taproot",
+  count = 2,
   network = "testnet"
 }: GenerateRefundableUTXOsOptions) {
   const networkObj = getNetwork(network)
@@ -196,30 +195,37 @@ export async function generateRefundableUTXOs({
   let totalValue = 0
   let paymentUtxoCount = 0
 
+  const witnessScripts: Buffer[] = []
   for (let i = 0; i < spendableUTXOs.length; i++) {
     const utxo = spendableUTXOs[i]
     const input = await processInput({ utxo, pubKey: publicKey, network })
 
+    input.witnessUtxo?.script && witnessScripts.push(input.witnessUtxo?.script)
     psbt.addInput(input)
 
     totalValue += utxo.sats
     paymentUtxoCount += 1
 
-    const fees = calculateTxFeeWithRate(
-      paymentUtxoCount,
-      count, // 2-refundable outputs
-      feeRate
-    )
+    const fees = calculateTxFee({
+      totalInputs: paymentUtxoCount,
+      totalOutputs: count,
+      satsPerByte: feeRate,
+      type: pubKeyType,
+      additional: { witnessScripts }
+    })
+
     if (totalValue >= value * count + fees) {
       break
     }
   }
 
-  const finalFees = calculateTxFeeWithRate(
-    paymentUtxoCount,
-    count, // 2-refundable outputs
-    feeRate
-  )
+  const finalFees = calculateTxFee({
+    totalInputs: paymentUtxoCount,
+    totalOutputs: count,
+    satsPerByte: feeRate,
+    type: pubKeyType,
+    additional: { witnessScripts }
+  })
 
   const changeValue = totalValue - value * count - finalFees
   // We must have enough value to create a refundable utxo and pay for tx fees
