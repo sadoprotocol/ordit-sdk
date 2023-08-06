@@ -1,8 +1,6 @@
 import { Ordit } from "@sadoprotocol/ordit-sdk";
-import { base64_encode } from "./utils.js";
 
 const WORDS = "<MNEMONIC PHRASE>";
-const IMG_BASE64 = base64_encode("./assets/collection/cover.png"); // relative path to image
 
 async function publish() {
   // Load wallet
@@ -16,15 +14,15 @@ async function publish() {
 
   //publish
   const transaction = await Ordit.collection.publish({
-    title: "Elemental",
-    description: "Azuki Elementals are a collection of 20,000 characters within the four domains of the Garden.",
-    slug: "elemental",
+    title: "Collection Name",
+    description: "Lorem ipsum something else",
+    slug: "collection-name",
     creator: {
       address: wallet.selectedAddress,
-      email: "iamsaikranthi@gmail.com",
-      name: "Sai Kranthi"
+      email: "your-email@example.com",
+      name: "Your Name"
     },
-    publishers: ["n4PnWbQRkn4XxcYjsSao97D5Xx96SYAvLw"],
+    publishers: ["<publisher-legacy-address>"],
     inscriptions: [
       {
         iid: "el-01",
@@ -37,13 +35,13 @@ async function publish() {
         sri: "sha256-zjQXDuk++5sICrObmfWqAM5EibidXd2emZoUcU2l5Pg="
       }
     ],
-    url: "https://google.com",
+    url: "https://example.com",
     publicKey: wallet.publicKey,
     destination: wallet.selectedAddress,
     changeAddress: wallet.selectedAddress,
     postage: 1000,
-    mediaContent: IMG_BASE64,
-    mediaType: "image/png"
+    mediaContent: 'Collection Name', // this will be inscribed on-chain as primary content
+    mediaType: "text/plain"
   });
 
   const depositDetails = transaction.generateCommit();
@@ -58,7 +56,7 @@ async function publish() {
 
     // sign transaction
     const psbtHex = transaction.toHex();
-    const sig = wallet.signPsbt(psbtHex, { finalized: true });
+    const sig = wallet.signPsbt(psbtHex, { isRevealTx: true });
     // console.log(JSON.stringify(sig, null, 2))
     // Broadcast transaction
     const submittedTx = await wallet.relayTx(sig, "testnet");
@@ -117,7 +115,7 @@ async function mint() {
 
     // sign transaction
     const psbtHex = transaction.toHex();
-    const sig = userWallet.signPsbt(psbtHex, { finalized: true });
+    const sig = userWallet.signPsbt(psbtHex, { isRevealTx: true });
     // console.log(JSON.stringify(sig, null, 2))
     // Broadcast transaction
     const submittedTx = await userWallet.relayTx(sig, "testnet");

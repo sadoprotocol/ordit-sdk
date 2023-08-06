@@ -8,7 +8,8 @@
     "inscribe": "node inscribe",
     "read": "node read",
     "send": "node send",
-    "create-psbt": "node create-psbt"
+    "create-psbt": "node create-psbt",
+    "instant-buy": "node instant-buy"
   },
   "author": "",
   "license": "ISC",

@@ -1,15 +1,16 @@
 import { Psbt } from "bitcoinjs-lib";
 
-import { isUnisatInstalled } from "./utils";
+import { UnisatSignPSBTOptions } from "./types"
+import { isUnisatInstalled } from "./utils"
 
-export async function signPsbt(psbt: Psbt) {
+export async function signPsbt(psbt: Psbt, { finalize = true }: UnisatSignPSBTOptions = {}) {
   if (!isUnisatInstalled()) {
     throw new Error("Unisat not installed.");
   }
 
   const psbtHex = psbt.toHex();
 
-  const signedPsbtHex = await window.unisat.signPsbt(psbtHex);
+  const signedPsbtHex = await window.unisat.signPsbt(psbtHex, { autoFinalized: finalize })
 
   if (!signedPsbtHex) {
     throw new Error("Failed to sign psbt hex using Unisat.");

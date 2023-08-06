@@ -11,7 +11,7 @@ import {
   AddressFormats,
   addressNameToType,
   generateBuyerPsbt,
-  generateDummyUtxos,
+  generateRefundableUTXOs,
   generateSellerPsbt,
   getAccountDataFromHdNode,
   getAddressesFromPublicKey,
@@ -152,7 +152,7 @@ export class Ordit {
     });
   }
 
-  signPsbt(value: string, { finalized = true, tweak = false }: SignPSBTOptions = {}) {
+  signPsbt(value: string, { finalize = true, extractTx = true, isRevealTx = false }: SignPSBTOptions = {}) {
     const networkObj = getNetwork(this.#network);
     let psbt: bitcoin.Psbt | null = null;
 
@@ -188,7 +188,7 @@ export class Ordit {
         const address = bitcoin.address.fromOutputScript(script, networkObj);
 
         // TODO: improvise the below logic by accepting indexes to sign
-        if (!tweak || (tweak && this.selectedAddress === address)) {
+        if (isRevealTx || (!isRevealTx && this.selectedAddress === address)) {
           inputsToSign.push({
             index,
             publicKey: this.publicKey,
@@ -216,7 +216,8 @@ export class Ordit {
             network: networkObj
           });
 
-          const signer = tweak ? tweakedSigner : this.#keyPair;
+          const signer =
+            input.witnessUtxo?.script && input.tapInternalKey && !input.tapLeafScript ? tweakedSigner : this.#keyPair
 
           psbt.signInput(inputsToSign[i].index, signer, inputsToSign[i].sighashTypes);
         } else {
@@ -227,17 +228,16 @@ export class Ordit {
       }
     }
 
-    const psbtHex = psbt.toHex();
-
-    if (finalized) {
-      psbt.finalizeAllInputs();
-
-      const signedHex = psbt.extractTransaction().toHex();
-
-      return signedHex;
+    // TODO: check if psbt has been signed
+    if (finalize) {
+      psbt.finalizeAllInputs()
     }
 
-    return psbtHex;
+    if (extractTx) {
+      return psbt.extractTransaction().toHex()
+    }
+
+    return psbt.toHex()
   }
 
   signMessage(message: string) {
@@ -287,8 +287,8 @@ export class Ordit {
   static instantBuy = {
     generateBuyerPsbt,
     generateSellerPsbt,
-    generateDummyUtxos
-  };
+    generateRefundableUTXOs
+  }
 
   static collection = {
     publish: publishCollection,
@@ -324,6 +324,7 @@ export interface Input {
 }
 
 export interface SignPSBTOptions {
-  finalized?: boolean;
-  tweak?: boolean;
+  extractTx?: boolean
+  finalize?: boolean
+  isRevealTx?: boolean
 }

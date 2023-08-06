@@ -1,10 +1,11 @@
-import { Psbt } from "bitcoinjs-lib";
+import { Psbt } from "bitcoinjs-lib"
 
-import { getAddresses } from "../addresses";
-import { OrditApi } from "../api";
-import { createTransaction, getNetwork } from "../utils";
-import { GetWalletOptions } from "../wallet";
-import { buildWitnessScript } from "./witness";
+import { getAddresses } from "../addresses"
+import { OrditApi } from "../api"
+import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import { createTransaction, getNetwork } from "../utils"
+import { GetWalletOptions } from "../wallet"
+import { buildWitnessScript } from "./witness"
 
 export async function createRevealPsbt(options: CreateRevealPsbtOptions) {
   const networkObj = getNetwork(options.network);
@@ -75,7 +76,7 @@ export async function createRevealPsbt(options: CreateRevealPsbtOptions) {
     value: options.postage
   });
 
-  if (change > 600) {
+  if (change > MINIMUM_AMOUNT_IN_SATS) {
     let changeAddress = inscribePayTx.address;
     if (options.changeAddress) {
       changeAddress = options.changeAddress;
