@@ -8,24 +8,23 @@ import { OrditApi } from "../api"
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { calculateTxFee, createTransaction, getNetwork, toXOnly } from "../utils"
-import { GetWalletOptions } from "../wallet"
+import { OnOffUnion } from "../wallet"
 import { UTXO } from "./types"
 
 const bip32 = BIP32Factory(ecc)
 
 export async function createPsbt({
-  network,
   pubKey,
-  ins,
-  outs,
-  satsPerByte = 10,
+  network,
+  address,
+  outputs,
+  satsPerByte,
   safeMode = "on",
   enableRBF = true
 }: CreatePsbtOptions) {
-  if (!ins.length || !outs.length) {
+  if (!outputs.length) {
     throw new Error("Invalid request")
   }
-  const { address } = ins[0]
   const { spendableUTXOs, unspendableUTXOs, totalUTXOs } = await OrditApi.fetchUnspentUTXOs({
     address,
     network,
@@ -41,7 +40,7 @@ export async function createPsbt({
   const inputSats = spendableUTXOs
     .concat(safeMode === "off" ? unspendableUTXOs : [])
     .reduce((acc, utxo) => (acc += utxo.sats), 0)
-  const outputSats = outs.reduce((acc, utxo) => (acc += utxo.cardinals), 0)
+  const outputSats = outputs.reduce((acc, utxo) => (acc += utxo.cardinals), 0)
 
   // add inputs
   const witnessScripts: Buffer[] = []
@@ -59,7 +58,7 @@ export async function createPsbt({
 
   const fees = calculateTxFee({
     totalInputs: totalUTXOs, // select only relevant utxos to spend. NOT ALL!
-    totalOutputs: outs.length,
+    totalOutputs: outputs.length,
     satsPerByte,
     type: addressTypeToName[getAddressType(address, network)],
     additional: { witnessScripts }
@@ -72,14 +71,14 @@ export async function createPsbt({
 
   const isChangeOwed = remainingBalance > MINIMUM_AMOUNT_IN_SATS
   if (isChangeOwed) {
-    outs.push({
+    outputs.push({
       address,
       cardinals: remainingBalance
     })
   }
 
   // add outputs
-  outs.forEach((out) => {
+  outputs.forEach((out) => {
     psbt.addOutput({
       address: out.address,
       value: out.cardinals
@@ -215,11 +214,17 @@ type NestedSegwitInputType = BaseInputType & {
 
 export type InputType = BaseInputType | TaprootInputType | NestedSegwitInputType
 
-export type CreatePsbtOptions = GetWalletOptions & {
-  satsPerByte?: number
-  ins: any[]
-  outs: any[]
+export type CreatePsbtOptions = {
+  satsPerByte: number
+  address: string
+  outputs: {
+    address: string
+    cardinals: number
+  }[]
   enableRBF: boolean
+  pubKey: string
+  network: Network
+  safeMode?: OnOffUnion
 }
 
 interface ProcessInputOptions {
