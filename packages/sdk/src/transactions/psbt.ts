@@ -1,6 +1,6 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
 import { BIP32Factory } from "bip32"
-import { Psbt, Transaction } from "bitcoinjs-lib"
+import { Psbt } from "bitcoinjs-lib"
 
 import { getAddressType } from "../addresses"
 import { addressTypeToName } from "../addresses/formats"
@@ -91,38 +91,27 @@ export async function createPsbt({
   }
 }
 
-export async function processInput({
-  utxo,
-  pubKey,
-  network,
-  ...options
-}: Omit<ProcessInputOptions, "rawTx">): Promise<InputType> {
+export async function processInput({ utxo, pubKey, network, sighashType }: ProcessInputOptions): Promise<InputType> {
   switch (utxo.scriptPubKey.type) {
     case "witness_v1_taproot":
-      return generateTaprootInput({ utxo, pubKey, network, ...options })
+      return generateTaprootInput({ utxo, pubKey, network, sighashType })
 
     case "witness_v0_scripthash":
     case "witness_v0_keyhash":
-      return generateSegwitInput({ utxo, pubKey, network, ...options })
+      return generateSegwitInput({ utxo, sighashType })
 
     case "scripthash":
-      return generateNestedSegwitInput({ utxo, pubKey, network, ...options })
+      return generateNestedSegwitInput({ utxo, pubKey, network, sighashType })
 
     case "pubkeyhash":
-      const { rawTx } = await OrditApi.fetchTx({ txId: utxo.txid, network, hex: true })
-      return generateLegacyInput({ utxo, rawTx, ...options })
+      return generateLegacyInput({ utxo, sighashType, network })
 
     default:
       throw new Error("invalid script pub type")
   }
 }
 
-function generateTaprootInput({
-  utxo,
-  pubKey,
-  network,
-  sighashType
-}: Omit<ProcessInputOptions, "rawTx">): TaprootInputType {
+function generateTaprootInput({ utxo, pubKey, network, sighashType }: ProcessInputOptions): TaprootInputType {
   const chainCode = Buffer.alloc(32)
   chainCode.fill(1)
 
@@ -145,7 +134,7 @@ function generateTaprootInput({
   }
 }
 
-function generateSegwitInput({ utxo, sighashType }: ProcessInputOptions): BaseInputType {
+function generateSegwitInput({ utxo, sighashType }: Omit<ProcessInputOptions, "pubKey" | "network">): BaseInputType {
   if (!utxo.scriptPubKey.hex) {
     throw new Error("Unable to process Segwit input")
   }
@@ -182,8 +171,13 @@ function generateNestedSegwitInput({ utxo, pubKey, network, sighashType }: Proce
 async function generateLegacyInput({
   utxo,
   sighashType,
-  rawTx
-}: Omit<ProcessInputOptions, "pubKey" | "network">): Promise<BaseInputType> {
+  network
+}: Omit<ProcessInputOptions, "pubKey">): Promise<BaseInputType> {
+  const { rawTx } = await OrditApi.fetchTx({ txId: utxo.txid, network, hex: true })
+  if (!rawTx) {
+    throw new Error("Unable to process legacy input")
+  }
+
   return {
     hash: utxo.txid,
     index: utxo.n,
@@ -232,5 +226,4 @@ interface ProcessInputOptions {
   pubKey: string
   network: Network
   sighashType?: number
-  rawTx?: Transaction
 }
