@@ -102,7 +102,7 @@ export async function processInput({
       return generateTaprootInput({ utxo, pubKey, network, rawTx, enableRBF, ...options })
 
     case "witness_v0_scripthash":
-      return generateSegwitInput({ utxo, pubKey, network, rawTx, enableRBF, ...options })
+    case "witness_v0_keyhash":
 
     case "scripthash":
       return generateNestedSegwitInput({ utxo, pubKey, network, rawTx, enableRBF, ...options })
