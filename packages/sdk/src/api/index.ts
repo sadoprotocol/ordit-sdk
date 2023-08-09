@@ -30,7 +30,7 @@ export class OrditApi {
         },
         pagination: {
           page: 1,
-          limit: 25
+          limit: 50
         }
       },
       rpc.id
