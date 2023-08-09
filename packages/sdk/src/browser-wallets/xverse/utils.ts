@@ -1,13 +1,13 @@
 export function isXverseInstalled() {
   if (typeof window.BitcoinProvider !== "undefined") {
-    return true;
+    return true
   }
 
-  return false;
+  return false
 }
 
 export function fromXOnlyToFullPubkey(xOnly: string) {
-  return `03${xOnly}`; // prepend y-coord/tie-breaker to x-only
+  return `03${xOnly}` // prepend y-coord/tie-breaker to x-only
 }
 
-export type XverseNetwork = "Mainnet" | "Testnet";
+export type XverseNetwork = "Mainnet" | "Testnet"

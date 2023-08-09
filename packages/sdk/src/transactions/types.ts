@@ -48,24 +48,24 @@ export type Transaction = {
 }
 
 export interface ScriptPubKey {
-  asm: string;
-  desc: string;
-  hex: string;
-  address: string;
-  type: string;
+  asm: string
+  desc: string
+  hex: string
+  address: string
+  type: string
 }
 
 export interface UTXO {
-  n: number;
-  txHash: string;
-  blockHash: string;
-  blockN: number;
-  sats: number;
-  scriptPubKey: ScriptPubKey;
-  txid: string;
-  value: number;
-  ordinals?: Ordinal[] | null;
-  inscriptions?: Inscription[] | null;
-  safeToSpend: boolean;
-  confirmation: number;
+  n: number
+  txHash: string
+  blockHash: string
+  blockN: number
+  sats: number
+  scriptPubKey: ScriptPubKey
+  txid: string
+  value: number
+  ordinals?: Ordinal[] | null
+  inscriptions?: Inscription[] | null
+  safeToSpend: boolean
+  confirmation: number
 }

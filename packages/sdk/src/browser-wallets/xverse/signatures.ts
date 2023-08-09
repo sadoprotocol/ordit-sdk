@@ -1,15 +1,15 @@
-import { Psbt } from "bitcoinjs-lib";
-import { InputToSign, signMessage as _signMessage, signTransaction } from "sats-connect";
+import { Psbt } from "bitcoinjs-lib"
+import { InputToSign, signMessage as _signMessage, signTransaction } from "sats-connect"
 
-import { Network } from "../../config/types";
-import { isXverseInstalled, XverseNetwork } from "./utils";
+import { Network } from "../../config/types"
+import { isXverseInstalled, XverseNetwork } from "./utils"
 
 interface XverseSignedPsbt {
-  rawTxHex: string | null;
+  rawTxHex: string | null
   psbt: {
-    hex: string;
-    base64: string;
-  };
+    hex: string
+    base64: string
+  }
 }
 
 export async function signPsbt(options: XverseSignPsbtOptions) {
@@ -19,28 +19,28 @@ export async function signPsbt(options: XverseSignPsbtOptions) {
       hex: "",
       base64: ""
     }
-  };
+  }
 
   if (!options.psbt || !options.network || !options.inputs) {
-    throw new Error("Invalid options provided.");
+    throw new Error("Invalid options provided.")
   }
 
   if (!isXverseInstalled()) {
-    throw new Error("xverse not installed.");
+    throw new Error("xverse not installed.")
   }
 
   const handleFinish = (response: XverseSignPsbtResponse) => {
-    const { psbtBase64 } = response;
+    const { psbtBase64 } = response
 
     if (!psbtBase64) {
-      throw new Error("Failed to sign transaction using xVerse");
+      throw new Error("Failed to sign transaction using xVerse")
     }
 
-    const signedPsbt = Psbt.fromBase64(psbtBase64);
+    const signedPsbt = Psbt.fromBase64(psbtBase64)
 
     try {
-      signedPsbt.finalizeAllInputs();
-      result.rawTxHex = signedPsbt.extractTransaction().toHex();
+      signedPsbt.finalizeAllInputs()
+      result.rawTxHex = signedPsbt.extractTransaction().toHex()
     } catch (error) {
       // Do nothing, leave the rawTxHex as null
     }
@@ -48,8 +48,8 @@ export async function signPsbt(options: XverseSignPsbtOptions) {
     result.psbt = {
       hex: signedPsbt.toHex(),
       base64: signedPsbt.toBase64()
-    };
-  };
+    }
+  }
 
   const xverseOptions = {
     payload: {
@@ -63,28 +63,28 @@ export async function signPsbt(options: XverseSignPsbtOptions) {
     },
     onFinish: handleFinish,
     onCancel: () => handleOnSignCancel("Psbt")
-  };
+  }
 
-  await signTransaction(xverseOptions);
+  await signTransaction(xverseOptions)
 
-  return result;
+  return result
 }
 
 export async function signMessage(options: XverseSignMessageOptions) {
-  let result = null;
+  let result = null
   if (!options.message || !options.network || !options.address) {
-    throw new Error("Invalid options provided.");
+    throw new Error("Invalid options provided.")
   }
 
   if (!isXverseInstalled()) {
-    throw new Error("xverse not installed.");
+    throw new Error("xverse not installed.")
   }
 
   const handleFinish = (response: string) => {
     result = {
       signature: response
-    };
-  };
+    }
+  }
 
   const xverseOptions = {
     payload: {
@@ -97,29 +97,29 @@ export async function signMessage(options: XverseSignMessageOptions) {
     },
     onFinish: handleFinish,
     onCancel: () => handleOnSignCancel("Message")
-  };
+  }
 
-  await _signMessage(xverseOptions);
+  await _signMessage(xverseOptions)
 
-  return result;
+  return result
 }
 
 function handleOnSignCancel(value = "") {
-  throw new Error(`Failed to sign ${value} using xVerse`);
+  throw new Error(`Failed to sign ${value} using xVerse`)
 }
 
 export type XverseSignPsbtOptions = {
-  psbt: Psbt;
-  network: Network;
-  inputs: InputToSign[];
-};
+  psbt: Psbt
+  network: Network
+  inputs: InputToSign[]
+}
 
 export type XverseSignPsbtResponse = {
-  psbtBase64: string;
-};
+  psbtBase64: string
+}
 
 export type XverseSignMessageOptions = {
-  address: string;
-  message: string;
-  network: Network;
-};
+  address: string
+  message: string
+  network: Network
+}
