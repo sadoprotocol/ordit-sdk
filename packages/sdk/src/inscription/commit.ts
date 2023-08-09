@@ -4,12 +4,16 @@ import { GetWalletOptions } from "../wallet"
 import { buildWitnessScript } from "./witness"
 
 export async function generateCommitAddress(options: GenerateCommitAddressOptions) {
-  const { satsPerByte = 10, network, pubKey } = options
+  const { satsPerByte = 10, network, pubKey, encodeMetadata = false } = options
   const key = (await getAddresses({ pubKey, network, format: "p2tr" }))[0]
   const xkey = key.xkey
 
   if (xkey) {
-    const witnessScript = buildWitnessScript({ ...options, xkey, meta: encodeObject(options.meta) })
+    const witnessScript = buildWitnessScript({
+      ...options,
+      xkey,
+      meta: options.meta && encodeMetadata ? encodeObject(options.meta) : options.meta
+    })
 
     if (!witnessScript) {
       throw new Error("Failed to build witness script.")
@@ -41,4 +45,5 @@ export type GenerateCommitAddressOptions = Omit<GetWalletOptions, "format" | "sa
   mediaType: string
   mediaContent: string
   meta: any
+  encodeMetadata?: boolean
 }

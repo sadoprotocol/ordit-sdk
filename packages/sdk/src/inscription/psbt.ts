@@ -8,17 +8,22 @@ import { GetWalletOptions } from "../wallet"
 import { buildWitnessScript } from "./witness"
 
 export async function createRevealPsbt(options: CreateRevealPsbtOptions) {
-  const networkObj = getNetwork(options.network);
-  const key = (await getAddresses({ ...options, format: "p2tr" }))[0];
-  const xkey = key.xkey;
-  
-  options.safeMode = !options.safeMode ? "on": options.safeMode
+  const networkObj = getNetwork(options.network)
+  const key = (await getAddresses({ ...options, format: "p2tr" }))[0]
+  const xkey = key.xkey
+  const { encodeMetadata = false } = options
+
+  options.safeMode = !options.safeMode ? "on" : options.safeMode
 
   if (!xkey) {
     throw new Error("Failed to build createRevealPsbt");
   }
 
-  const witnessScript = buildWitnessScript({ ...options, xkey, meta: encodeObject(options.meta) })
+  const witnessScript = buildWitnessScript({
+    ...options,
+    xkey,
+    meta: options.meta && encodeMetadata ? encodeObject(options.meta) : options.meta
+  })
 
   if (!witnessScript) {
     throw new Error("Failed to build createRevealPsbt");
@@ -95,11 +100,12 @@ export async function createRevealPsbt(options: CreateRevealPsbtOptions) {
 }
 
 export type CreateRevealPsbtOptions = Omit<GetWalletOptions, "format"> & {
-  fees: number;
-  postage: number;
-  mediaType: string;
-  mediaContent: string;
-  destination: string;
-  changeAddress: string;
-  meta: any;
-};
+  fees: number
+  postage: number
+  mediaType: string
+  mediaContent: string
+  destination: string
+  changeAddress: string
+  meta: any
+  encodeMetadata?: boolean
+}
