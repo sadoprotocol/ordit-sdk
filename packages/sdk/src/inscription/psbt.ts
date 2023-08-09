@@ -3,7 +3,7 @@ import { Psbt } from "bitcoinjs-lib"
 import { getAddresses } from "../addresses"
 import { OrditApi } from "../api"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
-import { createTransaction, getNetwork } from "../utils"
+import { createTransaction, encodeObject, getNetwork } from "../utils"
 import { GetWalletOptions } from "../wallet"
 import { buildWitnessScript } from "./witness"
 
@@ -18,7 +18,7 @@ export async function createRevealPsbt(options: CreateRevealPsbtOptions) {
     throw new Error("Failed to build createRevealPsbt");
   }
 
-  const witnessScript = buildWitnessScript({ ...options, xkey });
+  const witnessScript = buildWitnessScript({ ...options, xkey, meta: encodeObject(options.meta) })
 
   if (!witnessScript) {
     throw new Error("Failed to build createRevealPsbt");

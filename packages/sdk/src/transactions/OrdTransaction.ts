@@ -6,6 +6,7 @@ import {
   buildWitnessScript,
   calculateTxFee,
   createTransaction,
+  encodeObject,
   getAddressesFromPublicKey,
   getNetwork,
   GetWalletOptions,
@@ -14,6 +15,7 @@ import {
 } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import { NestedObject } from "../utils/types"
 
 bitcoin.initEccLib(ecc)
 
@@ -25,7 +27,7 @@ export class OrdTransaction {
   mediaContent: string
   destinationAddress: string
   changeAddress: string
-  meta: object | unknown
+  meta?: NestedObject
   network: Network
   psbt: bitcoin.Psbt | null = null
   ready = false
@@ -173,13 +175,13 @@ export class OrdTransaction {
     const witnessScript = buildWitnessScript({
       mediaContent: this.mediaContent,
       mediaType: this.mediaType,
-      meta: this.meta,
+      meta: this.meta ? encodeObject(this.meta) : null,
       xkey: this.#xKey
     })
     const recoverScript = buildWitnessScript({
       mediaContent: this.mediaContent,
       mediaType: this.mediaType,
-      meta: this.meta,
+      meta: this.meta ? encodeObject(this.meta) : null,
       xkey: this.#xKey,
       recover: true
     })
@@ -238,13 +240,13 @@ export class OrdTransaction {
     const witnessScript = buildWitnessScript({
       mediaContent: this.mediaContent,
       mediaType: this.mediaType,
-      meta: this.meta,
+      meta: this.meta ? encodeObject(this.meta) : null,
       xkey: this.#xKey
     })
     const recoverScript = buildWitnessScript({
       mediaContent: this.mediaContent,
       mediaType: this.mediaType,
-      meta: this.meta,
+      meta: this.meta ? encodeObject(this.meta) : null,
       xkey: this.#xKey,
       recover: true
     })
@@ -333,7 +335,7 @@ export type OrdTransactionOptions = Pick<GetWalletOptions, "safeMode"> & {
   mediaContent: string
   destination: string
   changeAddress: string
-  meta?: object | unknown
+  meta?: NestedObject
   network?: Network
   publicKey: string
   outs?: Outputs

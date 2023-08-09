@@ -5,7 +5,7 @@ import ECPairFactory from "ecpair"
 
 import { AddressFormats, AddressTypes } from "../addresses/formats"
 import { Network } from "../config/types"
-import { CalculateTxFeeOptions, CalculateTxVirtualSizeOptions } from "./types"
+import { CalculateTxFeeOptions, CalculateTxVirtualSizeOptions, EncodeDecodeObjectOptions, NestedObject } from "./types"
 
 export function getNetwork(value: Network) {
   if (value === "mainnet") {
@@ -137,4 +137,36 @@ export function getInputOutputBaseSizeByType(type: AddressFormats) {
     default:
       throw new Error("Invalid type")
   }
+}
+
+export const isObject = (o: any) => o?.constructor === Object
+export const isString = (s: any) => s instanceof String || typeof s === "string"
+
+function encodeDecodeObject(obj: NestedObject, { encode, depth = 0 }: EncodeDecodeObjectOptions) {
+  const maxDepth = 5
+
+  if (depth > maxDepth) {
+    throw new Error("Object too deep")
+  }
+
+  for (const key in obj) {
+    if (!obj.hasOwnProperty(key)) continue
+
+    const value = obj[key]
+    if (isObject(value)) {
+      obj[key] = encodeDecodeObject(value as NestedObject, { encode, depth: depth++ })
+    } else if (isString(value)) {
+      obj[key] = encode ? encodeURIComponent(value as string) : decodeURIComponent(value as string)
+    }
+  }
+
+  return obj
+}
+
+export function encodeObject(obj: NestedObject) {
+  return encodeDecodeObject(obj, { encode: true })
+}
+
+export function decodeObject(obj: NestedObject) {
+  return encodeDecodeObject(obj, { encode: false })
 }
