@@ -175,81 +175,85 @@ export async function generateBuyerPsbt({
 }
 
 export async function generateRefundableUTXOs({
-  value = MINIMUM_AMOUNT_IN_SATS,
   publicKey,
   pubKeyType,
-  feeRate = 10,
+  feeRate,
   count = 2,
-  network = "testnet"
+  destination,
+  network = "testnet",
+  enableRBF = true
 }: GenerateRefundableUTXOsOptions) {
   const networkObj = getNetwork(network)
   const format = addressNameToType[pubKeyType]
   const address = getAddressesFromPublicKey(publicKey, network, format)[0]
+  const finalCount =
+    destination && destination.length ? destination.reduce((acc, curr) => (acc += curr.count), 0) : count
+
+  if (!finalCount) {
+    throw new Error("count or destination should be more than 2")
+  }
 
   const { totalUTXOs, spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({ address: address.address!, network })
   if (!totalUTXOs) {
     throw new Error("No UTXOs found.")
   }
 
+  const utxo = spendableUTXOs.sort((a, b) => b.sats - a.sats)[0] // Largest UTXO
   const psbt = new bitcoin.Psbt({ network: networkObj })
-  let totalValue = 0
-  let paymentUtxoCount = 0
-
   const witnessScripts: Buffer[] = []
-  for (let i = 0; i < spendableUTXOs.length; i++) {
-    const utxo = spendableUTXOs[i]
-    const input = await processInput({ utxo, pubKey: publicKey, network })
+  const input = await processInput({ utxo, pubKey: publicKey, network })
 
-    input.witnessUtxo?.script && witnessScripts.push(input.witnessUtxo?.script)
-    psbt.addInput(input)
+  input.witnessUtxo?.script && witnessScripts.push(input.witnessUtxo?.script)
+  psbt.addInput(input)
 
-    totalValue += utxo.sats
-    paymentUtxoCount += 1
-
-    const fees = calculateTxFee({
-      totalInputs: paymentUtxoCount,
-      totalOutputs: count,
-      satsPerByte: feeRate,
-      type: pubKeyType,
-      additional: { witnessScripts }
-    })
-
-    if (totalValue >= value * count + fees) {
-      break
-    }
+  if (enableRBF) {
+    psbt.setInputSequence(0, 0xfffffffd) // hardcoded index because input is just one
   }
 
-  const finalFees = calculateTxFee({
-    totalInputs: paymentUtxoCount,
-    totalOutputs: count,
+  const fees = calculateTxFee({
+    totalInputs: 1,
+    totalOutputs: finalCount,
     satsPerByte: feeRate,
     type: pubKeyType,
     additional: { witnessScripts }
   })
 
-  const changeValue = totalValue - value * count - finalFees
-  // We must have enough value to create a refundable utxo and pay for tx fees
-  if (changeValue < 0) {
-    throw new Error(`You might have pending transactions or not enough fund`)
+  const remainingSats = utxo.sats - fees
+  const perUTXOSats = Math.floor(remainingSats / finalCount)
+  if (perUTXOSats < MINIMUM_AMOUNT_IN_SATS) {
+    throw new Error(
+      `Not enough sats to generate ${finalCount} UTXOs with at least ${MINIMUM_AMOUNT_IN_SATS} sats per UTXO. Try decreasing the count or deposit more BTC`
+    )
   }
 
-  Array(count)
-    .fill(value)
-    .forEach((val) => {
-      psbt.addOutput({
-        address: address.address!,
-        value: val
-      })
-    })
+  destination =
+    destination && destination.length
+      ? destination
+      : [
+          {
+            address: address.address!,
+            count: finalCount
+          }
+        ]
 
-  if (changeValue > 580) {
+  let receivers: { address: string; cardinals: number }[] = []
+  destination.forEach((o) => {
+    const receiver = Array.from({ length: o.count }).fill({
+      address: o.address,
+      cardinals: perUTXOSats
+    }) as { address: string; cardinals: number }[]
+
+    receivers = receivers.concat(receiver)
+  })
+
+  receivers.forEach((output) => {
     psbt.addOutput({
-      address: address.address!,
-      value: changeValue
+      address: output.address,
+      value: output.cardinals
     })
-  }
+  })
 
-  return psbt
+  return psbt.toHex()
 }
 
 export async function getSellerInputsOutputs({
@@ -325,9 +329,14 @@ export interface GenerateBuyerInstantBuyPsbtOptions {
 
 export interface GenerateRefundableUTXOsOptions {
   value: number
-  count: number
+  count?: number
   publicKey: string
   pubKeyType: AddressFormats
+  destination?: {
+    address: string
+    count: number
+  }[]
   network?: Network
-  feeRate?: number
+  feeRate: number
+  enableRBF?: boolean
 }
