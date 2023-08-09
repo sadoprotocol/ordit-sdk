@@ -45,7 +45,7 @@ async function main() {
     transaction.build();
 
     // sign transaction
-    const signature = wallet.signPsbt(transaction.toHex());
+    const signature = wallet.signPsbt(transaction.toHex(), { isRevealTx: true });
 
     // Broadcast transaction
     const tx = await wallet.relayTx(signature, "testnet");
