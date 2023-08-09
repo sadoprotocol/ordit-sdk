@@ -39,6 +39,7 @@ export class OrdTransaction {
   #recovery = false
   #outs: Outputs = []
   #safeMode: OnOffUnion
+  #encodeMetadata: boolean
 
   constructor({
     feeRate = 10,
@@ -47,6 +48,7 @@ export class OrdTransaction {
     network = "testnet",
     publicKey,
     outs = [],
+    encodeMetadata = false,
     ...otherOptions
   }: OrdTransactionOptions) {
     if (!publicKey || !otherOptions.changeAddress || !otherOptions.destination || !otherOptions.mediaContent) {
@@ -64,6 +66,7 @@ export class OrdTransaction {
     this.postage = postage
     this.#outs = outs
     this.#safeMode = !otherOptions.safeMode ? "on" : otherOptions.safeMode
+    this.#encodeMetadata = encodeMetadata
 
     const xKey = getAddressesFromPublicKey(publicKey, network, "p2tr")[0].xkey
 
@@ -175,13 +178,13 @@ export class OrdTransaction {
     const witnessScript = buildWitnessScript({
       mediaContent: this.mediaContent,
       mediaType: this.mediaType,
-      meta: this.meta ? encodeObject(this.meta) : null,
+      meta: this.meta && this.#encodeMetadata ? encodeObject(this.meta) : this.meta,
       xkey: this.#xKey
     })
     const recoverScript = buildWitnessScript({
       mediaContent: this.mediaContent,
       mediaType: this.mediaType,
-      meta: this.meta ? encodeObject(this.meta) : null,
+      meta: this.meta && this.#encodeMetadata ? encodeObject(this.meta) : this.meta,
       xkey: this.#xKey,
       recover: true
     })
@@ -240,13 +243,13 @@ export class OrdTransaction {
     const witnessScript = buildWitnessScript({
       mediaContent: this.mediaContent,
       mediaType: this.mediaType,
-      meta: this.meta ? encodeObject(this.meta) : null,
+      meta: this.meta && this.#encodeMetadata ? encodeObject(this.meta) : this.meta,
       xkey: this.#xKey
     })
     const recoverScript = buildWitnessScript({
       mediaContent: this.mediaContent,
       mediaType: this.mediaType,
-      meta: this.meta ? encodeObject(this.meta) : null,
+      meta: this.meta && this.#encodeMetadata ? encodeObject(this.meta) : this.meta,
       xkey: this.#xKey,
       recover: true
     })
@@ -339,6 +342,7 @@ export type OrdTransactionOptions = Pick<GetWalletOptions, "safeMode"> & {
   network?: Network
   publicKey: string
   outs?: Outputs
+  encodeMetadata?: boolean
 }
 
 type Outputs = Array<{ address: string; value: number }>

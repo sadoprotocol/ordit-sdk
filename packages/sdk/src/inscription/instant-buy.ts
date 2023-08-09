@@ -328,7 +328,6 @@ export interface GenerateBuyerInstantBuyPsbtOptions {
 }
 
 export interface GenerateRefundableUTXOsOptions {
-  value: number
   count?: number
   publicKey: string
   pubKeyType: AddressFormats
