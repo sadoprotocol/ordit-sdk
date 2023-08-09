@@ -1,14 +1,15 @@
-import { Transaction as BTCTransaction } from 'bitcoinjs-lib'
+import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
-import { Network } from "../config/types";
-import { Rarity } from "../inscription/types";
-import { Transaction, UTXO } from "../transactions/types";
+import { Network } from "../config/types"
+import { Rarity } from "../inscription/types"
+import { Transaction, UTXO } from "../transactions/types"
 
 export interface FetchUnspentUTXOsOptions {
   address: string
   network?: Network
   type?: "all" | "spendable"
   rarity?: Rarity[]
+  decodeMetadata?: boolean
 }
 
 export interface FetchUnspentUTXOsResponse {
@@ -23,6 +24,7 @@ export interface FetchTxOptions {
   ordinals?: boolean
   hex?: boolean
   witness?: boolean
+  decodeMetadata?: boolean
 }
 
 export interface FetchTxResponse {
@@ -33,6 +35,7 @@ export interface FetchTxResponse {
 export interface FetchInscriptionsOptions {
   outpoint: string
   network?: Network
+  decodeMetadata?: boolean
 }
 
 export interface RelayTxOptions {
