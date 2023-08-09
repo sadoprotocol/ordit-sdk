@@ -1,5 +1,5 @@
 import { getAddresses } from "../addresses"
-import { createTransaction } from "../utils"
+import { createTransaction, encodeObject } from "../utils"
 import { GetWalletOptions } from "../wallet"
 import { buildWitnessScript } from "./witness"
 
@@ -9,7 +9,7 @@ export async function generateCommitAddress(options: GenerateCommitAddressOption
   const xkey = key.xkey
 
   if (xkey) {
-    const witnessScript = buildWitnessScript({ ...options, xkey })
+    const witnessScript = buildWitnessScript({ ...options, xkey, meta: encodeObject(options.meta) })
 
     if (!witnessScript) {
       throw new Error("Failed to build witness script.")

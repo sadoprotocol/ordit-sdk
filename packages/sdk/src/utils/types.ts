@@ -11,3 +11,12 @@ export interface CalculateTxFeeOptions {
 }
 
 export type CalculateTxVirtualSizeOptions = Omit<CalculateTxFeeOptions, "satsPerByte">
+
+export interface NestedObject {
+  [key: string]: NestedObject | any
+}
+
+export interface EncodeDecodeObjectOptions {
+  encode: boolean
+  depth?: number
+}
