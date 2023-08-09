@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 importers:
 
   .:
@@ -47,8 +51,8 @@ importers:
         specifier: 6.6.1
         version: 6.6.1
       sats-connect:
-        specifier: 0.2.0
-        version: 0.2.0
+        specifier: 0.5.0
+        version: 0.5.0
     devDependencies:
       '@sadoprotocol/eslint-config':
         specifier: ^0.0.2
@@ -2066,8 +2070,8 @@ packages:
       is-regex: 1.1.4
     dev: true
 
-  /sats-connect@0.2.0:
-    resolution: {integrity: sha512-PEeqgPmAASPwGnBRmKYAmOey2HRbzW733EOVia067MoDAoai+/Buzx1NzaJ5FXZzpzHbG2YFQDp+43vkFWTQxw==}
+  /sats-connect@0.5.0:
+    resolution: {integrity: sha512-GDhKmkpKyi7jgonC/CZbXWKOddb9XJ7oC87T0fogv5+fcyBa7eIFyEQwY518XkeMdNjLIxioU4EQORm8NTYhaQ==}
     dependencies:
       jsontokens: 4.0.1
       process: 0.11.10
@@ -2502,7 +2506,3 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false

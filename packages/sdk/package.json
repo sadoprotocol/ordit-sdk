@@ -31,7 +31,7 @@
     "cross-fetch": "3.1.6",
     "ecpair": "2.1.0",
     "ethers": "6.6.1",
-    "sats-connect": "0.2.0"
+    "sats-connect": "0.5.0"
   },
   "devDependencies": {
     "@sadoprotocol/eslint-config": "^0.0.2",
