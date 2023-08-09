@@ -34,7 +34,7 @@
     "sats-connect": "0.2.0"
   },
   "devDependencies": {
-    "@sadoprotocol/eslint-config": "^0.0.2",
+    "@sadoprotocol/eslint-config": "^0.0.9",
     "@sadoprotocol/typescript": "^0.0.2",
     "@types/node": "^20.3.1"
   },
