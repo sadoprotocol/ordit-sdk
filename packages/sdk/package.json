@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@sadoprotocol/eslint-config": "^0.0.2",
-    "@sadoprotocol/typescript": "^0.0.2",
+    "@sadoprotocol/typescript": "^0.0.9",
     "@types/node": "^20.3.1"
   },
   "eslintConfig": {
