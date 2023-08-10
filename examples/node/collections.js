@@ -98,8 +98,8 @@ async function mint() {
     destination: userWallet.selectedAddress,
     changeAddress: userWallet.selectedAddress,
     postage: 1000,
-    mediaContent: IMG_BASE64,
-    mediaType: "image/png",
+    mediaContent: 'Sample content',
+    mediaType: "text/plain",
     outs: [{address: 'tb1pk6yxhcwzzjg9gwsumnlrh3l9q3ajxk657e7kqwmwpd8mklmnmehsrn3hu2', value: 1000}]
   });
 
