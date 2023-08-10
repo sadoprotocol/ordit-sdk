@@ -71,11 +71,20 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
       throw new Error("Invalid inscription iid supplied.")
     }
 
+    const inscriptions = await OrditApi.fetchInscriptions({
+      outpoint: options.collectionOutpoint,
+      network: options.network
+    })
+
+    if (!inscriptions.length || inscriptions.length > 1) {
+      throw new Error("Invalid inscriptions")
+    }
+
     const meta: any = {
       p: "vord",
       v: 1,
       ty: "insc",
-      col: options.collectionOutpoint,
+      col: inscriptions[0].genesis,
       iid: options.inscriptionIid,
       publ: colMeta?.publ[options.publisherIndex],
       nonce: options.nonce,
