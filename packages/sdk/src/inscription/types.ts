@@ -29,6 +29,7 @@ export interface Inscription {
   id: string
   outpoint: string
   owner: string
+  genesis: string
   fee: number
   height: number
   number: number
