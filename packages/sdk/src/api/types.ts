@@ -38,6 +38,12 @@ export interface FetchInscriptionsOptions {
   decodeMetadata?: boolean
 }
 
+export interface FetchInscriptionOptions {
+  id: string
+  network?: Network
+  decodeMetadata?: boolean
+}
+
 export interface RelayTxOptions {
   hex: string
   maxFeeRate?: number

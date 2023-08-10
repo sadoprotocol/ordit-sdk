@@ -7,6 +7,7 @@ import { Transaction, UTXO } from "../transactions/types"
 import { decodeObject } from "../utils"
 import { rpc } from "./jsonrpc"
 import {
+  FetchInscriptionOptions,
   FetchInscriptionsOptions,
   FetchTxOptions,
   FetchTxResponse,
@@ -144,6 +145,25 @@ export class OrditApi {
     }
 
     return inscriptions
+  }
+
+  static async fetchInscription({ id, network = "testnet", decodeMetadata = true }: FetchInscriptionOptions) {
+    if (!id) {
+      throw new Error("Invalid options provided.")
+    }
+
+    const inscription = await rpc[network].call<Inscription>(
+      "GetInscription",
+      {
+        id,
+        network
+      },
+      rpc.id
+    )
+
+    inscription.meta = inscription.meta && decodeMetadata ? decodeObject(inscription.meta) : inscription.meta
+
+    return inscription
   }
 
   static async relayTx({ hex, network = "testnet", maxFeeRate }: RelayTxOptions): Promise<string> {
