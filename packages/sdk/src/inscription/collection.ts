@@ -82,7 +82,7 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
       traits: options.traits
     }
 
-    const message = options.collectionOutpoint + " " + options.inscriptionIid + " " + options.nonce
+    const message = `${options.collectionOutpoint} ${options.inscriptionIid} ${options.nonce}`
     const validSignature = verifyMessage({ address: meta.publ, message: message, signature: options.signature })
 
     if (!validSignature) {
