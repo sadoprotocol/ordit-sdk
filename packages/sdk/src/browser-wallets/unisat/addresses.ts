@@ -1,35 +1,35 @@
-import { getAddressFormat } from "../..";
-import { Network } from "../../config/types";
-import { isUnisatInstalled, UnisatNetwork } from "./utils";
+import { getAddressFormat } from "../.."
+import { Network } from "../../config/types"
+import { isUnisatInstalled, UnisatNetwork } from "./utils"
 
 export async function getAddresses(network: Network) {
   if (!isUnisatInstalled()) {
-    throw new Error("Unisat not installed.");
+    throw new Error("Unisat not installed.")
   }
 
   if (!network) {
-    throw new Error("Invalid options provided.");
+    throw new Error("Invalid options provided.")
   }
 
-  let targetNetwork: UnisatNetwork = "livenet";
-  const connectedNetwork = await window.unisat.getNetwork();
+  let targetNetwork: UnisatNetwork = "livenet"
+  const connectedNetwork = await window.unisat.getNetwork()
 
   if (network === "testnet") {
-    targetNetwork = network;
+    targetNetwork = network
   }
 
   if (connectedNetwork !== targetNetwork) {
-    await window.unisat.switchNetwork(targetNetwork);
+    await window.unisat.switchNetwork(targetNetwork)
   }
 
-  const accounts = await window.unisat.requestAccounts();
-  const publicKey = await window.unisat.getPublicKey();
+  const accounts = await window.unisat.requestAccounts()
+  const publicKey = await window.unisat.getPublicKey()
 
   if (!accounts[0]) {
-    return [];
+    return []
   }
 
-  const formatObj = getAddressFormat(accounts[0], network);
+  const formatObj = getAddressFormat(accounts[0], network)
 
   return [
     {
@@ -37,5 +37,5 @@ export async function getAddresses(network: Network) {
       address: formatObj.address,
       format: formatObj.format
     }
-  ];
+  ]
 }

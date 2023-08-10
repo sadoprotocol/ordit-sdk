@@ -1,29 +1,29 @@
-import { Psbt } from "bitcoinjs-lib";
+import { Psbt } from "bitcoinjs-lib"
 
 import { UnisatSignPSBTOptions } from "./types"
 import { isUnisatInstalled } from "./utils"
 
 export async function signPsbt(psbt: Psbt, { finalize = true }: UnisatSignPSBTOptions = {}) {
   if (!isUnisatInstalled()) {
-    throw new Error("Unisat not installed.");
+    throw new Error("Unisat not installed.")
   }
 
-  const psbtHex = psbt.toHex();
+  const psbtHex = psbt.toHex()
 
   const signedPsbtHex = await window.unisat.signPsbt(psbtHex, { autoFinalized: finalize })
 
   if (!signedPsbtHex) {
-    throw new Error("Failed to sign psbt hex using Unisat.");
+    throw new Error("Failed to sign psbt hex using Unisat.")
   }
 
   if (psbtHex === signedPsbtHex) {
-    throw new Error("Psbt has already been signed.");
+    throw new Error("Psbt has already been signed.")
   }
 
-  const signedPsbt = Psbt.fromHex(signedPsbtHex);
-  let rawTxHex = null;
+  const signedPsbt = Psbt.fromHex(signedPsbtHex)
+  let rawTxHex = null
   try {
-    rawTxHex = signedPsbt.extractTransaction().toHex();
+    rawTxHex = signedPsbt.extractTransaction().toHex()
   } catch (error) {
     return {
       rawTxHex,
@@ -31,7 +31,7 @@ export async function signPsbt(psbt: Psbt, { finalize = true }: UnisatSignPSBTOp
         hex: signedPsbt.toHex(),
         base64: signedPsbt.toBase64()
       }
-    };
+    }
   }
 
   return {
@@ -40,22 +40,22 @@ export async function signPsbt(psbt: Psbt, { finalize = true }: UnisatSignPSBTOp
       hex: signedPsbt.toHex(),
       base64: signedPsbt.toBase64()
     }
-  };
+  }
 }
 
 export async function signMessage(message: string) {
   if (!isUnisatInstalled()) {
-    throw new Error("Unisat not installed.");
+    throw new Error("Unisat not installed.")
   }
 
-  const signature = await window.unisat.signMessage(message);
+  const signature = await window.unisat.signMessage(message)
 
   if (!signature) {
-    throw new Error("Failed to sign message using Unisat.");
+    throw new Error("Failed to sign message using Unisat.")
   }
 
   return {
     base64: signature,
     hex: Buffer.from(signature, "base64").toString("hex")
-  };
+  }
 }

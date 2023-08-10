@@ -1,10 +1,10 @@
-import * as ecc from "@bitcoinerlab/secp256k1";
-import BIP32Factory, { BIP32Interface } from "bip32";
-import { mnemonicToSeedSync } from "bip39";
-import * as bitcoin from "bitcoinjs-lib";
-import { isTaprootInput } from "bitcoinjs-lib/src/psbt/bip371";
-import { sign } from "bitcoinjs-message";
-import ECPairFactory, { ECPairInterface } from "ecpair";
+import * as ecc from "@bitcoinerlab/secp256k1"
+import BIP32Factory, { BIP32Interface } from "bip32"
+import { mnemonicToSeedSync } from "bip39"
+import * as bitcoin from "bitcoinjs-lib"
+import { isTaprootInput } from "bitcoinjs-lib/src/psbt/bip371"
+import { sign } from "bitcoinjs-message"
+import ECPairFactory, { ECPairInterface } from "ecpair"
 
 import {
   Account,
@@ -20,128 +20,128 @@ import {
   mintFromCollection,
   publishCollection,
   tweakSigner
-} from "..";
-import { OrditApi } from "../api";
-import { Network } from "../config/types";
-import { Inscription } from "../inscription/types";
-import { OrdTransaction, OrdTransactionOptions } from "../transactions";
+} from ".."
+import { OrditApi } from "../api"
+import { Network } from "../config/types"
+import { Inscription } from "../inscription/types"
+import { OrdTransaction, OrdTransactionOptions } from "../transactions"
 
-bitcoin.initEccLib(ecc);
-const ECPair = ECPairFactory(ecc);
-const bip32 = BIP32Factory(ecc);
+bitcoin.initEccLib(ecc)
+const ECPair = ECPairFactory(ecc)
+const bip32 = BIP32Factory(ecc)
 
 export class Ordit {
-  #network: Network = "testnet";
+  #network: Network = "testnet"
   //   #config;
-  #initialized = false;
-  #keyPair: ECPairInterface | BIP32Interface;
-  #hdNode: BIP32Interface | null = null;
-  publicKey: string;
-  allAddresses: ReturnType<typeof getAddressesFromPublicKey> | ReturnType<typeof getAllAccountsFromHdNode> = [];
-  selectedAddressType: AddressFormats | undefined;
-  selectedAddress: string | undefined;
+  #initialized = false
+  #keyPair: ECPairInterface | BIP32Interface
+  #hdNode: BIP32Interface | null = null
+  publicKey: string
+  allAddresses: ReturnType<typeof getAddressesFromPublicKey> | ReturnType<typeof getAllAccountsFromHdNode> = []
+  selectedAddressType: AddressFormats | undefined
+  selectedAddress: string | undefined
 
   constructor({ wif, seed, privateKey, bip39, network = "testnet", type = "legacy" }: WalletOptions) {
-    this.#network = network;
-    const networkObj = getNetwork(network);
-    const format = addressNameToType[type];
+    this.#network = network
+    const networkObj = getNetwork(network)
+    const format = addressNameToType[type]
 
     if (wif) {
-      const keyPair = ECPair.fromWIF(wif, networkObj);
-      this.#keyPair = keyPair;
+      const keyPair = ECPair.fromWIF(wif, networkObj)
+      this.#keyPair = keyPair
 
-      this.publicKey = keyPair.publicKey.toString("hex");
+      this.publicKey = keyPair.publicKey.toString("hex")
 
-      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format);
-      this.#initialize(accounts);
+      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format)
+      this.#initialize(accounts)
     } else if (privateKey) {
-      const pkBuffer = Buffer.from(privateKey, "hex");
-      const keyPair = ECPair.fromPrivateKey(pkBuffer, { network: networkObj });
-      this.#keyPair = keyPair;
+      const pkBuffer = Buffer.from(privateKey, "hex")
+      const keyPair = ECPair.fromPrivateKey(pkBuffer, { network: networkObj })
+      this.#keyPair = keyPair
 
-      this.publicKey = keyPair.publicKey.toString("hex");
+      this.publicKey = keyPair.publicKey.toString("hex")
 
-      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format);
-      this.#initialize(accounts);
+      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format)
+      this.#initialize(accounts)
     } else if (seed) {
-      const seedBuffer = Buffer.from(seed, "hex");
-      const hdNode = bip32.fromSeed(seedBuffer, networkObj);
+      const seedBuffer = Buffer.from(seed, "hex")
+      const hdNode = bip32.fromSeed(seedBuffer, networkObj)
 
-      this.#hdNode = hdNode;
+      this.#hdNode = hdNode
 
-      const accounts = getAllAccountsFromHdNode({ hdNode, network });
+      const accounts = getAllAccountsFromHdNode({ hdNode, network })
 
-      const pkBuf = Buffer.from(accounts[0].priv, "hex");
-      this.#keyPair = ECPair.fromPrivateKey(pkBuf, { network: networkObj });
+      const pkBuf = Buffer.from(accounts[0].priv, "hex")
+      this.#keyPair = ECPair.fromPrivateKey(pkBuf, { network: networkObj })
 
-      this.publicKey = this.#keyPair.publicKey.toString("hex");
+      this.publicKey = this.#keyPair.publicKey.toString("hex")
 
-      this.#initialize(accounts);
+      this.#initialize(accounts)
     } else if (bip39) {
-      const seedBuffer = mnemonicToSeedSync(bip39);
-      const hdNode = bip32.fromSeed(seedBuffer, networkObj);
+      const seedBuffer = mnemonicToSeedSync(bip39)
+      const hdNode = bip32.fromSeed(seedBuffer, networkObj)
 
-      this.#hdNode = hdNode;
+      this.#hdNode = hdNode
 
-      const accounts = getAllAccountsFromHdNode({ hdNode, network });
-      this.#keyPair = accounts[0].child;
+      const accounts = getAllAccountsFromHdNode({ hdNode, network })
+      this.#keyPair = accounts[0].child
 
-      this.publicKey = this.#keyPair.publicKey.toString("hex");
+      this.publicKey = this.#keyPair.publicKey.toString("hex")
 
-      this.#initialize(accounts);
+      this.#initialize(accounts)
     } else {
-      throw new Error("Invalid options provided.");
+      throw new Error("Invalid options provided.")
     }
   }
 
   get network() {
-    return this.#network;
+    return this.#network
   }
 
   set network(value: Network) {
-    this.#network = value;
+    this.#network = value
   }
 
   getAddressByType(type: AddressFormats) {
     if (!this.#initialized || !this.allAddresses.length) {
-      throw new Error("Wallet not fully initialized.");
+      throw new Error("Wallet not fully initialized.")
     }
-    const result = this.allAddresses.filter((address) => address.format === type);
+    const result = this.allAddresses.filter((address) => address.format === type)
 
     if (!result) {
-      throw new Error(`Address of type ${type} not found in the instance.`);
+      throw new Error(`Address of type ${type} not found in the instance.`)
     }
 
-    return result;
+    return result
   }
 
   getAllAddresses() {
     if (!this.#keyPair) {
-      throw new Error("Keypair not found");
+      throw new Error("Keypair not found")
     }
 
-    return this.allAddresses;
+    return this.allAddresses
   }
 
   setDefaultAddress(type: AddressFormats, index = 0) {
-    if (this.selectedAddressType === type) return;
+    if (this.selectedAddressType === type) return
 
-    const result = this.getAddressByType(type) as Account[];
-    const addressToSelect = result[index];
+    const result = this.getAddressByType(type) as Account[]
+    const addressToSelect = result[index]
 
-    if (!addressToSelect) throw new Error("Address not found. Please add an address with the type and try again.");
+    if (!addressToSelect) throw new Error("Address not found. Please add an address with the type and try again.")
 
-    this.selectedAddress = addressToSelect.address;
-    this.publicKey = addressToSelect.pub;
-    this.selectedAddressType = type;
+    this.selectedAddress = addressToSelect.address
+    this.publicKey = addressToSelect.pub
+    this.selectedAddressType = type
 
     if (addressToSelect.child) {
-      this.#keyPair = addressToSelect.child;
+      this.#keyPair = addressToSelect.child
     }
   }
 
   generateAddress(type: AddressFormats, account: number, addressIndex: number) {
-    if (!this.#hdNode) throw new Error("No HD node found. Please reinitialize with BIP39 words or seed.");
+    if (!this.#hdNode) throw new Error("No HD node found. Please reinitialize with BIP39 words or seed.")
 
     return getAccountDataFromHdNode({
       hdNode: this.#hdNode,
@@ -149,43 +149,43 @@ export class Ordit {
       network: this.#network,
       account,
       addressIndex
-    });
+    })
   }
 
   signPsbt(value: string, { finalize = true, extractTx = true, isRevealTx = false }: SignPSBTOptions = {}) {
-    const networkObj = getNetwork(this.#network);
-    let psbt: bitcoin.Psbt | null = null;
+    const networkObj = getNetwork(this.#network)
+    let psbt: bitcoin.Psbt | null = null
 
     if (!this.#keyPair || !this.#initialized) {
-      throw new Error("Wallet not fully initialized.");
+      throw new Error("Wallet not fully initialized.")
     }
 
     try {
-      psbt = bitcoin.Psbt.fromHex(value);
+      psbt = bitcoin.Psbt.fromHex(value)
     } catch (error) {
-      psbt = bitcoin.Psbt.fromBase64(value);
+      psbt = bitcoin.Psbt.fromBase64(value)
     }
 
     if (!psbt || !psbt.inputCount) {
-      throw new Error("Invalid PSBT provided.");
+      throw new Error("Invalid PSBT provided.")
     }
 
-    const inputsToSign: Input[] = [];
+    const inputsToSign: Input[] = []
 
     psbt.data.inputs.forEach((v, index) => {
-      let script: any = null;
+      let script: any = null
 
       if (v.witnessUtxo) {
-        script = v.witnessUtxo.script;
+        script = v.witnessUtxo.script
       } else if (v.nonWitnessUtxo) {
-        const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo);
-        const output = tx.outs[psbt!.txInputs[index].index];
+        const tx = bitcoin.Transaction.fromBuffer(v.nonWitnessUtxo)
+        const output = tx.outs[psbt!.txInputs[index].index]
 
-        script = output.script;
+        script = output.script
       }
-      const isSigned = v.finalScriptSig || v.finalScriptWitness;
+      const isSigned = v.finalScriptSig || v.finalScriptWitness
       if (script && !isSigned) {
-        const address = bitcoin.address.fromOutputScript(script, networkObj);
+        const address = bitcoin.address.fromOutputScript(script, networkObj)
 
         // TODO: improvise the below logic by accepting indexes to sign
         if (isRevealTx || (!isRevealTx && this.selectedAddress === address)) {
@@ -193,38 +193,38 @@ export class Ordit {
             index,
             publicKey: this.publicKey,
             sighashTypes: v.sighashType ? [v.sighashType] : undefined
-          });
+          })
         }
       }
-    });
+    })
 
     if (!inputsToSign.length) {
-      throw new Error("Cannot sign PSBT with no signable inputs.");
+      throw new Error("Cannot sign PSBT with no signable inputs.")
     }
 
-    let psbtHasBeenSigned = false;
+    let psbtHasBeenSigned = false
 
     for (let i = 0; i < inputsToSign.length; i++) {
       try {
-        const input = psbt.data.inputs[i];
-        psbtHasBeenSigned = input.finalScriptSig || input.finalScriptWitness ? true : false;
+        const input = psbt.data.inputs[i]
+        psbtHasBeenSigned = input.finalScriptSig || input.finalScriptWitness ? true : false
 
-        if (psbtHasBeenSigned) continue;
+        if (psbtHasBeenSigned) continue
 
         if (isTaprootInput(input)) {
           const tweakedSigner = tweakSigner(this.#keyPair, {
             network: networkObj
-          });
+          })
 
           const signer =
             input.witnessUtxo?.script && input.tapInternalKey && !input.tapLeafScript ? tweakedSigner : this.#keyPair
 
-          psbt.signInput(inputsToSign[i].index, signer, inputsToSign[i].sighashTypes);
+          psbt.signInput(inputsToSign[i].index, signer, inputsToSign[i].sighashTypes)
         } else {
-          psbt.signInput(inputsToSign[i].index, this.#keyPair, inputsToSign[i].sighashTypes);
+          psbt.signInput(inputsToSign[i].index, this.#keyPair, inputsToSign[i].sighashTypes)
         }
       } catch (e) {
-        throw new Error(e.message);
+        throw new Error(e.message)
       }
     }
 
@@ -241,10 +241,10 @@ export class Ordit {
   }
 
   signMessage(message: string) {
-    const legacyWallet = this.allAddresses.find(wallet => wallet.format === 'legacy') as Account
-    const signature = sign(message, legacyWallet.child.privateKey!, false);
+    const legacyWallet = this.allAddresses.find((wallet) => wallet.format === "legacy") as Account
+    const signature = sign(message, legacyWallet.child.privateKey!, false)
 
-    return signature.toString("base64");
+    return signature.toString("base64")
   }
 
   async relayTx(hex: string, network?: Network, maxFeeRate?: number) {
@@ -253,19 +253,19 @@ export class Ordit {
 
   async getInscriptions() {
     if (!this.selectedAddress) {
-      throw new Error("Wallet not fully initialized.");
+      throw new Error("Wallet not fully initialized.")
     }
 
-    const { unspendableUTXOs }= await OrditApi.fetchUnspentUTXOs({
+    const { unspendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
       address: this.selectedAddress,
       network: this.#network
     })
 
     return unspendableUTXOs.reduce((acc, curr) => {
-      if(curr.inscriptions) {
+      if (curr.inscriptions) {
         acc.push(...curr.inscriptions)
       }
-      
+
       return acc
     }, [] as Inscription[])
   }
@@ -274,15 +274,15 @@ export class Ordit {
     new: (options: OrdTransactionOptions) => new OrdTransaction(options),
     fetchInscriptions: (outpoint: string, network: Network = "testnet") => {
       if (!outpoint) {
-        throw new Error("Outpoint is required.");
+        throw new Error("Outpoint is required.")
       }
 
       return OrditApi.fetchInscriptions({
         outpoint,
         network
-      });
+      })
     }
-  };
+  }
 
   static instantBuy = {
     generateBuyerPsbt,
@@ -293,34 +293,34 @@ export class Ordit {
   static collection = {
     publish: publishCollection,
     mint: mintFromCollection
-  };
+  }
 
   #initialize(addresses: Address[]) {
-    this.allAddresses = addresses;
+    this.allAddresses = addresses
 
-    const addressFormat = addresses[0].format as AddressFormats;
-    this.selectedAddressType = addressFormat;
-    this.selectedAddress = addresses[0].address;
+    const addressFormat = addresses[0].format as AddressFormats
+    this.selectedAddressType = addressFormat
+    this.selectedAddress = addresses[0].address
 
-    this.#initialized = true;
+    this.#initialized = true
   }
 }
 
 export type WalletOptions = {
-  wif?: string;
-  seed?: string;
-  privateKey?: string;
-  bip39?: string;
-  network?: Network;
-  type?: AddressFormats;
-};
+  wif?: string
+  seed?: string
+  privateKey?: string
+  bip39?: string
+  network?: Network
+  type?: AddressFormats
+}
 
-export type Address = ReturnType<typeof getAddressesFromPublicKey>[0];
+export type Address = ReturnType<typeof getAddressesFromPublicKey>[0]
 
 export interface Input {
-  index: number;
-  publicKey: string;
-  sighashTypes?: number[];
+  index: number
+  publicKey: string
+  sighashTypes?: number[]
 }
 
 export interface SignPSBTOptions {

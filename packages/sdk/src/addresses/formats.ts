@@ -17,21 +17,21 @@ export const addressFormats = {
     p2wpkh: /^(tb1[qp]|bcrt1[qp])[a-zA-HJ-NP-Z0-9]{14,74}$/,
     p2tr: /^(tb1p|bcrt1p)[a-zA-HJ-NP-Z0-9]{14,74}$/
   }
-} as const;
+} as const
 
 export const addressTypeToName = {
   p2pkh: "legacy",
   p2sh: "nested-segwit",
   p2wpkh: "segwit",
   p2tr: "taproot"
-} as const;
+} as const
 
 export const addressNameToType = {
   legacy: "p2pkh",
   segwit: "p2wpkh",
   "nested-segwit": "p2sh",
   taproot: "p2tr"
-} as const;
+} as const
 
-export type AddressTypes = keyof typeof addressTypeToName;
-export type AddressFormats = (typeof addressTypeToName)[AddressTypes];
+export type AddressTypes = keyof typeof addressTypeToName
+export type AddressFormats = (typeof addressTypeToName)[AddressTypes]

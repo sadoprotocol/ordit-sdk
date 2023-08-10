@@ -17,4 +17,4 @@ export const apiConfig = {
       ipfs: "http://ipfs-gateway.ordit.io/"
     }
   }
-};
+}

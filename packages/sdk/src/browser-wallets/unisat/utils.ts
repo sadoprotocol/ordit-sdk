@@ -1,9 +1,9 @@
 export function isUnisatInstalled() {
   if (typeof window.unisat !== "undefined") {
-    return true;
+    return true
   }
 
-  return false;
+  return false
 }
 
-export type UnisatNetwork = "livenet" | "testnet";
+export type UnisatNetwork = "livenet" | "testnet"
