@@ -3,12 +3,13 @@ import * as bitcoin from "bitcoinjs-lib"
 import { apiConfig } from "../config"
 import { Network } from "../config/types"
 import { Inscription } from "../inscription/types"
-import { Transaction, UTXO } from "../transactions/types"
+import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
 import { decodeObject } from "../utils"
 import { rpc } from "./jsonrpc"
 import {
   FetchInscriptionOptions,
   FetchInscriptionsOptions,
+  FetchSpendablesOptions,
   FetchTxOptions,
   FetchTxResponse,
   FetchUnspentUTXOsOptions,
@@ -164,6 +165,31 @@ export class OrditApi {
     inscription.meta = inscription.meta && decodeMetadata ? decodeObject(inscription.meta) : inscription.meta
 
     return inscription
+  }
+
+  static async fetchSpendables({
+    address,
+    value,
+    rarity = ["common"],
+    filter = [],
+    limit = 200,
+    network = "testnet"
+  }: FetchSpendablesOptions) {
+    if (!address || !value) {
+      throw new Error("Invalid options provided")
+    }
+
+    return rpc[network].call<UTXOLimited[]>(
+      "GetSpendables",
+      {
+        address,
+        value,
+        allowedrarity: rarity,
+        filter,
+        limit
+      },
+      rpc.id
+    )
   }
 
   static async relayTx({ hex, network = "testnet", maxFeeRate }: RelayTxOptions): Promise<string> {

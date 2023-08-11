@@ -49,3 +49,12 @@ export interface RelayTxOptions {
   maxFeeRate?: number
   network?: Network
 }
+
+export interface FetchSpendablesOptions {
+  address: string
+  value: number
+  rarity?: Rarity[]
+  filter?: string[]
+  limit?: number
+  network?: Network
+}
