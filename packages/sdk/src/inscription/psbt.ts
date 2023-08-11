@@ -3,7 +3,7 @@ import { Psbt } from "bitcoinjs-lib"
 import { getAddresses } from "../addresses"
 import { OrditApi } from "../api"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
-import { createTransaction, encodeObject, getNetwork } from "../utils"
+import { convertSatoshisToBTC, createTransaction, encodeObject, getNetwork } from "../utils"
 import { GetWalletOptions } from "../wallet"
 import { buildWitnessScript } from "./witness"
 
@@ -48,7 +48,7 @@ export async function createRevealPsbt(options: CreateRevealPsbtOptions) {
   const utxos = await OrditApi.fetchSpendables({
     address: inscribePayTx.address!,
     network: options.network,
-    value: totalAmount,
+    value: convertSatoshisToBTC(totalAmount),
     type: options.safeMode === "on" ? "spendable" : "all"
   })
 

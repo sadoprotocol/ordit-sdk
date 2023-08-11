@@ -5,6 +5,7 @@ import {
   addressNameToType,
   AddressTypes,
   calculateTxFee,
+  convertBTCToSatoshis,
   getAddressesFromPublicKey,
   getNetwork,
   InputType,
@@ -72,7 +73,7 @@ export async function generateBuyerPsbt({
     throw new Error("Outpoint not found.")
   }
 
-  postage = parseInt((output.value * 1e8).toString())
+  postage = convertBTCToSatoshis(output.value)
 
   const { totalUTXOs, spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({ address: address.address!, network })
   if (!totalUTXOs) {

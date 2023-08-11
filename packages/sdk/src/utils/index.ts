@@ -170,3 +170,12 @@ export function encodeObject(obj: NestedObject) {
 export function decodeObject(obj: NestedObject) {
   return encodeDecodeObject(obj, { encode: false })
 }
+
+// Temporary convertors until bignumber.js is integrated
+export function convertSatoshisToBTC(satoshis: number) {
+  return satoshis / 10 ** 8
+}
+
+export function convertBTCToSatoshis(btc: number) {
+  return parseInt((btc * 10 ** 8).toString()) // remove floating point overflow by parseInt
+}

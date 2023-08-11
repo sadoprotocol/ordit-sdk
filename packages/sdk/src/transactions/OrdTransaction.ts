@@ -5,6 +5,7 @@ import { Tapleaf } from "bitcoinjs-lib/src/types"
 import {
   buildWitnessScript,
   calculateTxFee,
+  convertSatoshisToBTC,
   createTransaction,
   encodeObject,
   getAddressesFromPublicKey,
@@ -307,7 +308,7 @@ export class OrdTransaction {
 
     const utxos = await OrditApi.fetchSpendables({
       address: this.#commitAddress,
-      value: amount,
+      value: convertSatoshisToBTC(amount),
       network: this.network,
       type: this.#safeMode === "on" ? "spendable" : "all"
     })
