@@ -43,19 +43,16 @@ export async function createRevealPsbt(options: CreateRevealPsbtOptions) {
     redeem: redeemScript
   })
 
-  const { spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
-    address: inscribePayTx.address!,
-    network: options.network
-  })
-
   const feesForWitnessData = options.fees
-  const suitableUTXO = spendableUTXOs.find((utxo) => {
-    return (
-      utxo.sats >= options.postage + feesForWitnessData &&
-      (options.safeMode === "off" || (options.safeMode === "on" && utxo.safeToSpend === true))
-    )
+  const totalAmount = options.postage + feesForWitnessData
+  const utxos = await OrditApi.fetchSpendables({
+    address: inscribePayTx.address!,
+    network: options.network,
+    value: totalAmount,
+    type: options.safeMode === "on" ? "spendable" : "all"
   })
 
+  const suitableUTXO = utxos.find((utxo) => utxo.sats === totalAmount)
   if (!suitableUTXO) {
     throw new Error("No suitable unspent found for reveal")
   }
