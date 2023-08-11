@@ -21,7 +21,7 @@ buyerWallet.setDefaultAddress('taproot')
 
 async function createSellOrder() {
     // replace w/ inscription outputpoint you'd like to sell, price, and address to receive sell proceeds
-    const sellerPSBT = await Ordit.instantBuy.generateSellerPsbt({
+    const { hex: sellerPSBT } = await Ordit.instantBuy.generateSellerPsbt({
         inscriptionOutPoint: '8d4a576aecb33b809c208d672a43fd6b175478d9454df4455ed0a2dc7eb7cbf6:0', 
         price: 4000, // Total sale proceeds will be price + inscription output value (4000 + 2000 = 6000 sats)
         receiveAddress: sellerWallet.selectedAddress,
@@ -30,7 +30,7 @@ async function createSellOrder() {
         network: 'testnet'
     })
 
-    const signedSellerPSBT = sellerWallet.signPsbt(sellerPSBT.toHex(), { finalize: false, extractTx: false })
+    const signedSellerPSBT = sellerWallet.signPsbt(sellerPSBT, { finalize: false, extractTx: false })
 
     return signedSellerPSBT // hex
 }
@@ -38,7 +38,7 @@ async function createSellOrder() {
 async function createBuyOrder({ sellerPSBT }) {    
     await checkForExistingRefundableUTXOs(buyerWallet.selectedAddress)
 
-    const buyerPSBT = await Ordit.instantBuy.generateBuyerPsbt({
+    const { hex: buyerPSBT } = await Ordit.instantBuy.generateBuyerPsbt({
         sellerPsbt: sellerPSBT,
         publicKey: buyerWallet.publicKey,
         pubKeyType: buyerWallet.selectedAddressType,
@@ -47,7 +47,7 @@ async function createBuyOrder({ sellerPSBT }) {
         inscriptionOutPoint: '0f3891f61b944c31fb48b0d9e770dc9e66a4b49097027be53b078be67aca72d4:0'
     })
     
-    const signature = buyerWallet.signPsbt(buyerPSBT.toHex())
+    const signature = buyerWallet.signPsbt(buyerPSBT)
     const tx = await buyerWallet.relayTx(signature, 'testnet')
 
     return tx

@@ -37,7 +37,10 @@ export async function generateSellerPsbt({
   psbt.addInput(inputs[0])
   psbt.addOutput(outputs[0])
 
-  return psbt
+  return {
+    hex: psbt.toHex(),
+    base64: psbt.toBase64()
+  }
 }
 
 export async function generateBuyerPsbt({
@@ -164,14 +167,18 @@ export async function generateBuyerPsbt({
     throw new Error("Insufficient funds to buy this inscription")
   }
 
-  if (changeValue > 580) {
+  if (changeValue > MINIMUM_AMOUNT_IN_SATS) {
     psbt.addOutput({
       address: address.address!,
       value: changeValue
     })
   }
 
-  return psbt
+  return {
+    hex: psbt.toHex(),
+    base64: psbt.toBase64(),
+    fee
+  }
 }
 
 export async function generateRefundableUTXOs({
