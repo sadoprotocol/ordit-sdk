@@ -308,7 +308,8 @@ export class OrdTransaction {
     const utxos = await OrditApi.fetchSpendables({
       address: this.#commitAddress,
       value: amount,
-      network: this.network
+      network: this.network,
+      type: this.#safeMode === "on" ? "spendable" : "all"
     })
 
     const suitableUTXO = utxos.find((utxo) => utxo.value === amount)
