@@ -55,28 +55,24 @@ export async function generateBuyerPsbt({
   let ordOutNumber = 0
   // get postage from outpoint
 
-  try {
-    const [ordTxId, ordOut] = inscriptionOutPoint.split(":")
-    if (!ordTxId || !ordOut) {
-      throw new Error("Invalid outpoint.")
-    }
-
-    ordOutNumber = parseInt(ordOut)
-    const { tx } = await OrditApi.fetchTx({ txId: ordTxId, network })
-    if (!tx) {
-      throw new Error("Failed to get raw transaction for id: " + ordTxId)
-    }
-
-    const output = tx && tx.vout[ordOutNumber]
-
-    if (!output) {
-      throw new Error("Outpoint not found.")
-    }
-
-    postage = parseInt((output.value * 1e8).toString())
-  } catch (error) {
-    throw new Error(error.message)
+  const [ordTxId, ordOut] = inscriptionOutPoint.split(":")
+  if (!ordTxId || !ordOut) {
+    throw new Error("Invalid outpoint.")
   }
+
+  ordOutNumber = parseInt(ordOut)
+  const { tx } = await OrditApi.fetchTx({ txId: ordTxId, network })
+  if (!tx) {
+    throw new Error("Failed to get raw transaction for id: " + ordTxId)
+  }
+
+  const output = tx && tx.vout[ordOutNumber]
+
+  if (!output) {
+    throw new Error("Outpoint not found.")
+  }
+
+  postage = parseInt((output.value * 1e8).toString())
 
   const { totalUTXOs, spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({ address: address.address!, network })
   if (!totalUTXOs) {
