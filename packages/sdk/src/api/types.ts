@@ -53,6 +53,7 @@ export interface RelayTxOptions {
 export interface FetchSpendablesOptions {
   address: string
   value: number
+  type?: "all" | "spendable"
   rarity?: Rarity[]
   filter?: string[]
   limit?: number

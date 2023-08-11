@@ -173,7 +173,8 @@ export class OrditApi {
     rarity = ["common"],
     filter = [],
     limit = 200,
-    network = "testnet"
+    network = "testnet",
+    type = "spendable"
   }: FetchSpendablesOptions) {
     if (!address || !value) {
       throw new Error("Invalid options provided")
@@ -184,6 +185,7 @@ export class OrditApi {
       {
         address,
         value,
+        safetospend: type === "spendable",
         allowedrarity: rarity,
         filter,
         limit
