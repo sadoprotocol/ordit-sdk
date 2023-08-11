@@ -3,6 +3,9 @@
   "compilerOptions": {
     "rootDir": "./",
     "outDir": "./dist",
+    "lib": ["ES2016"],
+    "target": "ES2015",
+    "types": ["node"],
     "sourceMap": true
   },
   "include": ["./src", "./tests", "./src/types"]

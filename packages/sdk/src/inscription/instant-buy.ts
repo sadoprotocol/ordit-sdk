@@ -22,7 +22,10 @@ export async function generateSellerPsbt({
   pubKeyType,
   network = "testnet"
 }: GenerateSellerInstantBuyPsbtOptions) {
-  const { inputs, outputs } = await getSellerInputsOutputs({
+  const {
+    inputs: [input],
+    outputs: [output]
+  } = await getSellerInputsOutputs({
     inscriptionOutPoint,
     price,
     receiveAddress,
@@ -34,8 +37,8 @@ export async function generateSellerPsbt({
   const networkObj = getNetwork(network)
   const psbt = new bitcoin.Psbt({ network: networkObj })
 
-  psbt.addInput(inputs[0])
-  psbt.addOutput(outputs[0])
+  psbt.addInput(input)
+  psbt.addOutput(output)
 
   return psbt
 }
@@ -84,16 +87,14 @@ export async function generateBuyerPsbt({
   }
 
   const psbt = new bitcoin.Psbt({ network: networkObj })
-  const refundableUTXOs = []
 
   // find refundableUTXOs utxos
-  for (let i = 0; i < spendableUTXOs.length; i++) {
-    const utxo = spendableUTXOs[i]
-
-    if (utxo.sats >= MINIMUM_AMOUNT_IN_SATS) {
-      refundableUTXOs.push(utxo)
+  const refundableUTXOs = spendableUTXOs.reduce((acc, cur) => {
+    if (cur.sats >= MINIMUM_AMOUNT_IN_SATS) {
+      acc.push(cur)
     }
-  }
+    return acc
+  }, [])
 
   if (refundableUTXOs.length < 2 || !spendableUTXOs.length) {
     throw new Error("No suitable UTXOs found.")
@@ -103,7 +104,7 @@ export async function generateBuyerPsbt({
 
   const witnessScripts: Buffer[] = []
   const usedUTXOTxIds: string[] = []
-  for (let i = 0; i < 2; i++) {
+  for (const [i] of Array.from({ length: 2 }).entries()) {
     const refundableUTXO = refundableUTXOs[i]
     if (usedUTXOTxIds.includes(refundableUTXO.txid)) continue
 
@@ -136,8 +137,7 @@ export async function generateBuyerPsbt({
   ;(psbt.data.globalMap.unsignedTx as any).tx.outs[2] = (decodedSellerPsbt.data.globalMap.unsignedTx as any).tx.outs[0]
   psbt.data.outputs[2] = decodedSellerPsbt.data.outputs[0]
 
-  for (let i = 0; i < spendableUTXOs.length; i++) {
-    const utxo = spendableUTXOs[i]
+  for (const utxo of spendableUTXOs) {
     if (usedUTXOTxIds.includes(utxo.txid)) continue
 
     const input = await processInput({ utxo, pubKey: publicKey, network })
@@ -157,7 +157,7 @@ export async function generateBuyerPsbt({
     additional: { witnessScripts }
   })
 
-  const totalOutput = psbt.txOutputs.reduce((partialSum, a) => partialSum + a.value, 0)
+  const totalOutput = psbt.txOutputs.reduce((partialSum: number, a: any) => partialSum + a.value, 0)
 
   const changeValue = totalInput - totalOutput - fee
   if (changeValue < 0) {
@@ -236,15 +236,16 @@ export async function generateRefundableUTXOs({
           }
         ]
 
-  let receivers: { address: string; cardinals: number }[] = []
-  destination.forEach((o) => {
-    const receiver = Array.from({ length: o.count }).fill({
-      address: o.address,
+  const receivers: { address: string; cardinals: number }[] = destination.reduce((acc, cur) => {
+    const receiver = Array.from({ length: cur.count }).fill({
+      address: cur.address,
       cardinals: perUTXOSats
     }) as { address: string; cardinals: number }[]
 
-    receivers = receivers.concat(receiver)
-  })
+    acc.push(...receiver)
+
+    return acc
+  }, [])
 
   receivers.forEach((output) => {
     psbt.addOutput({
@@ -265,9 +266,7 @@ export async function getSellerInputsOutputs({
   network = "testnet"
 }: GenerateSellerInstantBuyPsbtOptions) {
   const format = addressNameToType[pubKeyType]
-  const address = getAddressesFromPublicKey(publicKey, network, format)[0]
-  const inputs: InputType[] = []
-  const outputs = []
+  const [address] = getAddressesFromPublicKey(publicKey, network, format)
 
   const { totalUTXOs, unspendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
     address: address.address!,
@@ -290,8 +289,8 @@ export async function getSellerInputsOutputs({
     sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY
   })
 
-  inputs.push(input)
-  outputs.push({ address: receiveAddress, value: price + utxo.sats })
+  const inputs: InputType[] = [input]
+  const outputs = [{ address: receiveAddress, value: price + utxo.sats }]
 
   return { inputs, outputs }
 }
