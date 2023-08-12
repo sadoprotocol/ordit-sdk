@@ -26,3 +26,11 @@ export type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclu
     [K in Keys]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<Keys, K>>>
   }[Keys]
 
+interface BaseDataFormat {
+  hex?: string
+  base64?: string
+  buffer?: Buffer
+}
+
+export type OneOfAllDataFormats = RequireAtLeastOne<BaseDataFormat, "base64" | "buffer" | "hex">
+export type BufferOrHex = RequireAtLeastOne<BaseDataFormat, "buffer" | "hex">
