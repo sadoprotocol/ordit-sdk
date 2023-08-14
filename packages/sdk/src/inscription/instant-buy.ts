@@ -89,7 +89,7 @@ export async function generateBuyerPsbt({
   }
 
   const psbt = new bitcoin.Psbt({ network: networkObj })
-  let totalInput = 0
+  let totalInput = postage
   const witnessScripts: Buffer[] = []
   const usedUTXOTxIds: string[] = []
   const refundableUTXOs = [utxos[0]].concat(utxos[1])
