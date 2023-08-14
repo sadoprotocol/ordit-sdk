@@ -75,32 +75,25 @@ export async function generateBuyerPsbt({
 
   postage = convertBTCToSatoshis(output.value)
 
-  const { totalUTXOs, spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({ address: address.address!, network })
-  if (!totalUTXOs) {
-    throw new Error("No UTXOs found.")
+  const utxos = (
+    await OrditApi.fetchUnspentUTXOs({
+      address: address.address!,
+      network,
+      sort: "asc" // sort by ascending order to use low amount utxos as refundable utxos
+    })
+  ).spendableUTXOs.filter((utxo) => utxo.sats >= MINIMUM_AMOUNT_IN_SATS)
+
+  // 3 = 2 refundables + 1 to cover for purchase
+  if (utxos.length < 3) {
+    throw new Error("No suitable UTXOs found")
   }
 
   const psbt = new bitcoin.Psbt({ network: networkObj })
-  const refundableUTXOs = []
-
-  // find refundableUTXOs utxos
-  for (let i = 0; i < spendableUTXOs.length; i++) {
-    const utxo = spendableUTXOs[i]
-
-    if (utxo.sats >= MINIMUM_AMOUNT_IN_SATS) {
-      refundableUTXOs.push(utxo)
-    }
-  }
-
-  if (refundableUTXOs.length < 2 || !spendableUTXOs.length) {
-    throw new Error("No suitable UTXOs found.")
-  }
-
   let totalInput = 0
-
   const witnessScripts: Buffer[] = []
   const usedUTXOTxIds: string[] = []
-  for (let i = 0; i < 2; i++) {
+  const refundableUTXOs = [utxos[0]].concat(utxos[1])
+  for (let i = 0; i < refundableUTXOs.length; i++) {
     const refundableUTXO = refundableUTXOs[i]
     if (usedUTXOTxIds.includes(refundableUTXO.txid)) continue
 
@@ -133,8 +126,8 @@ export async function generateBuyerPsbt({
   ;(psbt.data.globalMap.unsignedTx as any).tx.outs[2] = (decodedSellerPsbt.data.globalMap.unsignedTx as any).tx.outs[0]
   psbt.data.outputs[2] = decodedSellerPsbt.data.outputs[0]
 
-  for (let i = 0; i < spendableUTXOs.length; i++) {
-    const utxo = spendableUTXOs[i]
+  for (let i = 0; i < utxos.length; i++) {
+    const utxo = utxos[i]
     if (usedUTXOTxIds.includes(utxo.txid)) continue
 
     const input = await processInput({ utxo, pubKey: publicKey, network })
@@ -161,7 +154,7 @@ export async function generateBuyerPsbt({
     throw new Error("Insufficient funds to buy this inscription")
   }
 
-  if (changeValue > 580) {
+  if (changeValue > MINIMUM_AMOUNT_IN_SATS) {
     psbt.addOutput({
       address: address.address!,
       value: changeValue
