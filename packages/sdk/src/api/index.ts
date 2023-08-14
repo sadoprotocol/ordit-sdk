@@ -14,6 +14,7 @@ import {
   FetchTxResponse,
   FetchUnspentUTXOsOptions,
   FetchUnspentUTXOsResponse,
+  GetBalanceOptions,
   RelayTxOptions
 } from "./types"
 
@@ -212,5 +213,21 @@ export class OrditApi {
       },
       rpc.id
     )
+  }
+
+  static async getBalance({ address, network = "testnet" }: GetBalanceOptions) {
+    if (!address) {
+      throw new Error("Invalid request")
+    }
+
+    const balance = await rpc[network].call<number>(
+      "GetBalance",
+      {
+        address
+      },
+      rpc.id
+    )
+
+    return balance
   }
 }
