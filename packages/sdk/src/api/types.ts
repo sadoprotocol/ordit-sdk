@@ -10,6 +10,7 @@ export interface FetchUnspentUTXOsOptions {
   type?: "all" | "spendable"
   rarity?: Rarity[]
   decodeMetadata?: boolean
+  sort?: "asc" | "desc"
 }
 
 export interface FetchUnspentUTXOsResponse {
@@ -57,5 +58,10 @@ export interface FetchSpendablesOptions {
   rarity?: Rarity[]
   filter?: string[]
   limit?: number
+  network?: Network
+}
+
+export interface GetBalanceOptions {
+  address: string
   network?: Network
 }

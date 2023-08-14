@@ -30,7 +30,8 @@ export class OrditApi {
     network = "testnet",
     type = "spendable",
     rarity = ["common"],
-    decodeMetadata = true
+    decodeMetadata = true,
+    sort = "desc"
   }: FetchUnspentUTXOsOptions): Promise<FetchUnspentUTXOsResponse> {
     if (!address) {
       throw new Error("Invalid address")
@@ -45,9 +46,9 @@ export class OrditApi {
           safetospend: type === "spendable"
         },
         pagination: {
-          page: 1,
           limit: 50
-        }
+        },
+        sort: { value: sort }
       },
       rpc.id
     )
