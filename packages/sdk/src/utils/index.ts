@@ -179,3 +179,7 @@ export function convertSatoshisToBTC(satoshis: number) {
 export function convertBTCToSatoshis(btc: number) {
   return parseInt((btc * 10 ** 8).toString()) // remove floating point overflow by parseInt
 }
+
+export function generateTxUniqueIdentifier(txId: string, index: number) {
+  return `${txId}:${index}`
+}
