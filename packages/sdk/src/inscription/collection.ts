@@ -47,63 +47,59 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
     throw new Error("Invalid collection outpoint supplied.")
   }
 
-  try {
-    const { tx } = await OrditApi.fetchTx({ txId: colTxId, network: options.network })
-    if (!tx) {
-      throw new Error("Failed to get raw transaction for id: " + colTxId)
-    }
-
-    const colMeta = tx.vout[colVOut].inscriptions[0].meta
-
-    let validInscription = false
-
-    for (let i = 0; i < colMeta?.insc.length; i++) {
-      if (
-        colMeta?.insc[i].iid == options.inscriptionIid &&
-        colMeta.publ[options.publisherIndex] &&
-        options.nonce < colMeta.insc[i].lim
-      ) {
-        validInscription = true
-      }
-    }
-
-    if (!validInscription) {
-      throw new Error("Invalid inscription iid supplied.")
-    }
-
-    const inscriptions = await OrditApi.fetchInscriptions({
-      outpoint: options.collectionOutpoint,
-      network: options.network
-    })
-
-    if (!inscriptions.length || inscriptions.length > 1) {
-      throw new Error("Invalid inscriptions")
-    }
-
-    const meta: any = {
-      p: "vord",
-      v: 1,
-      ty: "insc",
-      col: inscriptions[0].genesis,
-      iid: options.inscriptionIid,
-      publ: colMeta?.publ[options.publisherIndex],
-      nonce: options.nonce,
-      traits: options.traits
-    }
-
-    const message = `${options.collectionOutpoint} ${options.inscriptionIid} ${options.nonce}`
-    const validSignature = verifyMessage({ address: meta.publ, message: message, signature: options.signature })
-
-    if (!validSignature) {
-      throw new Error("Invalid signature supplied.")
-    }
-
-    meta.sig = options.signature
-
-    return new OrdTransaction({ ...options, meta })
-  } catch (error) {
-    throw new Error(error)
+  const { tx } = await OrditApi.fetchTx({ txId: colTxId, network: options.network })
+  if (!tx) {
+    throw new Error("Failed to get raw transaction for id: " + colTxId)
   }
+
+  const colMeta = tx.vout[colVOut].inscriptions[0].meta
+
+  let validInscription = false
+
+  for (let i = 0; i < colMeta?.insc.length; i++) {
+    if (
+      colMeta?.insc[i].iid == options.inscriptionIid &&
+      colMeta.publ[options.publisherIndex] &&
+      options.nonce < colMeta.insc[i].lim
+    ) {
+      validInscription = true
+    }
+  }
+
+  if (!validInscription) {
+    throw new Error("Invalid inscription iid supplied.")
+  }
+
+  const [collection] = await OrditApi.fetchInscriptions({
+    outpoint: options.collectionOutpoint,
+    network: options.network
+  })
+
+  if (!collection) {
+    throw new Error("Invalid collection")
+  }
+
+  const meta: any = {
+    p: "vord",
+    v: 1,
+    ty: "insc",
+    col: collection.genesis,
+    iid: options.inscriptionIid,
+    publ: colMeta?.publ[options.publisherIndex],
+    nonce: options.nonce,
+    traits: options.traits
+  }
+
+  const message = `${collection.genesis} ${options.inscriptionIid} ${options.nonce}`
+  const validSignature = verifyMessage({ address: meta.publ, message: message, signature: options.signature })
+
+  if (!validSignature) {
+    throw new Error("Invalid signature supplied.")
+  }
+
+  meta.sig = options.signature
+
+  return new OrdTransaction({ ...options, meta })
 }
 
 function validateInscriptions(inscriptions: CollectionInscription[] = []) {
