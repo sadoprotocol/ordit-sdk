@@ -6,6 +6,7 @@ import {
   AddressTypes,
   calculateTxFee,
   convertBTCToSatoshis,
+  generateTxUniqueIdentifier,
   getAddressesFromPublicKey,
   getNetwork,
   InputType,
@@ -93,11 +94,11 @@ export async function generateBuyerPsbt({
   const refundableUTXOs = [utxos[0]].concat(utxos[1])
   for (let i = 0; i < refundableUTXOs.length; i++) {
     const refundableUTXO = refundableUTXOs[i]
-    if (usedUTXOTxIds.includes(refundableUTXO.txid)) continue
+    if (usedUTXOTxIds.includes(generateTxUniqueIdentifier(refundableUTXO.txid, refundableUTXO.n))) continue
 
     const input = await processInput({ utxo: refundableUTXO, pubKey: publicKey, network })
 
-    usedUTXOTxIds.push(input.hash)
+    usedUTXOTxIds.push(generateTxUniqueIdentifier(input.hash, input.index))
     psbt.addInput(input)
     totalInput += refundableUTXO.sats
   }
@@ -126,12 +127,12 @@ export async function generateBuyerPsbt({
 
   for (let i = 0; i < utxos.length; i++) {
     const utxo = utxos[i]
-    if (usedUTXOTxIds.includes(utxo.txid)) continue
+    if (usedUTXOTxIds.includes(generateTxUniqueIdentifier(utxo.txid, utxo.n))) continue
 
     const input = await processInput({ utxo, pubKey: publicKey, network })
     input.witnessUtxo?.script && witnessScripts.push(input.witnessUtxo?.script)
 
-    usedUTXOTxIds.push(input.hash)
+    usedUTXOTxIds.push(generateTxUniqueIdentifier(input.hash, input.index))
 
     psbt.addInput(input)
     totalInput += utxo.sats
