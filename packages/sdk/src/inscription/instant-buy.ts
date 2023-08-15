@@ -52,7 +52,6 @@ export async function generateBuyerPsbt({
   const networkObj = getNetwork(network)
   const format = addressNameToType[pubKeyType]
   const address = getAddressesFromPublicKey(publicKey, network, format)[0]
-  let postage = 10000 // default postage
   let ordOutNumber = 0
   // get postage from outpoint
 
@@ -73,8 +72,7 @@ export async function generateBuyerPsbt({
     throw new Error("Outpoint not found.")
   }
 
-  postage = convertBTCToSatoshis(output.value)
-
+  const postage = convertBTCToSatoshis(output.value)
   const utxos = (
     await OrditApi.fetchUnspentUTXOs({
       address: address.address!,
