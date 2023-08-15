@@ -54,22 +54,13 @@ async function createBuyOrder({ sellerPSBT }) {
 }
 
 async function checkForExistingRefundableUTXOs(address) {
-    const response = await OrditApi.fetch('/utxo/unspents', {
-        data: {
-            address: address,
-            options: {
-                txhex: true,
-                notsafetospend: false,
-                allowedrarity: ["common"]
-            }
-        },
+    const { spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
+        address,
         network: 'testnet'
     })
 
-    const utxos = response.rdata
-    const filteredUTXOs = utxos
-        .filter(utxo => utxo.safeToSpend && !utxo.inscriptions.length && utxo.sats > 600 && utxo.sats <= 1000)
-        .sort((a, b) => a.sats - b.sats) // Sort by lowest value utxo to highest such that we spend only the ones that are lowest
+    const filteredUTXOs = spendableUTXOs
+        .filter(utxo => utxo.sats > 600)
 
     if(filteredUTXOs.length < 2) {
         throw new Error("Not enough UTXOs in 600-1000 sats range. Use Ordit.instantBuy.generateDummyUtxos() to generate dummy utxos.")
