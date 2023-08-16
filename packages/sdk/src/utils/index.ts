@@ -5,7 +5,14 @@ import ECPairFactory from "ecpair"
 
 import { AddressFormats, AddressTypes } from "../addresses/formats"
 import { Network } from "../config/types"
-import { CalculateTxFeeOptions, CalculateTxVirtualSizeOptions, EncodeDecodeObjectOptions, NestedObject } from "./types"
+import {
+  BufferOrHex,
+  CalculateTxFeeOptions,
+  CalculateTxVirtualSizeOptions,
+  EncodeDecodeObjectOptions,
+  NestedObject,
+  OneOfAllDataFormats
+} from "./types"
 
 export function getNetwork(value: Network) {
   if (value === "mainnet") {
@@ -182,4 +189,19 @@ export function convertBTCToSatoshis(btc: number) {
 
 export function generateTxUniqueIdentifier(txId: string, index: number) {
   return `${txId}:${index}`
+}
+
+export function decodePSBT({ hex, base64, buffer }: OneOfAllDataFormats): bitcoin.Psbt {
+  if (hex) return bitcoin.Psbt.fromHex(hex)
+  if (base64) return bitcoin.Psbt.fromBase64(base64)
+  if (buffer) return bitcoin.Psbt.fromBuffer(buffer)
+
+  throw new Error("Invalid options")
+}
+
+export function decodeTx({ hex, buffer }: BufferOrHex): bitcoin.Transaction {
+  if (hex) return bitcoin.Transaction.fromHex(hex)
+  if (buffer) return bitcoin.Transaction.fromBuffer(buffer)
+
+  throw new Error("Invalid options")
 }
