@@ -3,7 +3,7 @@ import { Psbt } from "bitcoinjs-lib"
 import { UnisatSignPSBTOptions } from "./types"
 import { isUnisatInstalled } from "./utils"
 
-export async function signPsbt(psbt: Psbt, { finalize = true }: UnisatSignPSBTOptions = {}) {
+export async function signPsbt(psbt: Psbt, { finalize = true, extractTx = true }: UnisatSignPSBTOptions = {}) {
   if (!isUnisatInstalled()) {
     throw new Error("Unisat not installed.")
   }
@@ -21,9 +21,9 @@ export async function signPsbt(psbt: Psbt, { finalize = true }: UnisatSignPSBTOp
   }
 
   const signedPsbt = Psbt.fromHex(signedPsbtHex)
-  let rawTxHex = null
+  let rawTxHex: string | null = null
   try {
-    rawTxHex = signedPsbt.extractTransaction().toHex()
+    rawTxHex = extractTx ? signedPsbt.extractTransaction().toHex() : signedPsbt.toHex()
   } catch (error) {
     return {
       rawTxHex,
