@@ -121,6 +121,8 @@ export async function generateBuyerPsbt({
   // seller psbt merge
 
   const decodedSellerPsbt = bitcoin.Psbt.fromHex(sellerPsbt, { network: networkObj })
+  const sellPrice = (decodedSellerPsbt.data.globalMap.unsignedTx as any).tx.outs[0].value - postage
+
   // inputs
   ;(psbt.data.globalMap.unsignedTx as any).tx.ins[2] = (decodedSellerPsbt.data.globalMap.unsignedTx as any).tx.ins[0]
   psbt.data.inputs[2] = decodedSellerPsbt.data.inputs[0]
@@ -166,7 +168,9 @@ export async function generateBuyerPsbt({
   return {
     hex: psbt.toHex(),
     base64: psbt.toBase64(),
-    fee
+    fee,
+    postage,
+    sellPrice
   }
 }
 

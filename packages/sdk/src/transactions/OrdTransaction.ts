@@ -303,7 +303,7 @@ export class OrdTransaction {
       throw new Error("No commit address found. Please generate a commit address.")
     }
 
-    const outAmount = this.#outs.reduce((acc, cur) => (acc = +cur.value), 0)
+    const outAmount = this.#outs.reduce((acc, cur) => (acc += cur.value), 0)
     const amount = this.postage + this.#feeForWitnessData! + outAmount
 
     const utxos = await OrditApi.fetchSpendables({
@@ -313,7 +313,7 @@ export class OrdTransaction {
       type: this.#safeMode === "on" ? "spendable" : "all"
     })
 
-    const suitableUTXO = utxos.find((utxo) => utxo.value === amount)
+    const suitableUTXO = utxos.find((utxo) => utxo.value >= amount)
     if (!suitableUTXO) {
       throw new Error("No suitable unspent found for reveal.")
     }
