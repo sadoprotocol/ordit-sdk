@@ -69,3 +69,5 @@ export interface UTXO {
   safeToSpend: boolean
   confirmation: number
 }
+
+export type UTXOLimited = Pick<UTXO, "txid" | "n" | "value" | "sats" | "scriptPubKey">

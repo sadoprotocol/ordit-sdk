@@ -12,7 +12,7 @@ interface XverseSignedPsbt {
   }
 }
 
-export async function signPsbt(options: XverseSignPsbtOptions) {
+export async function signPsbt({ psbt, network, inputs, finalize = true, extractTx = true }: XverseSignPsbtOptions) {
   const result: XverseSignedPsbt = {
     rawTxHex: null,
     psbt: {
@@ -21,7 +21,7 @@ export async function signPsbt(options: XverseSignPsbtOptions) {
     }
   }
 
-  if (!options.psbt || !options.network || !options.inputs) {
+  if (!psbt || !network || !inputs) {
     throw new Error("Invalid options provided.")
   }
 
@@ -39,8 +39,8 @@ export async function signPsbt(options: XverseSignPsbtOptions) {
     const signedPsbt = Psbt.fromBase64(psbtBase64)
 
     try {
-      signedPsbt.finalizeAllInputs()
-      result.rawTxHex = signedPsbt.extractTransaction().toHex()
+      finalize && signedPsbt.finalizeAllInputs()
+      result.rawTxHex = extractTx ? signedPsbt.extractTransaction().toHex() : null
     } catch (error) {
       // Do nothing, leave the rawTxHex as null
     }
@@ -54,12 +54,12 @@ export async function signPsbt(options: XverseSignPsbtOptions) {
   const xverseOptions = {
     payload: {
       network: {
-        type: (options.network.charAt(0).toUpperCase() + options.network.slice(1)) as XverseNetwork
+        type: (network.charAt(0).toUpperCase() + network.slice(1)) as XverseNetwork
       },
       message: "Sign Ordit SDK Transaction",
-      psbtBase64: options.psbt.toBase64(),
+      psbtBase64: psbt.toBase64(),
       broadcast: false,
-      inputsToSign: options.inputs
+      inputsToSign: inputs
     },
     onFinish: handleFinish,
     onCancel: () => handleOnSignCancel("Psbt")
@@ -112,6 +112,8 @@ export type XverseSignPsbtOptions = {
   psbt: Psbt
   network: Network
   inputs: InputToSign[]
+  finalize?: boolean
+  extractTx?: boolean
 }
 
 export type XverseSignPsbtResponse = {

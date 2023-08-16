@@ -5,6 +5,8 @@ import {
   addressNameToType,
   AddressTypes,
   calculateTxFee,
+  convertBTCToSatoshis,
+  generateTxUniqueIdentifier,
   getAddressesFromPublicKey,
   getNetwork,
   InputType,
@@ -54,65 +56,52 @@ export async function generateBuyerPsbt({
   const networkObj = getNetwork(network)
   const format = addressNameToType[pubKeyType]
   const address = getAddressesFromPublicKey(publicKey, network, format)[0]
-  let postage = 10000 // default postage
   let ordOutNumber = 0
   // get postage from outpoint
 
-  try {
-    const [ordTxId, ordOut] = inscriptionOutPoint.split(":")
-    if (!ordTxId || !ordOut) {
-      throw new Error("Invalid outpoint.")
-    }
-
-    ordOutNumber = parseInt(ordOut)
-    const { tx } = await OrditApi.fetchTx({ txId: ordTxId, network })
-    if (!tx) {
-      throw new Error("Failed to get raw transaction for id: " + ordTxId)
-    }
-
-    const output = tx && tx.vout[ordOutNumber]
-
-    if (!output) {
-      throw new Error("Outpoint not found.")
-    }
-
-    postage = parseInt((output.value * 1e8).toString())
-  } catch (error) {
-    throw new Error(error.message)
+  const [ordTxId, ordOut] = inscriptionOutPoint.split(":")
+  if (!ordTxId || !ordOut) {
+    throw new Error("Invalid outpoint.")
   }
 
-  const { totalUTXOs, spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({ address: address.address!, network })
-  if (!totalUTXOs) {
-    throw new Error("No UTXOs found.")
+  ordOutNumber = parseInt(ordOut)
+  const { tx } = await OrditApi.fetchTx({ txId: ordTxId, network })
+  if (!tx) {
+    throw new Error("Failed to get raw transaction for id: " + ordTxId)
+  }
+
+  const output = tx && tx.vout[ordOutNumber]
+
+  if (!output) {
+    throw new Error("Outpoint not found.")
+  }
+
+  const postage = convertBTCToSatoshis(output.value)
+  const utxos = (
+    await OrditApi.fetchUnspentUTXOs({
+      address: address.address!,
+      network,
+      sort: "asc" // sort by ascending order to use low amount utxos as refundable utxos
+    })
+  ).spendableUTXOs.filter((utxo) => utxo.sats >= MINIMUM_AMOUNT_IN_SATS)
+
+  // 3 = 2 refundables + 1 to cover for purchase
+  if (utxos.length < 3) {
+    throw new Error("No suitable UTXOs found")
   }
 
   const psbt = new bitcoin.Psbt({ network: networkObj })
-  const refundableUTXOs = []
-
-  // find refundableUTXOs utxos
-  for (let i = 0; i < spendableUTXOs.length; i++) {
-    const utxo = spendableUTXOs[i]
-
-    if (utxo.sats >= MINIMUM_AMOUNT_IN_SATS) {
-      refundableUTXOs.push(utxo)
-    }
-  }
-
-  if (refundableUTXOs.length < 2 || !spendableUTXOs.length) {
-    throw new Error("No suitable UTXOs found.")
-  }
-
-  let totalInput = 0
-
+  let totalInput = postage
   const witnessScripts: Buffer[] = []
   const usedUTXOTxIds: string[] = []
-  for (let i = 0; i < 2; i++) {
+  const refundableUTXOs = [utxos[0]].concat(utxos[1])
+  for (let i = 0; i < refundableUTXOs.length; i++) {
     const refundableUTXO = refundableUTXOs[i]
-    if (usedUTXOTxIds.includes(refundableUTXO.txid)) continue
+    if (usedUTXOTxIds.includes(generateTxUniqueIdentifier(refundableUTXO.txid, refundableUTXO.n))) continue
 
     const input = await processInput({ utxo: refundableUTXO, pubKey: publicKey, network })
 
-    usedUTXOTxIds.push(input.hash)
+    usedUTXOTxIds.push(generateTxUniqueIdentifier(input.hash, input.index))
     psbt.addInput(input)
     totalInput += refundableUTXO.sats
   }
@@ -139,14 +128,14 @@ export async function generateBuyerPsbt({
   ;(psbt.data.globalMap.unsignedTx as any).tx.outs[2] = (decodedSellerPsbt.data.globalMap.unsignedTx as any).tx.outs[0]
   psbt.data.outputs[2] = decodedSellerPsbt.data.outputs[0]
 
-  for (let i = 0; i < spendableUTXOs.length; i++) {
-    const utxo = spendableUTXOs[i]
-    if (usedUTXOTxIds.includes(utxo.txid)) continue
+  for (let i = 0; i < utxos.length; i++) {
+    const utxo = utxos[i]
+    if (usedUTXOTxIds.includes(generateTxUniqueIdentifier(utxo.txid, utxo.n))) continue
 
     const input = await processInput({ utxo, pubKey: publicKey, network })
     input.witnessUtxo?.script && witnessScripts.push(input.witnessUtxo?.script)
 
-    usedUTXOTxIds.push(input.hash)
+    usedUTXOTxIds.push(generateTxUniqueIdentifier(input.hash, input.index))
 
     psbt.addInput(input)
     totalInput += utxo.sats
@@ -274,7 +263,7 @@ export async function getSellerInputsOutputs({
   const format = addressNameToType[pubKeyType]
   const address = getAddressesFromPublicKey(publicKey, network, format)[0]
   const inputs: InputType[] = []
-  const outputs = []
+  const outputs: { address: string; value: number }[] = []
 
   const { totalUTXOs, unspendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
     address: address.address!,

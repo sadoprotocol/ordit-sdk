@@ -3,16 +3,18 @@ import * as bitcoin from "bitcoinjs-lib"
 import { apiConfig } from "../config"
 import { Network } from "../config/types"
 import { Inscription } from "../inscription/types"
-import { Transaction, UTXO } from "../transactions/types"
+import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
 import { decodeObject } from "../utils"
 import { rpc } from "./jsonrpc"
 import {
   FetchInscriptionOptions,
   FetchInscriptionsOptions,
+  FetchSpendablesOptions,
   FetchTxOptions,
   FetchTxResponse,
   FetchUnspentUTXOsOptions,
   FetchUnspentUTXOsResponse,
+  GetBalanceOptions,
   RelayTxOptions
 } from "./types"
 
@@ -29,7 +31,8 @@ export class OrditApi {
     network = "testnet",
     type = "spendable",
     rarity = ["common"],
-    decodeMetadata = true
+    decodeMetadata = true,
+    sort = "desc"
   }: FetchUnspentUTXOsOptions): Promise<FetchUnspentUTXOsResponse> {
     if (!address) {
       throw new Error("Invalid address")
@@ -44,9 +47,9 @@ export class OrditApi {
           safetospend: type === "spendable"
         },
         pagination: {
-          page: 1,
           limit: 50
-        }
+        },
+        sort: { value: sort }
       },
       rpc.id
     )
@@ -166,6 +169,33 @@ export class OrditApi {
     return inscription
   }
 
+  static async fetchSpendables({
+    address,
+    value,
+    rarity = ["common"],
+    filter = [],
+    limit = 200,
+    network = "testnet",
+    type = "spendable"
+  }: FetchSpendablesOptions) {
+    if (!address || !value) {
+      throw new Error("Invalid options provided")
+    }
+
+    return rpc[network].call<UTXOLimited[]>(
+      "GetSpendables",
+      {
+        address,
+        value,
+        safetospend: type === "spendable",
+        allowedrarity: rarity,
+        filter,
+        limit
+      },
+      rpc.id
+    )
+  }
+
   static async relayTx({ hex, network = "testnet", maxFeeRate }: RelayTxOptions): Promise<string> {
     if (!hex) {
       throw new Error("Invalid tx hex")
@@ -183,5 +213,21 @@ export class OrditApi {
       },
       rpc.id
     )
+  }
+
+  static async getBalance({ address, network = "testnet" }: GetBalanceOptions) {
+    if (!address) {
+      throw new Error("Invalid request")
+    }
+
+    const balance = await rpc[network].call<number>(
+      "GetBalance",
+      {
+        address
+      },
+      rpc.id
+    )
+
+    return balance
   }
 }
