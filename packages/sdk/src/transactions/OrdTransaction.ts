@@ -313,7 +313,7 @@ export class OrdTransaction {
       type: this.#safeMode === "on" ? "spendable" : "all"
     })
 
-    const suitableUTXO = utxos.find((utxo) => utxo.value >= amount)
+    const suitableUTXO = utxos.find((utxo) => utxo.sats >= amount)
     if (!suitableUTXO) {
       throw new Error("No suitable unspent found for reveal.")
     }
