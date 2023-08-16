@@ -256,7 +256,7 @@ export async function getSellerInputsOutputs({
   const format = addressNameToType[pubKeyType]
   const address = getAddressesFromPublicKey(publicKey, network, format)[0]
   const inputs: InputType[] = []
-  const outputs = []
+  const outputs: { address: string; value: number }[] = []
 
   const { totalUTXOs, unspendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
     address: address.address!,
