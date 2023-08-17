@@ -71,3 +71,8 @@ export interface UTXO {
 }
 
 export type UTXOLimited = Pick<UTXO, "txid" | "n" | "value" | "sats" | "scriptPubKey">
+
+export interface Output {
+  address: string
+  cardinals: number
+}

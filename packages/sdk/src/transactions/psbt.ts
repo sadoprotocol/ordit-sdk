@@ -9,7 +9,7 @@ import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { calculateTxFee, createTransaction, getNetwork, toXOnly } from "../utils"
 import { OnOffUnion } from "../wallet"
-import { UTXO } from "./types"
+import { UTXO, UTXOLimited } from "./types"
 
 const bip32 = BIP32Factory(ecc)
 
@@ -222,7 +222,7 @@ export type CreatePsbtOptions = {
 }
 
 interface ProcessInputOptions {
-  utxo: UTXO
+  utxo: UTXO | UTXOLimited
   pubKey: string
   network: Network
   sighashType?: number
