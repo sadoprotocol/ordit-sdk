@@ -52,8 +52,12 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
     throw new Error("Failed to get raw transaction for id: " + colTxId)
   }
 
-  const colMeta = tx.vout[colVOut].inscriptions[0].meta
+  const collection = tx.vout[colVOut].inscriptions[0]
+  if (!collection) {
+    throw new Error("Invalid collection")
+  }
 
+  const colMeta = collection.meta
   let validInscription = false
 
   for (let i = 0; i < colMeta?.insc.length; i++) {
@@ -68,15 +72,6 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
 
   if (!validInscription) {
     throw new Error("Invalid inscription iid supplied.")
-  }
-
-  const [collection] = await OrditApi.fetchInscriptions({
-    outpoint: options.collectionOutpoint,
-    network: options.network
-  })
-
-  if (!collection) {
-    throw new Error("Invalid collection")
   }
 
   const meta: any = {
