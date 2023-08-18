@@ -215,7 +215,7 @@ export type CreatePsbtOptions = {
     address: string
     cardinals: number
   }[]
-  enableRBF: boolean
+  enableRBF?: boolean
   pubKey: string
   network: Network
   safeMode?: OnOffUnion

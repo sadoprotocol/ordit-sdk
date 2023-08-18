@@ -41,6 +41,7 @@ export class OrdTransaction {
   #outs: Outputs = []
   #safeMode: OnOffUnion
   #encodeMetadata: boolean
+  #enableRBF: boolean
 
   constructor({
     feeRate = 10,
@@ -50,6 +51,7 @@ export class OrdTransaction {
     publicKey,
     outs = [],
     encodeMetadata = false,
+    enableRBF = true,
     ...otherOptions
   }: OrdTransactionOptions) {
     if (!publicKey || !otherOptions.changeAddress || !otherOptions.destination || !otherOptions.mediaContent) {
@@ -68,6 +70,7 @@ export class OrdTransaction {
     this.#outs = outs
     this.#safeMode = !otherOptions.safeMode ? "on" : otherOptions.safeMode
     this.#encodeMetadata = encodeMetadata
+    this.#enableRBF = enableRBF
 
     const xKey = getAddressesFromPublicKey(publicKey, network, "p2tr")[0].xkey
 
@@ -108,7 +111,7 @@ export class OrdTransaction {
     const psbt = new bitcoin.Psbt({ network: networkObj })
 
     psbt.addInput({
-      sequence: 0xfffffffd, // Needs to be at least 2 below max int value to be RBF
+      sequence: this.#enableRBF ? 0xfffffffd : 0xffffffff,
       hash: this.#suitableUnspent.txid,
       index: parseInt(this.#suitableUnspent.n),
       tapInternalKey: Buffer.from(this.#xKey, "hex"),
@@ -337,6 +340,7 @@ export type OrdTransactionOptions = Pick<GetWalletOptions, "safeMode"> & {
   publicKey: string
   outs?: Outputs
   encodeMetadata?: boolean
+  enableRBF?: boolean
 }
 
 type Outputs = Array<{ address: string; value: number }>
