@@ -131,6 +131,7 @@ export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   publicKey: string
   outs?: Outputs
   encodeMetadata?: boolean
+  enableRBF?: boolean
 }
 
 export type CollectionInscription = {
@@ -156,6 +157,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   outs?: Outputs
   traits?: any
   encodeMetadata?: boolean
+  enableRBF?: boolean
 }
 
 type Outputs = Array<{ address: string; value: number }>
