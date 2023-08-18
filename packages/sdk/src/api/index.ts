@@ -1,7 +1,5 @@
 import * as bitcoin from "bitcoinjs-lib"
 
-import { apiConfig } from "../config"
-import { Network } from "../config/types"
 import { Inscription } from "../inscription/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
 import { decodeObject } from "../utils"
@@ -19,11 +17,13 @@ import {
 } from "./types"
 
 export class OrditApi {
-  static readonly #config = apiConfig
-  #network: Network = "testnet"
+  static transformInscriptions(inscriptions: Inscription[] | undefined) {
+    if (!inscriptions) return []
 
-  constructor(network: Network) {
-    this.#network = network
+    return inscriptions.map((inscription) => {
+      inscription.meta = inscription.meta ? decodeObject(inscription.meta) : inscription.meta
+      return inscription
+    })
   }
 
   static async fetchUnspentUTXOs({
@@ -57,12 +57,7 @@ export class OrditApi {
     const { spendableUTXOs, unspendableUTXOs } = utxos.reduce(
       (acc, utxo) => {
         if (utxo.inscriptions?.length && !utxo.safeToSpend) {
-          if (decodeMetadata) {
-            utxo.inscriptions = utxo.inscriptions.map((inscription) => {
-              inscription.meta = inscription.meta ? decodeObject(inscription.meta) : inscription.meta
-              return inscription
-            })
-          }
+          utxo.inscriptions = decodeMetadata ? this.transformInscriptions(utxo.inscriptions) : utxo.inscriptions
 
           acc.unspendableUTXOs.push(utxo)
         } else {
@@ -109,16 +104,10 @@ export class OrditApi {
       rpc.id
     )
 
-    if (tx && tx.vout.length && decodeMetadata) {
-      tx.vout = tx.vout.map((vout) => {
-        vout.inscriptions = vout.inscriptions.map((inscription) => {
-          inscription.meta = inscription.meta ? decodeObject(inscription.meta) : inscription.meta
-          return inscription
-        })
-
-        return vout
-      })
-    }
+    tx.vout = tx.vout.map((vout) => {
+      vout.inscriptions = decodeMetadata ? this.transformInscriptions(vout.inscriptions) : vout.inscriptions
+      return vout
+    })
 
     return {
       tx,
@@ -141,10 +130,7 @@ export class OrditApi {
     )
 
     if (decodeMetadata) {
-      inscriptions = inscriptions.map((inscription) => {
-        inscription.meta = inscription.meta ? decodeObject(inscription.meta) : inscription.meta
-        return inscription
-      })
+      inscriptions = this.transformInscriptions(inscriptions)
     }
 
     return inscriptions
@@ -155,7 +141,7 @@ export class OrditApi {
       throw new Error("Invalid options provided.")
     }
 
-    const inscription = await rpc[network].call<Inscription>(
+    let inscription = await rpc[network].call<Inscription>(
       "GetInscription",
       {
         id,
@@ -164,7 +150,9 @@ export class OrditApi {
       rpc.id
     )
 
-    inscription.meta = inscription.meta && decodeMetadata ? decodeObject(inscription.meta) : inscription.meta
+    if (decodeMetadata) {
+      inscription = this.transformInscriptions([inscription])[0]
+    }
 
     return inscription
   }
