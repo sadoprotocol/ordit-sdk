@@ -50,7 +50,7 @@ class JsonRpc {
     if (response.status === 200) {
       const json = await response.json()
       if (json.error) {
-        throw new Error(json.error.message)
+        throw new Error(json.error.data || json.error.message)
       }
       return json.result
     }
