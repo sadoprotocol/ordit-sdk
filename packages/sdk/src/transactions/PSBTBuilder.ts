@@ -214,5 +214,18 @@ export class PSBTBuilder {
 
     this.calculateOutputAmount()
   }
+
+  build() {
+    this.addInputs()
+    this.outputs.forEach((output) =>
+      this.psbt.addOutput({
+        address: output.address,
+        value: output.cardinals
+      })
+    )
+
+    this.psbt.setMaximumFeeRate(this.feeRate)
+
+    return this
   }
 }
