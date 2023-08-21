@@ -25,6 +25,7 @@ export async function createPsbt({
   if (!outputs.length) {
     throw new Error("Invalid request")
   }
+
   const { spendableUTXOs, unspendableUTXOs, totalUTXOs } = await OrditApi.fetchUnspentUTXOs({
     address,
     network,
