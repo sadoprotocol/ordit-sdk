@@ -1,6 +1,14 @@
 import { networks, Psbt } from "bitcoinjs-lib"
 
-import { addressTypeToName, calculateTxFee, convertSatoshisToBTC, getAddressType, getNetwork, OrditApi } from ".."
+import {
+  addressTypeToName,
+  calculateTxFee,
+  convertSatoshisToBTC,
+  generateTxUniqueIdentifier,
+  getAddressType,
+  getNetwork,
+  OrditApi
+} from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { InputType, processInput } from "."
@@ -27,10 +35,12 @@ export class PSBTBuilder {
   outputs: Output[] = []
   outputAmount = 0
   network: Network
+  noMoreUTXOS = false
   psbt: Psbt
   publicKey: string
   rbf = true
   utxos: UTXOLimited[] = []
+  usedUTXOs: string[] = []
   witnessScripts: Buffer[] = []
 
   constructor({ address, feeRate, network, publicKey, outputs }: PSBTBuilderOptions) {
@@ -63,12 +73,7 @@ export class PSBTBuilder {
   }
 
   private async addInputs() {
-    for (const [index, utxo] of this.utxos.entries()) {
-      const input = await processInput({
-        utxo,
-        pubKey: this.publicKey,
-        network: this.network
-      }) // add sigHashType
+    for (const [index, input] of this.inputs.entries()) {
       this.psbt.addInput(input)
       this.psbt.setInputSequence(index, this.rbf ? 0xfffffffd : 0xffffffff)
 
@@ -110,8 +115,7 @@ export class PSBTBuilder {
   }
 
   private calculateOutputAmount() {
-    this.outputAmount =
-      this.changeAmount < 0 ? this.changeAmount * -1 : this.outputs.reduce((acc, curr) => (acc += curr.cardinals), 0)
+    this.outputAmount = this.outputs.reduce((acc, curr) => (acc += curr.cardinals), 0)
 
     this.validateOutputAmount()
   }
@@ -123,15 +127,11 @@ export class PSBTBuilder {
   }
 
   private async isNegativeChange() {
-    const existingInputsCount = this.inputs.length
+    if (this.changeAmount > 0) return
 
-    if (this.changeAmount < 0) {
-      this.outputAmount -= this.outputAmount + this.changeAmount
-      const inputsCount = await this.prepare()
-
-      if (existingInputsCount === inputsCount) {
-        throw new Error(`Insufficient balance. Decrease the output amount by ${this.changeAmount * -1} sats`)
-      }
+    await this.prepare()
+    if (this.noMoreUTXOS) {
+      throw new Error(`Insufficient balance. Decrease the output amount by ${this.changeAmount * -1} sats`)
     }
   }
 
@@ -142,23 +142,20 @@ export class PSBTBuilder {
       satsPerByte: this.feeRate,
       type: addressTypeToName[getAddressType(this.address, this.network)],
       additional: {
-        witnessScripts: this.inputs
-          // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-          .map((input) => input?.witnessUtxo?.script!)
-          .filter((script) => (script ? script : undefined))
+        witnessScripts: this.witnessScripts
       }
     })
-
-    // console.log({ fee: this.fee }, this.inputs.length, this.outputs.length)
 
     return this.fee
   }
 
   private getReservedUTXOs() {
-    return this.utxos.map((utxo) => `${utxo.txid}:${utxo.n}`)
+    return this.utxos.map((utxo) => generateTxUniqueIdentifier(utxo.txid, utxo.n))
   }
 
-  private async retrieveUTXOs(amount: number) {
+  private async retrieveUTXOs() {
+    const amount = this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
+
     const utxos = await OrditApi.fetchSpendables({
       address: this.address,
       value: convertSatoshisToBTC(amount),
@@ -166,20 +163,37 @@ export class PSBTBuilder {
       filter: this.getReservedUTXOs()
     })
 
+    this.noMoreUTXOS = utxos.length === 0
+
     this.utxos.push(...utxos)
   }
 
   private async prepareInputs() {
-    const promises = this.utxos.map((utxo) => {
+    const promises: Promise<InputType>[] = []
+
+    for (const utxo of this.utxos) {
+      if (this.usedUTXOs.includes(generateTxUniqueIdentifier(utxo.txid, utxo.n))) continue
+
       this.inputAmount += utxo.sats
-      return processInput({
+      const promise = processInput({
         utxo,
         pubKey: this.publicKey,
         network: this.network
-      })
-    })
+      }) // TODO: add sigHashType
 
-    this.inputs = await Promise.all(promises)
+      this.usedUTXOs.push(generateTxUniqueIdentifier(utxo.txid, utxo.n))
+
+      promises.push(promise)
+    }
+
+    const response = await Promise.all(promises)
+    for (const input of response) {
+      if (this.usedUTXOs.includes(generateTxUniqueIdentifier(input.hash, input.index))) continue
+
+      input.witnessUtxo?.script && this.witnessScripts.push(input.witnessUtxo.script)
+    }
+
+    this.inputs = this.inputs.concat(response)
 
     return this.inputs
   }
@@ -189,7 +203,7 @@ export class PSBTBuilder {
     this.calculateOutputAmount()
 
     // fetch UTXOs to spend
-    await this.retrieveUTXOs(this.outputAmount)
+    await this.retrieveUTXOs()
     await this.prepareInputs()
 
     // calculate network fee
@@ -198,6 +212,7 @@ export class PSBTBuilder {
     // calculate change amount
     await this.calculateChangeAmount()
 
-    return this.inputs.length
+    this.calculateOutputAmount()
+  }
   }
 }
