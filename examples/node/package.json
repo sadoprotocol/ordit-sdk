@@ -10,7 +10,8 @@
     "send": "node send",
     "create-psbt": "node create-psbt",
     "instant-buy": "node instant-buy",
-    "publish-collection": "node collections"
+    "publish-collection": "node collections",
+    "build-psbt": "node build-psbt"
   },
   "author": "",
   "license": "ISC",
