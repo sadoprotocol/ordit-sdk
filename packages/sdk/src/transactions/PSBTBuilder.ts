@@ -93,9 +93,17 @@ export class PSBTBuilder {
     }
   }
 
+  private removeOutputsByIndex(indexes: number[] = []) {
+    this.outputs = this.outputs.filter((_, index) => !indexes.includes(index))
+  }
+
   private async addChangeOutput() {
     await this.isNegativeChange()
-    if (this.changeAmount < MINIMUM_AMOUNT_IN_SATS) return
+
+    if (this.changeAmount < MINIMUM_AMOUNT_IN_SATS) {
+      this.changeOutputIndex > -1 && this.removeOutputsByIndex([this.changeOutputIndex])
+      return
+    }
 
     if (this.changeOutputIndex > -1) {
       return this.adjustChangeOutput()
