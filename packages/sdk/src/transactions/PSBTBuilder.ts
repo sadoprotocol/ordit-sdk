@@ -76,8 +76,6 @@ export class PSBTBuilder {
     for (const [index, input] of this.inputs.entries()) {
       this.psbt.addInput(input)
       this.psbt.setInputSequence(index, this.rbf ? 0xfffffffd : 0xffffffff)
-
-      input.witnessUtxo?.script && this.witnessScripts.push(input.witnessUtxo.script)
     }
   }
 
@@ -181,8 +179,6 @@ export class PSBTBuilder {
         network: this.network
       }) // TODO: add sigHashType
 
-      this.usedUTXOs.push(generateTxUniqueIdentifier(utxo.txid, utxo.n))
-
       promises.push(promise)
     }
 
@@ -191,6 +187,7 @@ export class PSBTBuilder {
       if (this.usedUTXOs.includes(generateTxUniqueIdentifier(input.hash, input.index))) continue
 
       input.witnessUtxo?.script && this.witnessScripts.push(input.witnessUtxo.script)
+      this.usedUTXOs.push(generateTxUniqueIdentifier(input.hash, input.index))
     }
 
     this.inputs = this.inputs.concat(response)
