@@ -205,26 +205,22 @@ export class Ordit {
     let psbtHasBeenSigned = false
 
     for (let i = 0; i < inputsToSign.length; i++) {
-      try {
-        const input = psbt.data.inputs[i]
-        psbtHasBeenSigned = input.finalScriptSig || input.finalScriptWitness ? true : false
+      const input = psbt.data.inputs[inputsToSign[i].index]
+      psbtHasBeenSigned = input.finalScriptSig || input.finalScriptWitness ? true : false
 
-        if (psbtHasBeenSigned) continue
+      if (psbtHasBeenSigned) continue
 
-        if (isTaprootInput(input)) {
-          const tweakedSigner = tweakSigner(this.#keyPair, {
-            network: networkObj
-          })
+      if (isTaprootInput(input)) {
+        const tweakedSigner = tweakSigner(this.#keyPair, {
+          network: networkObj
+        })
 
-          const signer =
-            input.witnessUtxo?.script && input.tapInternalKey && !input.tapLeafScript ? tweakedSigner : this.#keyPair
+        const signer =
+          input.witnessUtxo?.script && input.tapInternalKey && !input.tapLeafScript ? tweakedSigner : this.#keyPair
 
-          psbt.signInput(inputsToSign[i].index, signer, inputsToSign[i].sighashTypes)
-        } else {
-          psbt.signInput(inputsToSign[i].index, this.#keyPair, inputsToSign[i].sighashTypes)
-        }
-      } catch (e) {
-        throw new Error(e.message)
+        psbt.signInput(inputsToSign[i].index, signer, inputsToSign[i].sighashTypes)
+      } else {
+        psbt.signInput(inputsToSign[i].index, this.#keyPair, inputsToSign[i].sighashTypes)
       }
     }
 
