@@ -40,3 +40,9 @@ export interface Inscription {
   mediaContent: string
   meta?: Record<string, any>
 }
+
+export interface InputsToSign {
+  address: string
+  signingIndexes: number[]
+  sigHash?: number
+}

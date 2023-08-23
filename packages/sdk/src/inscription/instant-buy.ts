@@ -10,11 +10,13 @@ import {
   getAddressesFromPublicKey,
   getNetwork,
   InputType,
+  INSTANT_BUY_SELLER_INPUT_INDEX,
   OrditApi,
   processInput
 } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import { InputsToSign } from "./types"
 
 export async function generateSellerPsbt({
   inscriptionOutPoint,
@@ -24,7 +26,10 @@ export async function generateSellerPsbt({
   pubKeyType,
   network = "testnet"
 }: GenerateSellerInstantBuyPsbtOptions) {
-  const { inputs, outputs } = await getSellerInputsOutputs({
+  const {
+    inputs: [input],
+    outputs: [output]
+  } = await getSellerInputsOutputs({
     inscriptionOutPoint,
     price,
     receiveAddress,
@@ -33,15 +38,24 @@ export async function generateSellerPsbt({
     network
   })
 
+  const format = addressNameToType[pubKeyType]
+  const { address } = getAddressesFromPublicKey(publicKey, network, format)[0]
   const networkObj = getNetwork(network)
   const psbt = new bitcoin.Psbt({ network: networkObj })
 
-  psbt.addInput(inputs[0])
-  psbt.addOutput(outputs[0])
+  psbt.addInput(input)
+  psbt.addOutput(output)
+
+  const inputsToSign: InputsToSign = {
+    address: address!,
+    signingIndexes: [0], // hardcoding because there will always be one input
+    sigHash: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY
+  }
 
   return {
     hex: psbt.toHex(),
-    base64: psbt.toBase64()
+    base64: psbt.toBase64(),
+    inputsToSign
   }
 }
 
@@ -124,11 +138,15 @@ export async function generateBuyerPsbt({
   const sellPrice = (decodedSellerPsbt.data.globalMap.unsignedTx as any).tx.outs[0].value - postage
 
   // inputs
-  ;(psbt.data.globalMap.unsignedTx as any).tx.ins[2] = (decodedSellerPsbt.data.globalMap.unsignedTx as any).tx.ins[0]
-  psbt.data.inputs[2] = decodedSellerPsbt.data.inputs[0]
+  ;(psbt.data.globalMap.unsignedTx as any).tx.ins[INSTANT_BUY_SELLER_INPUT_INDEX] = (
+    decodedSellerPsbt.data.globalMap.unsignedTx as any
+  ).tx.ins[0]
+  psbt.data.inputs[INSTANT_BUY_SELLER_INPUT_INDEX] = decodedSellerPsbt.data.inputs[0]
   // outputs
-  ;(psbt.data.globalMap.unsignedTx as any).tx.outs[2] = (decodedSellerPsbt.data.globalMap.unsignedTx as any).tx.outs[0]
-  psbt.data.outputs[2] = decodedSellerPsbt.data.outputs[0]
+  ;(psbt.data.globalMap.unsignedTx as any).tx.outs[INSTANT_BUY_SELLER_INPUT_INDEX] = (
+    decodedSellerPsbt.data.globalMap.unsignedTx as any
+  ).tx.outs[0]
+  psbt.data.outputs[INSTANT_BUY_SELLER_INPUT_INDEX] = decodedSellerPsbt.data.outputs[0]
 
   for (let i = 0; i < utxos.length; i++) {
     const utxo = utxos[i]
@@ -165,12 +183,27 @@ export async function generateBuyerPsbt({
     })
   }
 
+  const inputsToSign = psbt.txInputs.reduce(
+    (acc, _, index) => {
+      if (index !== INSTANT_BUY_SELLER_INPUT_INDEX) {
+        acc.signingIndexes = acc.signingIndexes.concat(index)
+      }
+
+      return acc
+    },
+    {
+      address: address.address!,
+      signingIndexes: []
+    } as InputsToSign
+  )
+
   return {
     hex: psbt.toHex(),
     base64: psbt.toBase64(),
     fee,
     postage,
-    sellPrice
+    sellPrice,
+    inputsToSign
   }
 }
 
@@ -253,7 +286,16 @@ export async function generateRefundableUTXOs({
     })
   })
 
-  return psbt.toHex()
+  const inputsToSign: InputsToSign = {
+    address: address.address!,
+    signingIndexes: [0] // hardcoding because there will always be one input
+  }
+
+  return {
+    hex: psbt.toHex(),
+    base64: psbt.toBase64(),
+    inputsToSign
+  }
 }
 
 export async function getSellerInputsOutputs({
@@ -314,7 +356,7 @@ export interface GenerateSellerInstantBuyPsbtOptions {
   price: number
   receiveAddress: string
   publicKey: string
-  pubKeyType?: AddressFormats
+  pubKeyType: AddressFormats
   network?: Network
 }
 

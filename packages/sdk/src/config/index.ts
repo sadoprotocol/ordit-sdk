@@ -18,3 +18,5 @@ export const apiConfig = {
     }
   }
 }
+
+export const INSTANT_BUY_SELLER_INPUT_INDEX = 2
