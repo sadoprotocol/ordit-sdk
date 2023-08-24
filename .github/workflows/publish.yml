@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: NPM Release Publishing
     steps:
-      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
+      - uses: actions/checkout@7739b9ba2efcda9dde65ad1e3c2dbe65b41dfba7
 
       - run: corepack enable pnpm
 
