@@ -1,27 +1,19 @@
 import { Psbt } from "bitcoinjs-lib"
-import { InputToSign, signMessage as _signMessage, signTransaction } from "sats-connect"
+import { signMessage as _signMessage, signTransaction } from "sats-connect"
 
 import { Network } from "../../config/types"
+import { InputsToSign } from "../../inscription/types"
 import { isXverseInstalled, XverseNetwork } from "./utils"
 
-interface XverseSignedPsbt {
-  rawTxHex: string | null
-  psbt: {
-    hex: string
-    base64: string
-  }
-}
-
-export async function signPsbt({ psbt, network, inputs, finalize = true, extractTx = true }: XverseSignPsbtOptions) {
-  const result: XverseSignedPsbt = {
-    rawTxHex: null,
-    psbt: {
-      hex: "",
-      base64: ""
-    }
-  }
-
-  if (!psbt || !network || !inputs) {
+export async function signPsbt({
+  psbt,
+  network,
+  inputs,
+  finalize = true,
+  extractTx = true,
+  message = "Sign Transaction"
+}: XverseSignPsbtOptions) {
+  if (!psbt || !network || !inputs.length) {
     throw new Error("Invalid options provided.")
   }
 
@@ -29,26 +21,17 @@ export async function signPsbt({ psbt, network, inputs, finalize = true, extract
     throw new Error("xverse not installed.")
   }
 
+  let hex = null
   const handleFinish = (response: XverseSignPsbtResponse) => {
     const { psbtBase64 } = response
-
     if (!psbtBase64) {
       throw new Error("Failed to sign transaction using xVerse")
     }
 
     const signedPsbt = Psbt.fromBase64(psbtBase64)
 
-    try {
-      finalize && signedPsbt.finalizeAllInputs()
-      result.rawTxHex = extractTx ? signedPsbt.extractTransaction().toHex() : null
-    } catch (error) {
-      // Do nothing, leave the rawTxHex as null
-    }
-
-    result.psbt = {
-      hex: signedPsbt.toHex(),
-      base64: signedPsbt.toBase64()
-    }
+    finalize && signedPsbt.finalizeAllInputs()
+    hex = extractTx ? signedPsbt.extractTransaction().toHex() : signedPsbt.toHex()
   }
 
   const xverseOptions = {
@@ -56,18 +39,18 @@ export async function signPsbt({ psbt, network, inputs, finalize = true, extract
       network: {
         type: (network.charAt(0).toUpperCase() + network.slice(1)) as XverseNetwork
       },
-      message: "Sign Ordit SDK Transaction",
+      message,
       psbtBase64: psbt.toBase64(),
       broadcast: false,
       inputsToSign: inputs
     },
     onFinish: handleFinish,
-    onCancel: () => handleOnSignCancel("Psbt")
+    onCancel: () => handleOnSignCancel("transaction")
   }
 
   await signTransaction(xverseOptions)
 
-  return result
+  return { hex }
 }
 
 export async function signMessage(options: XverseSignMessageOptions) {
@@ -96,7 +79,7 @@ export async function signMessage(options: XverseSignMessageOptions) {
       address: options.address
     },
     onFinish: handleFinish,
-    onCancel: () => handleOnSignCancel("Message")
+    onCancel: () => handleOnSignCancel("message")
   }
 
   await _signMessage(xverseOptions)
@@ -104,16 +87,17 @@ export async function signMessage(options: XverseSignMessageOptions) {
   return result
 }
 
-function handleOnSignCancel(value = "") {
-  throw new Error(`Failed to sign ${value} using xVerse`)
+function handleOnSignCancel(type: "transaction" | "message") {
+  throw new Error(`Failed to sign ${type} using xVerse`)
 }
 
 export type XverseSignPsbtOptions = {
   psbt: Psbt
   network: Network
-  inputs: InputToSign[]
+  inputs: InputsToSign[]
   finalize?: boolean
   extractTx?: boolean
+  message?: string
 }
 
 export type XverseSignPsbtResponse = {
