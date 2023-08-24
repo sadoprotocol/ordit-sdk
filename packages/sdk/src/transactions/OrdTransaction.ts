@@ -222,7 +222,7 @@ export class OrdTransaction {
       totalOutputs: 1,
       satsPerByte: this.feeRate,
       type: "taproot", // hardcoding because this process is only supported by Taproot txs
-      additional: { witnessScripts: [witnessScript] }
+      additional: { witnessScripts: inscribePayTx.witness }
     })
 
     const customOutsAmount = this.#outs.reduce((acc, cur) => {
