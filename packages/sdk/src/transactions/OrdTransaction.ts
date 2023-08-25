@@ -5,7 +5,6 @@ import { Tapleaf } from "bitcoinjs-lib/src/types"
 import {
   buildWitnessScript,
   calculateTxFee,
-  calculateTxVirtualSize,
   convertSatoshisToBTC,
   createTransaction,
   encodeObject,
