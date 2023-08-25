@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "inscribe": "node inscribe",
+    "mint": "node mint",
     "read": "node read",
     "send": "node send",
     "create-psbt": "node create-psbt",
