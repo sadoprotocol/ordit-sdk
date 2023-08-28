@@ -178,20 +178,13 @@ export async function generateRefundableUTXOs({
   publicKey,
   pubKeyType,
   feeRate,
-  count = 2,
-  destination,
+  destinationAddress,
   network = "testnet",
   enableRBF = true
 }: GenerateRefundableUTXOsOptions) {
   const networkObj = getNetwork(network)
   const format = addressNameToType[pubKeyType]
   const address = getAddressesFromPublicKey(publicKey, network, format)[0]
-  const finalCount =
-    destination && destination.length ? destination.reduce((acc, curr) => (acc += curr.count), 0) : count
-
-  if (!finalCount) {
-    throw new Error("count or destination should be more than 2")
-  }
 
   const { totalUTXOs, spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({ address: address.address!, network })
   if (!totalUTXOs) {
@@ -202,6 +195,8 @@ export async function generateRefundableUTXOs({
   const psbt = new bitcoin.Psbt({ network: networkObj })
   const witnessScripts: Buffer[] = []
   const input = await processInput({ utxo, pubKey: publicKey, network })
+  const totalOutputs = 3
+  const outputs: { address: string; cardinals: number }[] = []
 
   input.witnessUtxo?.script && witnessScripts.push(input.witnessUtxo?.script)
   psbt.addInput(input)
@@ -212,41 +207,31 @@ export async function generateRefundableUTXOs({
 
   const fees = calculateTxFee({
     totalInputs: 1,
-    totalOutputs: finalCount,
+    totalOutputs,
     satsPerByte: feeRate,
     type: pubKeyType,
     additional: { witnessScripts }
   })
 
   const remainingSats = utxo.sats - fees
-  const perUTXOSats = Math.floor(remainingSats / finalCount)
-  if (perUTXOSats < MINIMUM_AMOUNT_IN_SATS) {
-    throw new Error(
-      `Not enough sats to generate ${finalCount} UTXOs with at least ${MINIMUM_AMOUNT_IN_SATS} sats per UTXO. Try decreasing the count or deposit more BTC`
-    )
+  for (let i = 0; i < totalOutputs; i++) {
+    const usedAmount = outputs.reduce((acc, curr) => (acc += curr.cardinals), 0)
+    const remainingAmount = remainingSats - usedAmount
+    const amount = [0, 1].includes(i) ? MINIMUM_AMOUNT_IN_SATS : remainingAmount
+
+    if (amount < MINIMUM_AMOUNT_IN_SATS) {
+      throw new Error(
+        `Not enough sats to generate ${totalOutputs} UTXOs with at least ${MINIMUM_AMOUNT_IN_SATS} sats per UTXO. Try decreasing the count or deposit more BTC`
+      )
+    }
+
+    outputs.push({
+      address: destinationAddress || address.address!,
+      cardinals: amount
+    })
   }
 
-  destination =
-    destination && destination.length
-      ? destination
-      : [
-          {
-            address: address.address!,
-            count: finalCount
-          }
-        ]
-
-  let receivers: { address: string; cardinals: number }[] = []
-  destination.forEach((o) => {
-    const receiver = Array.from({ length: o.count }).fill({
-      address: o.address,
-      cardinals: perUTXOSats
-    }) as { address: string; cardinals: number }[]
-
-    receivers = receivers.concat(receiver)
-  })
-
-  receivers.forEach((output) => {
+  outputs.forEach((output) => {
     psbt.addOutput({
       address: output.address,
       value: output.cardinals
@@ -331,10 +316,7 @@ export interface GenerateRefundableUTXOsOptions {
   count?: number
   publicKey: string
   pubKeyType: AddressFormats
-  destination?: {
-    address: string
-    count: number
-  }[]
+  destinationAddress?: string
   network?: Network
   feeRate: number
   enableRBF?: boolean
