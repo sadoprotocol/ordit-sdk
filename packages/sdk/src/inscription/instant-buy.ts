@@ -56,13 +56,13 @@ export async function generateBuyerPsbt({
   const networkObj = getNetwork(network)
 
   const format = {
-    receiveInscription: addressNameToType[pubKeyType.receiveInscription],
-    paymentRefund: addressNameToType[pubKeyType.paymentRefund]
+    inscriptions: addressNameToType[pubKeyType.inscriptions],
+    payments: addressNameToType[pubKeyType.payments]
   }
 
   const address = {
-    receiveInscription: getAddressesFromPublicKey(publicKey.receiveInscription, network, format.receiveInscription)[0],
-    paymentRefund: getAddressesFromPublicKey(publicKey.paymentRefund, network, format.paymentRefund)[0]
+    inscriptions: getAddressesFromPublicKey(publicKey.inscriptions, network, format.inscriptions)[0],
+    payments: getAddressesFromPublicKey(publicKey.payments, network, format.payments)[0]
   }
 
   let ordOutNumber = 0
@@ -88,7 +88,7 @@ export async function generateBuyerPsbt({
   const postage = convertBTCToSatoshis(output.value)
   const utxos = (
     await OrditApi.fetchUnspentUTXOs({
-      address: address.paymentRefund.address!,
+      address: address.payments.address!,
       network,
       sort: "asc" // sort by ascending order to use low amount utxos as refundable utxos
     })
@@ -108,7 +108,7 @@ export async function generateBuyerPsbt({
     const refundableUTXO = refundableUTXOs[i]
     if (usedUTXOTxIds.includes(generateTxUniqueIdentifier(refundableUTXO.txid, refundableUTXO.n))) continue
 
-    const input = await processInput({ utxo: refundableUTXO, pubKey: publicKey.paymentRefund, network })
+    const input = await processInput({ utxo: refundableUTXO, pubKey: publicKey.payments, network })
 
     usedUTXOTxIds.push(generateTxUniqueIdentifier(input.hash, input.index))
     psbt.addInput(input)
@@ -117,13 +117,13 @@ export async function generateBuyerPsbt({
 
   // Add refundable output
   psbt.addOutput({
-    address: address.paymentRefund.address!,
+    address: address.payments.address!,
     value: refundableUTXOs[0].sats + refundableUTXOs[1].sats
   })
 
   // Add ordinal output
   psbt.addOutput({
-    address: address.receiveInscription.address!,
+    address: address.inscriptions.address!,
     value: postage
   })
 
@@ -143,7 +143,7 @@ export async function generateBuyerPsbt({
     const utxo = utxos[i]
     if (usedUTXOTxIds.includes(generateTxUniqueIdentifier(utxo.txid, utxo.n))) continue
 
-    const input = await processInput({ utxo, pubKey: publicKey.paymentRefund, network })
+    const input = await processInput({ utxo, pubKey: publicKey.payments, network })
     input.witnessUtxo?.script && witnessScripts.push(input.witnessUtxo?.script)
 
     usedUTXOTxIds.push(generateTxUniqueIdentifier(input.hash, input.index))
@@ -156,7 +156,7 @@ export async function generateBuyerPsbt({
     totalInputs: psbt.txInputs.length,
     totalOutputs: psbt.txOutputs.length,
     satsPerByte: feeRate,
-    type: pubKeyType.paymentRefund, // Will be inaccurate if input and output type are not the same
+    type: pubKeyType.payments, // Will be inaccurate if input and output type are not the same
     additional: { witnessScripts }
   })
 
@@ -169,7 +169,7 @@ export async function generateBuyerPsbt({
 
   if (changeValue > MINIMUM_AMOUNT_IN_SATS) {
     psbt.addOutput({
-      address: address.paymentRefund.address!,
+      address: address.payments.address!,
       value: changeValue
     })
   }
@@ -312,7 +312,7 @@ export interface GenerateSellerInstantBuyPsbtOptions {
   network?: Network
 }
 
-type BiWallet<T> = { receiveInscription: T, paymentRefund: T}
+type BiWallet<T> = { inscriptions: T, payments: T}
 
 export interface GenerateBuyerInstantBuyPsbtOptions {
   publicKey: BiWallet<string>
