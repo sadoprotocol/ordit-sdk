@@ -40,8 +40,8 @@ async function createBuyOrder({ sellerPSBT }) {
 
     const { hex: buyerPSBT } = await Ordit.instantBuy.generateBuyerPsbt({
         sellerPsbt: sellerPSBT,
-        publicKey: buyerWallet.publicKey,
-        pubKeyType: buyerWallet.selectedAddressType,
+        publicKey: { payments: buyerWallet.publicKey, inscriptions: buyerWallet.publicKey },
+        pubKeyType: { payments: buyerWallet.selectedAddressType, inscriptions: buyerWallet.selectedAddressType },
         feeRate: 10, // set correct rate to prevent tx from getting stuck in mempool
         network: 'testnet',
         inscriptionOutPoint: '0f3891f61b944c31fb48b0d9e770dc9e66a4b49097027be53b078be67aca72d4:0'
