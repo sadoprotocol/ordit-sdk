@@ -51,7 +51,8 @@ export async function generateBuyerPsbt({
   feeRate = 10,
   network = "testnet",
   sellerPsbt,
-  inscriptionOutPoint
+  inscriptionOutPoint,
+  inscriptionDestinationAddress
 }: GenerateBuyerInstantBuyPsbtOptions) {
   const networkObj = getNetwork(network)
   const format = addressNameToType[pubKeyType]
@@ -114,7 +115,7 @@ export async function generateBuyerPsbt({
 
   // Add ordinal output
   psbt.addOutput({
-    address: address.address!,
+    address: inscriptionDestinationAddress || address.address!,
     value: postage
   })
 
@@ -310,6 +311,7 @@ export interface GenerateBuyerInstantBuyPsbtOptions {
   feeRate?: number
   inscriptionOutPoint: string
   sellerPsbt: string
+  inscriptionDestinationAddress?: string
 }
 
 export interface GenerateRefundableUTXOsOptions {
