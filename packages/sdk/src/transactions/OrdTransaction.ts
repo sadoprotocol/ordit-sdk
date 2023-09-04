@@ -219,10 +219,10 @@ export class OrdTransaction {
       redeem: redeemScript
     })
 
-    // inscription tx always have 1 input and 1 output
+    // inscription tx always have 1 input and 1 + n custom outs
     const fees = calculateTxFee({
       totalInputs: 1,
-      totalOutputs: 1,
+      totalOutputs: 1 + this.#outs.length,
       satsPerByte: this.feeRate,
       type: "taproot", // hardcoding because this process is only supported by Taproot txs
       additional: { witnessScripts: inscribePayTx.witness }
