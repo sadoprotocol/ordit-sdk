@@ -329,42 +329,6 @@ export class OrdTransaction {
 
     return suitableUTXO
   }
-
-  /**
-   * naiive implementation of estimate reveal network fee that does not need the actual content bytes (only size)
-   * @param contentSize
-   * @param contentType
-   * @param meta
-   * @param feeRate
-   */
-  static estimateRevealNetworkFee({
-    contentSize,
-    contentType,
-    meta,
-    feeRate
-  }: {
-    contentSize: number
-    contentType: string
-    meta: any
-    feeRate: number
-  }) {
-    const META_OP_CODES_BYTES_LENGTH = 39 // opcodes
-    const BASE_INSCRIPTION_BYTES_LENGTH = 33 + 10 // 33 (pub key length) + 10 (opcodes)
-    const RECOVER_SCRIPT_BYTES_LENGTH = 34
-
-    const contentTypeLength = Buffer.from(contentType, "utf8").length
-    const metaBytesLength = Buffer.from(JSON.stringify(meta), "utf8").length
-    const estimatedWitnessScriptSize =
-      metaBytesLength +
-      contentSize +
-      META_OP_CODES_BYTES_LENGTH +
-      BASE_INSCRIPTION_BYTES_LENGTH +
-      contentTypeLength +
-      RECOVER_SCRIPT_BYTES_LENGTH
-    const estimatedNetworkFee = Math.ceil((estimatedWitnessScriptSize / 4 + 175) * feeRate)
-
-    return estimatedNetworkFee
-  }
 }
 
 export type OrdTransactionOptions = Pick<GetWalletOptions, "safeMode"> & {
