@@ -3,6 +3,7 @@ import { signMessage as _signMessage, signTransaction } from "sats-connect"
 
 import { Network } from "../../config/types"
 import { InputsToSign } from "../../inscription/types"
+import { BrowserWalletSignPSBTResponse } from "../types"
 import { isXverseInstalled, XverseNetwork } from "./utils"
 
 export async function signPsbt({
@@ -12,7 +13,7 @@ export async function signPsbt({
   finalize = true,
   extractTx = true,
   message = "Sign Transaction"
-}: XverseSignPsbtOptions) {
+}: XverseSignPsbtOptions): Promise<BrowserWalletSignPSBTResponse> {
   if (!psbt || !network || !inputs.length) {
     throw new Error("Invalid options provided.")
   }
@@ -21,7 +22,8 @@ export async function signPsbt({
     throw new Error("xverse not installed.")
   }
 
-  let hex = null
+  let hex: string
+  let base64: string | null = null
   const handleFinish = (response: XverseSignPsbtResponse) => {
     const { psbtBase64 } = response
     if (!psbtBase64) {
@@ -32,6 +34,7 @@ export async function signPsbt({
 
     finalize && signedPsbt.finalizeAllInputs()
     hex = extractTx ? signedPsbt.extractTransaction().toHex() : signedPsbt.toHex()
+    base64 = !extractTx ? signedPsbt.toBase64() : null
   }
 
   const xverseOptions = {
@@ -50,7 +53,7 @@ export async function signPsbt({
 
   await signTransaction(xverseOptions)
 
-  return { hex }
+  return { hex: hex!, base64 }
 }
 
 export async function signMessage(options: XverseSignMessageOptions) {
