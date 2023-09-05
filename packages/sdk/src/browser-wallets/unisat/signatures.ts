@@ -1,17 +1,19 @@
 import { Psbt } from "bitcoinjs-lib"
 
+import { BrowserWalletSignPSBTResponse } from "../types"
 import { UnisatSignPSBTOptions } from "./types"
 import { isUnisatInstalled } from "./utils"
 
-export async function signPsbt(psbt: Psbt, { finalize = true, extractTx = true }: UnisatSignPSBTOptions = {}) {
+export async function signPsbt(
+  psbt: Psbt,
+  { finalize = true, extractTx = true }: UnisatSignPSBTOptions = {}
+): Promise<BrowserWalletSignPSBTResponse> {
   if (!isUnisatInstalled()) {
     throw new Error("Unisat not installed.")
   }
 
   const psbtHex = psbt.toHex()
-
   const signedPsbtHex = await window.unisat.signPsbt(psbtHex, { autoFinalized: finalize })
-
   if (!signedPsbtHex) {
     throw new Error("Failed to sign psbt hex using Unisat.")
   }
@@ -21,25 +23,10 @@ export async function signPsbt(psbt: Psbt, { finalize = true, extractTx = true }
   }
 
   const signedPsbt = Psbt.fromHex(signedPsbtHex)
-  let rawTxHex: string | null = null
-  try {
-    rawTxHex = extractTx ? signedPsbt.extractTransaction().toHex() : signedPsbt.toHex()
-  } catch (error) {
-    return {
-      rawTxHex,
-      psbt: {
-        hex: signedPsbt.toHex(),
-        base64: signedPsbt.toBase64()
-      }
-    }
-  }
 
   return {
-    rawTxHex,
-    psbt: {
-      hex: signedPsbt.toHex(),
-      base64: signedPsbt.toBase64()
-    }
+    hex: extractTx ? signedPsbt.extractTransaction().toHex() : signedPsbt.toHex(),
+    base64: !extractTx ? signedPsbt.toBase64() : null
   }
 }
 
