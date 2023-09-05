@@ -19,4 +19,6 @@ export const apiConfig = {
   }
 }
 
+// Input from seller PSBT when unwrapped & merged,
+// is placed on the 2nd index in instant-buy-sell flow
 export const INSTANT_BUY_SELLER_INPUT_INDEX = 2
