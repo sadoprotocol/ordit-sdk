@@ -16,6 +16,7 @@ import {
 } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import { InputsToSign } from "../inscription/types"
 import { NestedObject } from "../utils/types"
 
 bitcoin.initEccLib(ecc)
@@ -32,6 +33,8 @@ export class OrdTransaction {
   network: Network
   psbt: bitcoin.Psbt | null = null
   ready = false
+  address: string
+  inputsToSign: InputsToSign
   #xKey: string
   #feeForWitnessData: number | null = null
   #commitAddress: string | null = null
@@ -72,13 +75,18 @@ export class OrdTransaction {
     this.#encodeMetadata = encodeMetadata
     this.#enableRBF = enableRBF
 
-    const xKey = getAddressesFromPublicKey(publicKey, network, "p2tr")[0].xkey
+    const { xkey, address } = getAddressesFromPublicKey(publicKey, network, "p2tr")[0]
 
-    if (!xKey) {
+    if (!xkey) {
       throw new Error("Failed to derive xKey from the provided public key.")
     }
 
-    this.#xKey = xKey
+    this.#xKey = xkey
+    this.address = address!
+    this.inputsToSign = {
+      address: this.address,
+      signingIndexes: []
+    }
   }
 
   get outs() {
@@ -130,6 +138,8 @@ export class OrdTransaction {
         }
       ]
     })
+
+    this.inputsToSign.signingIndexes.push(0) // hardcoding because there will always be one input
 
     if (!this.#recovery) {
       psbt.addOutput({
