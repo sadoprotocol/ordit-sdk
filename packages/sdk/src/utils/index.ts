@@ -144,7 +144,7 @@ export function calculateTxVirtualSize({ psbt, network }: CalculateTxVirtualSize
   const { input, txHeader, output } = getInputOutputBaseSizeByType(txType)
 
   const inputVBytes = input * inputs.length
-  const outputVBytes = output * (outputs.length + 1)
+  const outputVBytes = output * outputs.length
   const baseVBytes = inputVBytes + outputVBytes + txHeader
   const additionalVBytes = ["taproot", "segwit", "nested-segwit"].includes(txType)
     ? witnessScripts.reduce((acc, script) => (acc += script.byteLength), 0) || 0
