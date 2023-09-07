@@ -32,7 +32,18 @@ export async function signPsbt({
 
     const signedPsbt = Psbt.fromBase64(psbtBase64)
 
-    finalize && signedPsbt.finalizeAllInputs()
+    if (finalize) {
+      if (!inputs.length) {
+        signedPsbt.finalizeAllInputs()
+      } else {
+        inputs.forEach((input) => {
+          input.signingIndexes.forEach((index) => {
+            signedPsbt.finalizeInput(index)
+          })
+        })
+      }
+    }
+
     hex = extractTx ? signedPsbt.extractTransaction().toHex() : signedPsbt.toHex()
     base64 = !extractTx ? signedPsbt.toBase64() : null
   }
