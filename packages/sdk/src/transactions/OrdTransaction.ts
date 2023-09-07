@@ -9,6 +9,7 @@ import {
   createTransaction,
   encodeObject,
   getAddressesFromPublicKey,
+  getDummyP2TRInput,
   getNetwork,
   GetWalletOptions,
   OnOffUnion,
@@ -223,10 +224,15 @@ export class OrdTransaction {
       redeem: redeemScript
     })
 
+    this.#suitableUnspent = getDummyP2TRInput()
+    this.build()
     const fee = calculateTxFee({
       psbt: this.psbt!,
       satsPerByte: this.feeRate
     })
+    this.psbt = null
+    this.#suitableUnspent = null
+    this.inputsToSign.signingIndexes.pop() // remove last added index
 
     const customOutsAmount = this.#outs.reduce((acc, cur) => {
       return acc + cur.value
