@@ -137,10 +137,18 @@ export function analyzePSBTComponents(psbt: bitcoin.Psbt, network: Network) {
 }
 
 export function calculateTxVirtualSize({ psbt, network }: CalculateTxVirtualSizeOptions) {
+  const prioritiesByTxType: AddressFormats[] = ["taproot", "nested-segwit", "segwit", "legacy"]
   const { inputs, outputs, witnessScripts } = analyzePSBTComponents(psbt, network)
+  const uniqueInputTypes = [...new Set(...[inputs])] // remove dupes
+  const txType = prioritiesByTxType.find((type) => uniqueInputTypes.includes(type)) as AddressFormats
+  const { input, txHeader, output } = getInputOutputBaseSizeByType(txType)
 
-  const baseVBytes = inputVBytes + outputVBytes
-  const additionalVBytes = witnessScripts.reduce((acc, script) => (acc += script.byteLength), 0) || 0
+  const inputVBytes = input * inputs.length
+  const outputVBytes = output * (outputs.length + 1)
+  const baseVBytes = inputVBytes + outputVBytes + txHeader
+  const additionalVBytes = ["taproot", "segwit", "nested-segwit"].includes(txType)
+    ? witnessScripts.reduce((acc, script) => (acc += script.byteLength), 0) || 0
+    : 0
 
   const weight = 3 * baseVBytes + (baseVBytes + additionalVBytes)
   const vSize = Math.ceil(weight / 4)
