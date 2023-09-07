@@ -2,8 +2,6 @@ import * as ecc from "@bitcoinerlab/secp256k1"
 import { BIP32Factory } from "bip32"
 import { Psbt } from "bitcoinjs-lib"
 
-import { getAddressType } from "../addresses"
-import { addressTypeToName } from "../addresses/formats"
 import { OrditApi } from "../api"
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
@@ -56,17 +54,14 @@ export async function createPsbt({
     }
   }
 
-  const fees = calculateTxFee({
-    totalInputs: totalUTXOs, // select only relevant utxos to spend. NOT ALL!
-    totalOutputs: outputs.length,
-    satsPerByte,
-    type: addressTypeToName[getAddressType(address, network)],
-    additional: { witnessScripts }
+  const fee = calculateTxFee({
+    psbt,
+    satsPerByte
   })
 
-  const remainingBalance = inputSats - outputSats - fees
+  const remainingBalance = inputSats - outputSats - fee
   if (remainingBalance < 0) {
-    throw new Error(`Insufficient balance. Available: ${inputSats}. Attemping to spend: ${outputSats}. Fees: ${fees}`)
+    throw new Error(`Insufficient balance. Available: ${inputSats}. Attemping to spend: ${outputSats}. Fees: ${fee}`)
   }
 
   const isChangeOwed = remainingBalance > MINIMUM_AMOUNT_IN_SATS

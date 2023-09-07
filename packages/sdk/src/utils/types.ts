@@ -1,16 +1,21 @@
-import { AddressFormats } from "../addresses/formats"
+import { Psbt } from "bitcoinjs-lib"
+
+import { AddressFormats } from ".."
 
 export interface CalculateTxFeeOptions {
-  totalInputs: number
-  totalOutputs: number
+  psbt: Psbt
   satsPerByte: number
-  type: AddressFormats
-  additional?: {
-    witnessScripts?: Buffer[]
-  }
 }
 
-export type CalculateTxVirtualSizeOptions = Omit<CalculateTxFeeOptions, "satsPerByte">
+export interface CalculateTxVirtualSizeOptions {
+  psbt: Psbt
+}
+
+export interface PSBTComponents {
+  inputs: AddressFormats[]
+  outputs: AddressFormats[]
+  witnessScripts: Buffer[]
+}
 
 export interface NestedObject {
   [key: string]: NestedObject | any
