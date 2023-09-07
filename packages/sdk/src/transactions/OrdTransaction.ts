@@ -98,25 +98,6 @@ export class OrdTransaction {
       throw new Error("Failed to build PSBT. Transaction not ready.")
     }
 
-    let fees = this.#feeForWitnessData!
-
-    if (this.#recovery) {
-      fees = calculateTxFee({
-        totalInputs: 1,
-        totalOutputs: 1, // change output
-        satsPerByte: this.feeRate,
-        type: "taproot", // hardcoding because recovery is only supported by Taproot txs
-        additional: {
-          witnessScripts: this.#inscribePayTx.witness
-        }
-      })
-    }
-
-    const customOutsAmount = this.#outs.reduce((acc, cur) => {
-      return acc + cur.value
-    }, 0)
-    const change = this.#suitableUnspent.sats - fees - customOutsAmount - this.postage
-
     const networkObj = getNetwork(this.network)
 
     const psbt = new bitcoin.Psbt({ network: networkObj })
@@ -151,6 +132,19 @@ export class OrdTransaction {
         psbt.addOutput(out)
       })
     }
+
+    let fee = this.#feeForWitnessData!
+    if (this.#recovery) {
+      fee = calculateTxFee({
+        psbt,
+        satsPerByte: this.feeRate
+      })
+    }
+
+    const customOutsAmount = this.#outs.reduce((acc, cur) => {
+      return acc + cur.value
+    }, 0)
+    const change = this.#suitableUnspent.sats - fee - customOutsAmount - this.postage
 
     if (change > MINIMUM_AMOUNT_IN_SATS) {
       let changeAddress = this.#inscribePayTx.address
@@ -229,26 +223,22 @@ export class OrdTransaction {
       redeem: redeemScript
     })
 
-    // inscription tx always have 1 input and 1 + n custom outs
-    const fees = calculateTxFee({
-      totalInputs: 1,
-      totalOutputs: 1 + this.#outs.length,
-      satsPerByte: this.feeRate,
-      type: "taproot", // hardcoding because this process is only supported by Taproot txs
-      additional: { witnessScripts: inscribePayTx.witness }
+    const fee = calculateTxFee({
+      psbt: this.psbt!,
+      satsPerByte: this.feeRate
     })
 
     const customOutsAmount = this.#outs.reduce((acc, cur) => {
       return acc + cur.value
     }, 0)
 
-    this.#feeForWitnessData = fees
+    this.#feeForWitnessData = fee
     this.#commitAddress = inscribePayTx.address!
     this.#inscribePayTx = inscribePayTx
 
     return {
       address: inscribePayTx.address!,
-      revealFee: this.postage + fees + customOutsAmount
+      revealFee: this.postage + fee + customOutsAmount
     }
   }
 

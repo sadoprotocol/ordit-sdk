@@ -3,15 +3,17 @@ import { BIP32Interface } from "bip32"
 import * as bitcoin from "bitcoinjs-lib"
 import ECPairFactory from "ecpair"
 
-import { AddressFormats, AddressTypes } from "../addresses/formats"
+import { AddressFormats, AddressTypes, addressTypeToName } from "../addresses/formats"
 import { Network } from "../config/types"
+import { UTXO } from "../transactions/types"
 import {
   BufferOrHex,
   CalculateTxFeeOptions,
   CalculateTxVirtualSizeOptions,
   EncodeDecodeObjectOptions,
   NestedObject,
-  OneOfAllDataFormats
+  OneOfAllDataFormats,
+  PSBTComponents
 } from "./types"
 
 export function getNetwork(value: Network) {
@@ -97,28 +99,56 @@ export function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
   return bitcoin.crypto.taggedHash("TapTweak", Buffer.concat(h ? [pubKey, h] : [pubKey]))
 }
 
-export function calculateTxFee({
-  totalInputs,
-  totalOutputs,
-  satsPerByte,
-  type,
-  additional: { witnessScripts = [] } = {}
-}: CalculateTxFeeOptions): number {
-  const txWeight = calculateTxVirtualSize({ totalInputs, totalOutputs, type, additional: { witnessScripts } })
+export function calculateTxFee({ psbt, satsPerByte }: CalculateTxFeeOptions): number {
+  const txWeight = calculateTxVirtualSize({ psbt })
   return txWeight * satsPerByte
 }
 
-export function calculateTxVirtualSize({
-  totalInputs,
-  totalOutputs,
-  type,
-  additional: { witnessScripts = [] } = {}
-}: CalculateTxVirtualSizeOptions) {
-  const baseWeight = getInputOutputBaseSizeByType(type)
+export function analyzePSBTComponents(psbt: bitcoin.Psbt) {
+  const inputs = psbt.data.inputs
+  const outputs = psbt.txOutputs
+  const result: PSBTComponents = {
+    inputs: [],
+    outputs: [],
+    witnessScripts: []
+  }
 
-  const inputVBytes = baseWeight.input * totalInputs
-  const outputVBytes = baseWeight.output * totalOutputs
-  const baseVBytes = inputVBytes + outputVBytes + baseWeight.txHeader
+  inputs.forEach((input) => {
+    const script =
+      input.witnessUtxo && input.witnessUtxo.script
+        ? input.witnessUtxo.script
+        : input.nonWitnessUtxo
+        ? input.nonWitnessUtxo
+        : null
+
+    if (!script) {
+      throw new Error("Invalid input. Script not found")
+    }
+
+    result.inputs.push(getInputType(script))
+    input.witnessScript && result.witnessScripts.push(input.witnessScript)
+  })
+
+  outputs.forEach((output) => {
+    result.outputs.push(getInputType(output.script))
+  })
+
+  return result
+}
+
+export function calculateTxVirtualSize({ psbt }: CalculateTxVirtualSizeOptions) {
+  const { inputs, outputs, witnessScripts } = analyzePSBTComponents(psbt)
+  const inputVBytes = inputs.reduce((acc, inputType) => {
+    const { input, txHeader } = getInputOutputBaseSizeByType(inputType)
+    acc += input + txHeader
+    return acc
+  }, 0)
+  const outputVBytes = outputs.reduce((acc, inputType) => {
+    acc += getInputOutputBaseSizeByType(inputType).output
+    return acc
+  }, 0)
+
+  const baseVBytes = inputVBytes + outputVBytes
   const additionalVBytes = witnessScripts.reduce((acc, script) => (acc += script.byteLength), 0) || 0
 
   const weight = 3 * baseVBytes + (baseVBytes + additionalVBytes)

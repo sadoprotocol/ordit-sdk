@@ -163,11 +163,8 @@ export async function generateBuyerPsbt({
   }
 
   const fee = calculateTxFee({
-    totalInputs: psbt.txInputs.length,
-    totalOutputs: psbt.txOutputs.length,
-    satsPerByte: feeRate,
-    type: pubKeyType,
-    additional: { witnessScripts }
+    psbt,
+    satsPerByte: feeRate
   })
 
   const totalOutput = psbt.txOutputs.reduce((partialSum, a) => partialSum + a.value, 0)
@@ -239,15 +236,12 @@ export async function generateRefundableUTXOs({
     psbt.setInputSequence(0, 0xfffffffd) // hardcoded index because input is just one
   }
 
-  const fees = calculateTxFee({
-    totalInputs: 1,
-    totalOutputs,
-    satsPerByte: feeRate,
-    type: pubKeyType,
-    additional: { witnessScripts }
+  const fee = calculateTxFee({
+    psbt,
+    satsPerByte: feeRate
   })
 
-  const remainingSats = utxo.sats - fees
+  const remainingSats = utxo.sats - fee
   for (let i = 0; i < totalOutputs; i++) {
     const usedAmount = outputs.reduce((acc, curr) => (acc += curr.cardinals), 0)
     const remainingAmount = remainingSats - usedAmount
