@@ -57,7 +57,8 @@ export async function createPsbt({
 
   const fee = calculateTxFee({
     psbt,
-    satsPerByte
+    satsPerByte,
+    network
   })
 
   const remainingBalance = inputSats - outputSats - fee

@@ -138,7 +138,8 @@ export class OrdTransaction {
     if (this.#recovery) {
       fee = calculateTxFee({
         psbt,
-        satsPerByte: this.feeRate
+        satsPerByte: this.feeRate,
+        network: this.network
       })
     }
 
@@ -228,7 +229,8 @@ export class OrdTransaction {
     this.build()
     const fee = calculateTxFee({
       psbt: this.psbt!,
-      satsPerByte: this.feeRate
+      satsPerByte: this.feeRate,
+      network: this.network
     })
     this.psbt = null
     this.#suitableUnspent = null

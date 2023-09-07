@@ -99,12 +99,12 @@ export function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
   return bitcoin.crypto.taggedHash("TapTweak", Buffer.concat(h ? [pubKey, h] : [pubKey]))
 }
 
-export function calculateTxFee({ psbt, satsPerByte }: CalculateTxFeeOptions): number {
-  const txWeight = calculateTxVirtualSize({ psbt })
+export function calculateTxFee({ psbt, satsPerByte, network }: CalculateTxFeeOptions): number {
+  const txWeight = calculateTxVirtualSize({ psbt, network })
   return txWeight * satsPerByte
 }
 
-export function analyzePSBTComponents(psbt: bitcoin.Psbt) {
+export function analyzePSBTComponents(psbt: bitcoin.Psbt, network: Network) {
   const inputs = psbt.data.inputs
   const outputs = psbt.txOutputs
   const result: PSBTComponents = {
@@ -125,28 +125,19 @@ export function analyzePSBTComponents(psbt: bitcoin.Psbt) {
       throw new Error("Invalid input. Script not found")
     }
 
-    result.inputs.push(getInputType(script))
-    input.witnessScript && result.witnessScripts.push(input.witnessScript)
+    result.inputs.push(getInputType(script, network))
+    result.witnessScripts.push(script)
   })
 
   outputs.forEach((output) => {
-    result.outputs.push(getInputType(output.script))
+    result.outputs.push(getInputType(output.script, network))
   })
 
   return result
 }
 
-export function calculateTxVirtualSize({ psbt }: CalculateTxVirtualSizeOptions) {
-  const { inputs, outputs, witnessScripts } = analyzePSBTComponents(psbt)
-  const inputVBytes = inputs.reduce((acc, inputType) => {
-    const { input, txHeader } = getInputOutputBaseSizeByType(inputType)
-    acc += input + txHeader
-    return acc
-  }, 0)
-  const outputVBytes = outputs.reduce((acc, inputType) => {
-    acc += getInputOutputBaseSizeByType(inputType).output
-    return acc
-  }, 0)
+export function calculateTxVirtualSize({ psbt, network }: CalculateTxVirtualSizeOptions) {
+  const { inputs, outputs, witnessScripts } = analyzePSBTComponents(psbt, network)
 
   const baseVBytes = inputVBytes + outputVBytes
   const additionalVBytes = witnessScripts.reduce((acc, script) => (acc += script.byteLength), 0) || 0
@@ -236,31 +227,31 @@ export function decodeTx({ hex, buffer }: BufferOrHex): bitcoin.Transaction {
   throw new Error("Invalid options")
 }
 
-function isPaymentFactory(payment: bitcoin.PaymentCreator) {
+function isPaymentFactory(payment: bitcoin.PaymentCreator, network: Network) {
   return (script: Buffer) => {
     try {
-      payment({ output: script })
+      payment({ output: script, network: getNetwork(network) })
       return true
     } catch (err) {
       return false
     }
   }
 }
-export const isP2MS = isPaymentFactory(bitcoin.payments.p2ms)
-export const isP2PK = isPaymentFactory(bitcoin.payments.p2pk)
-export const isP2PKH = isPaymentFactory(bitcoin.payments.p2pkh)
-export const isP2WPKH = isPaymentFactory(bitcoin.payments.p2wpkh)
-export const isP2WSHScript = isPaymentFactory(bitcoin.payments.p2wsh)
-export const isP2SHScript = isPaymentFactory(bitcoin.payments.p2sh)
-export const isP2TR = isPaymentFactory(bitcoin.payments.p2tr)
-export function getInputType(script: Buffer): AddressFormats {
-  if (isP2PKH(script)) {
+export const isP2MS = (network: Network) => isPaymentFactory(bitcoin.payments.p2ms, network)
+export const isP2PK = (network: Network) => isPaymentFactory(bitcoin.payments.p2pk, network)
+export const isP2PKH = (network: Network) => isPaymentFactory(bitcoin.payments.p2pkh, network)
+export const isP2WPKH = (network: Network) => isPaymentFactory(bitcoin.payments.p2wpkh, network)
+export const isP2WSHScript = (network: Network) => isPaymentFactory(bitcoin.payments.p2wsh, network)
+export const isP2SHScript = (network: Network) => isPaymentFactory(bitcoin.payments.p2sh, network)
+export const isP2TR = (network: Network) => isPaymentFactory(bitcoin.payments.p2tr, network)
+export function getInputType(script: Buffer, network: Network): AddressFormats {
+  if (isP2PKH(network)(script)) {
     return addressTypeToName["p2pkh"]
-  } else if (isP2WPKH(script)) {
+  } else if (isP2WPKH(network)(script)) {
     return addressTypeToName["p2wpkh"]
-  } else if (isP2WSHScript(script)) {
+  } else if (isP2SHScript(network)(script)) {
     return addressTypeToName["p2sh"]
-  } else if (isP2TR(script)) {
+  } else if (isP2TR(network)(script)) {
     return addressTypeToName["p2tr"]
   }
 

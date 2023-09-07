@@ -164,7 +164,8 @@ export async function generateBuyerPsbt({
 
   const fee = calculateTxFee({
     psbt,
-    satsPerByte: feeRate
+    satsPerByte: feeRate,
+    network
   })
 
   const totalOutput = psbt.txOutputs.reduce((partialSum, a) => partialSum + a.value, 0)
@@ -238,7 +239,8 @@ export async function generateRefundableUTXOs({
 
   const fee = calculateTxFee({
     psbt,
-    satsPerByte: feeRate
+    satsPerByte: feeRate,
+    network
   })
 
   const remainingSats = utxo.sats - fee
