@@ -205,3 +205,34 @@ export function decodeTx({ hex, buffer }: BufferOrHex): bitcoin.Transaction {
 
   throw new Error("Invalid options")
 }
+
+function isPaymentFactory(payment: bitcoin.PaymentCreator) {
+  return (script: Buffer) => {
+    try {
+      payment({ output: script })
+      return true
+    } catch (err) {
+      return false
+    }
+  }
+}
+export const isP2MS = isPaymentFactory(bitcoin.payments.p2ms)
+export const isP2PK = isPaymentFactory(bitcoin.payments.p2pk)
+export const isP2PKH = isPaymentFactory(bitcoin.payments.p2pkh)
+export const isP2WPKH = isPaymentFactory(bitcoin.payments.p2wpkh)
+export const isP2WSHScript = isPaymentFactory(bitcoin.payments.p2wsh)
+export const isP2SHScript = isPaymentFactory(bitcoin.payments.p2sh)
+export const isP2TR = isPaymentFactory(bitcoin.payments.p2tr)
+export function getInputType(script: Buffer): AddressFormats {
+  if (isP2PKH(script)) {
+    return addressTypeToName["p2pkh"]
+  } else if (isP2WPKH(script)) {
+    return addressTypeToName["p2wpkh"]
+  } else if (isP2WSHScript(script)) {
+    return addressTypeToName["p2sh"]
+  } else if (isP2TR(script)) {
+    return addressTypeToName["p2tr"]
+  }
+
+  throw new Error("Unsupported input")
+}
