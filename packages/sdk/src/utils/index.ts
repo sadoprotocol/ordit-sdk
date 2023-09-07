@@ -168,7 +168,7 @@ export function getInputOutputBaseSizeByType(type: AddressFormats) {
       return { input: 91, output: 32, txHeader: 10.5 }
 
     case "legacy":
-      return { input: 147.5, output: 34, txHeader: 10.5 }
+      return { input: 146, output: 33, txHeader: 10.5 }
 
     default:
       throw new Error("Invalid type")
