@@ -9,13 +9,13 @@ wallet.setDefaultAddress('taproot')
 
 async function buildPSBT() {
     const psbt = new PSBTBuilder({
-        address: 'tb1p98dv6f5jp5qr4z2dtaljvwrhq34xrr8zuaqgv4ajf36vg2mmsruqt5m3lv',
+        address: wallet.selectedAddress,
         feeRate: 2,
         network: 'testnet',
-        publicKey: '039ce27aa7666731648421004ba943b90b8273e23a175d9c58e3ec2e643a9b01d1',
+        publicKey: wallet.publicKey,
         outputs: [{
             address: 'mwwTsmPhVcJzbW6dCeLVYoJQMraW1EeeuN',
-            cardinals: 1455
+            cardinals: 600
         }]
     })
 
