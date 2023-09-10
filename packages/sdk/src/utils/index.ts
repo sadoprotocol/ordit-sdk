@@ -123,11 +123,11 @@ export function analyzePSBTComponents(psbt: bitcoin.Psbt, network: Network) {
       throw new Error("Invalid input. Script not found")
     }
 
-    result.inputs.push(getInputType(script, network))
+    result.inputs.push(getScriptType(script, network))
   })
 
   outputs.forEach((output) => {
-    result.outputs.push(getInputType(output.script, network))
+    result.outputs.push(getScriptType(output.script, network))
   })
 
   return result
@@ -250,7 +250,7 @@ export const isP2WPKH = (network: Network) => isPaymentFactory(bitcoin.payments.
 export const isP2WSHScript = (network: Network) => isPaymentFactory(bitcoin.payments.p2wsh, network)
 export const isP2SHScript = (network: Network) => isPaymentFactory(bitcoin.payments.p2sh, network)
 export const isP2TR = (network: Network) => isPaymentFactory(bitcoin.payments.p2tr, network)
-export function getInputType(script: Buffer, network: Network): AddressFormats {
+export function getScriptType(script: Buffer, network: Network): AddressFormats {
   if (isP2PKH(network)(script)) {
     return addressTypeToName["p2pkh"]
   } else if (isP2WPKH(network)(script)) {
