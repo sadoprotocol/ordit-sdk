@@ -33,7 +33,7 @@ export class PSBTBuilder {
   rbf = true
   utxos: UTXOLimited[] = []
   usedUTXOs: string[] = []
-  witnessScripts: Buffer[] = []
+  witness: Buffer[] = []
 
   constructor({ address, feeRate, network, publicKey, outputs }: PSBTBuilderOptions) {
     this.address = address
@@ -180,8 +180,6 @@ export class PSBTBuilder {
     const response = await Promise.all(promises)
     for (const input of response) {
       if (this.usedUTXOs.includes(generateTxUniqueIdentifier(input.hash, input.index))) continue
-
-      input.witnessUtxo?.script && this.witnessScripts.push(input.witnessUtxo.script)
       this.usedUTXOs.push(generateTxUniqueIdentifier(input.hash, input.index))
     }
 
