@@ -1,14 +1,6 @@
 import { networks, Psbt } from "bitcoinjs-lib"
 
-import {
-  addressTypeToName,
-  calculateTxFee,
-  convertSatoshisToBTC,
-  generateTxUniqueIdentifier,
-  getAddressType,
-  getNetwork,
-  OrditApi
-} from ".."
+import { calculateTxFee, convertSatoshisToBTC, generateTxUniqueIdentifier, getNetwork, OrditApi } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { InputType, processInput } from "."
@@ -143,13 +135,9 @@ export class PSBTBuilder {
 
   private calculateNetworkFee() {
     this.fee = calculateTxFee({
-      totalInputs: this.inputs.length,
-      totalOutputs: this.outputs.length,
+      psbt: this.psbt,
       satsPerByte: this.feeRate,
-      type: addressTypeToName[getAddressType(this.address, this.network)],
-      additional: {
-        witnessScripts: this.witnessScripts
-      }
+      network: this.network
     })
 
     return this.fee
