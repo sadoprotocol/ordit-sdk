@@ -161,13 +161,6 @@ export class PSBTBuilder {
 
   private async retrieveUTXOs() {
     const amount = this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
-    console.log({
-      address: this.address,
-      value: convertSatoshisToBTC(amount),
-      network: this.network,
-      filter: this.getReservedUTXOs()
-    })
-
     const utxos = await OrditApi.fetchSpendables({
       address: this.address,
       value: convertSatoshisToBTC(amount),
