@@ -7,17 +7,18 @@ export interface CalculateTxFeeOptions {
   psbt: Psbt
   satsPerByte: number
   network: Network
+  witnesses?: Buffer[]
 }
 
 export interface CalculateTxVirtualSizeOptions {
   psbt: Psbt
   network: Network
+  witnesses?: Buffer[]
 }
 
 export interface PSBTComponents {
   inputs: AddressFormats[]
   outputs: AddressFormats[]
-  witnessScripts: Buffer[]
 }
 
 export interface NestedObject {

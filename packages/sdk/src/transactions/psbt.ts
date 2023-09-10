@@ -42,12 +42,12 @@ export async function createPsbt({
   const outputSats = outputs.reduce((acc, utxo) => (acc += utxo.cardinals), 0)
 
   // add inputs
-  const witnessScripts: Buffer[] = []
+  const witnesses: Buffer[] = []
   for (const [index, utxo] of spendableUTXOs.entries()) {
     if (utxo.scriptPubKey.address !== address) continue
 
     const payload = await processInput({ utxo, pubKey, network })
-    payload.witnessUtxo?.script && witnessScripts.push(payload.witnessUtxo?.script)
+    payload.type === "taproot" && payload.witnesses && witnesses.push(...payload.witnesses)
     psbt.addInput(payload)
 
     if (enableRBF) {
@@ -88,10 +88,16 @@ export async function createPsbt({
   }
 }
 
-export async function processInput({ utxo, pubKey, network, sighashType }: ProcessInputOptions): Promise<InputType> {
+export async function processInput({
+  utxo,
+  pubKey,
+  network,
+  sighashType,
+  witnesses
+}: ProcessInputOptions): Promise<InputType> {
   switch (utxo.scriptPubKey.type) {
     case "witness_v1_taproot":
-      return generateTaprootInput({ utxo, pubKey, network, sighashType })
+      return generateTaprootInput({ utxo, pubKey, network, sighashType, witnesses })
 
     case "witness_v0_scripthash":
     case "witness_v0_keyhash":
@@ -108,7 +114,13 @@ export async function processInput({ utxo, pubKey, network, sighashType }: Proce
   }
 }
 
-function generateTaprootInput({ utxo, pubKey, network, sighashType }: ProcessInputOptions): TaprootInputType {
+function generateTaprootInput({
+  utxo,
+  pubKey,
+  network,
+  sighashType,
+  witnesses
+}: ProcessInputOptions): TaprootInputType {
   const chainCode = Buffer.alloc(32)
   chainCode.fill(1)
 
@@ -120,6 +132,7 @@ function generateTaprootInput({ utxo, pubKey, network, sighashType }: ProcessInp
   }
 
   return {
+    type: "taproot",
     hash: utxo.txid,
     index: utxo.n,
     tapInternalKey: xOnlyPubKey,
@@ -127,16 +140,18 @@ function generateTaprootInput({ utxo, pubKey, network, sighashType }: ProcessInp
       script: Buffer.from(utxo.scriptPubKey.hex, "hex"),
       value: utxo.sats
     },
+    witnesses,
     ...(sighashType ? { sighashType } : undefined)
   }
 }
 
-function generateSegwitInput({ utxo, sighashType }: Omit<ProcessInputOptions, "pubKey" | "network">): BaseInputType {
+function generateSegwitInput({ utxo, sighashType }: Omit<ProcessInputOptions, "pubKey" | "network">): SegwitInputType {
   if (!utxo.scriptPubKey.hex) {
     throw new Error("Unable to process Segwit input")
   }
 
   return {
+    type: "segwit",
     hash: utxo.txid,
     index: utxo.n,
     witnessUtxo: {
@@ -154,6 +169,7 @@ function generateNestedSegwitInput({ utxo, pubKey, network, sighashType }: Proce
   }
 
   return {
+    type: "nested-segwit",
     hash: utxo.txid,
     index: utxo.n,
     redeemScript: p2sh.redeem.output!,
@@ -169,13 +185,14 @@ async function generateLegacyInput({
   utxo,
   sighashType,
   network
-}: Omit<ProcessInputOptions, "pubKey">): Promise<BaseInputType> {
+}: Omit<ProcessInputOptions, "pubKey">): Promise<LegacyInputType> {
   const { rawTx } = await OrditApi.fetchTx({ txId: utxo.txid, network, hex: true })
   if (!rawTx) {
     throw new Error("Unable to process legacy input")
   }
 
   return {
+    type: "legacy",
     hash: utxo.txid,
     index: utxo.n,
     nonWitnessUtxo: rawTx?.toBuffer(),
@@ -188,22 +205,35 @@ interface BaseInputType {
   hash: string
   index: number
   sighashType?: number
+}
+
+type LegacyInputType = BaseInputType & {
+  type: "legacy"
+  nonWitnessUtxo?: Buffer
+}
+
+type SegwitInputType = BaseInputType & {
+  type: "segwit"
   witnessUtxo?: {
     script: Buffer
     value: number
   }
-  nonWitnessUtxo?: Buffer
+  witnesses?: Buffer[]
 }
 
-type TaprootInputType = BaseInputType & {
-  tapInternalKey: Buffer
-}
+type TaprootInputType = BaseInputType &
+  Omit<SegwitInputType, "type"> & {
+    type: "taproot"
+    tapInternalKey: Buffer
+  }
 
-type NestedSegwitInputType = BaseInputType & {
-  redeemScript: Buffer
-}
+type NestedSegwitInputType = BaseInputType &
+  Omit<SegwitInputType, "type"> & {
+    type: "nested-segwit"
+    redeemScript: Buffer
+  }
 
-export type InputType = BaseInputType | TaprootInputType | NestedSegwitInputType
+export type InputType = LegacyInputType | SegwitInputType | NestedSegwitInputType | TaprootInputType
 
 export type CreatePsbtOptions = {
   satsPerByte: number
@@ -223,4 +253,5 @@ interface ProcessInputOptions {
   pubKey: string
   network: Network
   sighashType?: number
+  witnesses?: Buffer[]
 }

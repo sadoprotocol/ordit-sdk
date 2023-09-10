@@ -5,7 +5,6 @@ import ECPairFactory from "ecpair"
 
 import { AddressFormats, AddressTypes, addressTypeToName } from "../addresses/formats"
 import { Network } from "../config/types"
-import { UTXO } from "../transactions/types"
 import {
   BufferOrHex,
   CalculateTxFeeOptions,
@@ -99,8 +98,8 @@ export function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
   return bitcoin.crypto.taggedHash("TapTweak", Buffer.concat(h ? [pubKey, h] : [pubKey]))
 }
 
-export function calculateTxFee({ psbt, satsPerByte, network }: CalculateTxFeeOptions): number {
-  const txWeight = calculateTxVirtualSize({ psbt, network })
+export function calculateTxFee({ psbt, satsPerByte, network, witnesses }: CalculateTxFeeOptions): number {
+  const txWeight = calculateTxVirtualSize({ psbt, network, witnesses })
   return txWeight * satsPerByte
 }
 
@@ -109,8 +108,7 @@ export function analyzePSBTComponents(psbt: bitcoin.Psbt, network: Network) {
   const outputs = psbt.txOutputs
   const result: PSBTComponents = {
     inputs: [],
-    outputs: [],
-    witnessScripts: []
+    outputs: []
   }
 
   inputs.forEach((input) => {
@@ -126,7 +124,6 @@ export function analyzePSBTComponents(psbt: bitcoin.Psbt, network: Network) {
     }
 
     result.inputs.push(getInputType(script, network))
-    result.witnessScripts.push(script)
   })
 
   outputs.forEach((output) => {
@@ -136,9 +133,9 @@ export function analyzePSBTComponents(psbt: bitcoin.Psbt, network: Network) {
   return result
 }
 
-export function calculateTxVirtualSize({ psbt, network }: CalculateTxVirtualSizeOptions) {
+export function calculateTxVirtualSize({ psbt, network, witnesses }: CalculateTxVirtualSizeOptions) {
   const prioritiesByTxType: AddressFormats[] = ["taproot", "nested-segwit", "segwit", "legacy"]
-  const { inputs, outputs, witnessScripts } = analyzePSBTComponents(psbt, network)
+  const { inputs, outputs } = analyzePSBTComponents(psbt, network)
   const uniqueInputTypes = [...new Set(...[inputs])] // remove dupes
   const txType = prioritiesByTxType.find((type) => uniqueInputTypes.includes(type)) as AddressFormats
   const { input, txHeader, output } = getInputOutputBaseSizeByType(txType)
@@ -146,9 +143,10 @@ export function calculateTxVirtualSize({ psbt, network }: CalculateTxVirtualSize
   const inputVBytes = input * inputs.length
   const outputVBytes = output * outputs.length
   const baseVBytes = inputVBytes + outputVBytes + txHeader
-  const additionalVBytes = ["taproot", "segwit", "nested-segwit"].includes(txType)
-    ? witnessScripts.reduce((acc, script) => (acc += script.byteLength), 0) || 0
-    : 0
+  const additionalVBytes =
+    ["taproot"].includes(txType) && witnesses?.length
+      ? witnesses.reduce((acc, script) => (acc += script.byteLength), 0) || 0
+      : 0
 
   const weight = 3 * baseVBytes + (baseVBytes + additionalVBytes)
   const vSize = Math.ceil(weight / 4)
