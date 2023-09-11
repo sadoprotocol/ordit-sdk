@@ -4,7 +4,6 @@ import { Tapleaf } from "bitcoinjs-lib/src/types"
 
 import {
   buildWitnessScript,
-  calculateTxFee,
   convertSatoshisToBTC,
   createTransaction,
   encodeObject,
@@ -17,6 +16,7 @@ import {
 } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import FeeEstimator from "../fee/FeeEstimator"
 import { InputsToSign } from "../inscription/types"
 import { NestedObject } from "../utils/types"
 
@@ -136,11 +136,12 @@ export class OrdTransaction {
 
     let fee = this.#feeForWitnessData!
     if (this.#recovery) {
-      fee = calculateTxFee({
+      const feeEstimator = new FeeEstimator({
         psbt,
-        satsPerByte: this.feeRate,
+        feeRate: this.feeRate,
         network: this.network
       })
+      fee = feeEstimator.calculateNetworkFee()
     }
 
     const customOutsAmount = this.#outs.reduce((acc, cur) => {
@@ -227,11 +228,12 @@ export class OrdTransaction {
 
     this.#suitableUnspent = getDummyP2TRInput()
     this.build()
-    const fee = calculateTxFee({
+    const feeEstimator = new FeeEstimator({
       psbt: this.psbt!,
-      satsPerByte: this.feeRate,
+      feeRate: this.feeRate,
       network: this.network
     })
+    const fee = feeEstimator.calculateNetworkFee()
     this.psbt = null
     this.#suitableUnspent = null
     this.inputsToSign.signingIndexes.pop() // remove last added index

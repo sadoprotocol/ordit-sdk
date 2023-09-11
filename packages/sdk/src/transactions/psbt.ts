@@ -5,7 +5,8 @@ import { Psbt } from "bitcoinjs-lib"
 import { OrditApi } from "../api"
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
-import { calculateTxFee, createTransaction, getNetwork, toXOnly } from "../utils"
+import FeeEstimator from "../fee/FeeEstimator"
+import { createTransaction, getNetwork, toXOnly } from "../utils"
 import { OnOffUnion } from "../wallet"
 import { UTXO, UTXOLimited } from "./types"
 
@@ -55,11 +56,12 @@ export async function createPsbt({
     }
   }
 
-  const fee = calculateTxFee({
+  const feeEstimator = new FeeEstimator({
     psbt,
-    satsPerByte,
+    feeRate: satsPerByte,
     network
   })
+  const fee = feeEstimator.calculateNetworkFee()
 
   const remainingBalance = inputSats - outputSats - fee
   if (remainingBalance < 0) {

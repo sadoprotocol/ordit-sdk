@@ -4,7 +4,6 @@ import {
   AddressFormats,
   addressNameToType,
   AddressTypes,
-  calculateTxFee,
   convertBTCToSatoshis,
   generateTxUniqueIdentifier,
   getAddressesFromPublicKey,
@@ -16,6 +15,7 @@ import {
 } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import FeeEstimator from "../fee/FeeEstimator"
 import { InputsToSign } from "./types"
 
 export async function generateSellerPsbt({
@@ -162,11 +162,12 @@ export async function generateBuyerPsbt({
     totalInput += utxo.sats
   }
 
-  const fee = calculateTxFee({
+  const feeEstimator = new FeeEstimator({
     psbt,
-    satsPerByte: feeRate,
+    feeRate,
     network
   })
+  const fee = feeEstimator.calculateNetworkFee()
 
   const totalOutput = psbt.txOutputs.reduce((partialSum, a) => partialSum + a.value, 0)
 
@@ -237,11 +238,12 @@ export async function generateRefundableUTXOs({
     psbt.setInputSequence(0, 0xfffffffd) // hardcoded index because input is just one
   }
 
-  const fee = calculateTxFee({
+  const feeEstimator = new FeeEstimator({
     psbt,
-    satsPerByte: feeRate,
+    feeRate,
     network
   })
+  const fee = feeEstimator.calculateNetworkFee()
 
   const remainingSats = utxo.sats - fee
   for (let i = 0; i < totalOutputs; i++) {
