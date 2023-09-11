@@ -20,8 +20,6 @@ export class PSBTBuilder {
   address: string
   changeAmount = 0
   changeOutputIndex = -1
-  fee = 0
-  feeRate: number
   inputs: InputType[] = []
   inputAmount = 0
   outputs: Output[] = []
@@ -33,13 +31,11 @@ export class PSBTBuilder {
   rbf = true
   utxos: UTXOLimited[] = []
   usedUTXOs: string[] = []
-  witness: Buffer[] = []
 
   constructor({ address, feeRate, network, publicKey, outputs }: PSBTBuilderOptions) {
     this.address = address
     this.network = network
     this.outputs = outputs
-    this.feeRate = feeRate
     this.nativeNetwork = getNetwork(network)
     this.publicKey = publicKey
 
