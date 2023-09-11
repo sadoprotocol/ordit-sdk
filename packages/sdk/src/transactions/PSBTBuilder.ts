@@ -137,7 +137,7 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async isNegativeChange() {
-    if (this.changeAmount > 0) return
+    if (this.changeAmount >= 0) return
 
     await this.prepare()
     if (this.noMoreUTXOS) {
