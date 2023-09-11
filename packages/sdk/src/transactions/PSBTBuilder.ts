@@ -1,4 +1,5 @@
 import { networks, Psbt } from "bitcoinjs-lib"
+import reverseBuffer from "buffer-reverse"
 
 import { convertSatoshisToBTC, generateTxUniqueIdentifier, getNetwork, OrditApi } from ".."
 import { Network } from "../config/types"
@@ -66,7 +67,17 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async addInputs() {
+    const existingInputHashes = this.psbt.txInputs.map((input) => {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const hash = reverseBuffer(input.hash) as Buffer
+
+      return generateTxUniqueIdentifier(hash.toString("hex"), input.index)
+    })
+
     for (const [index, input] of this.inputs.entries()) {
+      if (existingInputHashes.includes(generateTxUniqueIdentifier(input.hash, input.index))) continue
+
       this.psbt.addInput(input)
       this.psbt.setInputSequence(index, this.rbf ? 0xfffffffd : 0xffffffff)
     }
