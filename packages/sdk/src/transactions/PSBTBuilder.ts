@@ -206,7 +206,9 @@ export class PSBTBuilder extends FeeEstimator {
     await this.build()
   }
 
-  build() {
+  private async build() {
+    this.psbt = new Psbt({ network: getNetwork(this.network) }) // create tx from scratch
+
     this.addInputs()
     this.outputs.forEach((output) =>
       this.psbt.addOutput({
