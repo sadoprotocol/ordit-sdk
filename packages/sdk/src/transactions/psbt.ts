@@ -1,14 +1,12 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
 import { BIP32Factory } from "bip32"
-import { Psbt } from "bitcoinjs-lib"
 
 import { OrditApi } from "../api"
 import { Network } from "../config/types"
-import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
-import FeeEstimator from "../fee/FeeEstimator"
 import { createTransaction, getNetwork, toXOnly } from "../utils"
 import { OnOffUnion } from "../wallet"
-import { UTXO, UTXOLimited } from "./types"
+import { PSBTBuilder } from "./PSBTBuilder"
+import { Output, UTXO, UTXOLimited } from "./types"
 
 const bip32 = BIP32Factory(ecc)
 
@@ -18,71 +16,22 @@ export async function createPsbt({
   address,
   outputs,
   satsPerByte,
-  safeMode = "on",
   enableRBF = true
 }: CreatePsbtOptions) {
   if (!outputs.length) {
     throw new Error("Invalid request")
   }
 
-  const { spendableUTXOs, unspendableUTXOs, totalUTXOs } = await OrditApi.fetchUnspentUTXOs({
+  const psbt = new PSBTBuilder({
     address,
-    network,
-    type: safeMode === "off" ? "all" : "spendable"
-  })
-
-  if (!totalUTXOs) {
-    throw new Error("No spendable UTXOs")
-  }
-
-  const nativeNetwork = getNetwork(network)
-  const psbt = new Psbt({ network: nativeNetwork })
-  const inputSats = spendableUTXOs
-    .concat(safeMode === "off" ? unspendableUTXOs : [])
-    .reduce((acc, utxo) => (acc += utxo.sats), 0)
-  const outputSats = outputs.reduce((acc, utxo) => (acc += utxo.cardinals), 0)
-
-  // add inputs
-  const witnesses: Buffer[] = []
-  for (const [index, utxo] of spendableUTXOs.entries()) {
-    if (utxo.scriptPubKey.address !== address) continue
-
-    const payload = await processInput({ utxo, pubKey, network })
-    payload.type === "taproot" && payload.witnesses && witnesses.push(...payload.witnesses)
-    psbt.addInput(payload)
-
-    if (enableRBF) {
-      psbt.setInputSequence(index, 0xfffffffd)
-    }
-  }
-
-  const feeEstimator = new FeeEstimator({
-    psbt,
     feeRate: satsPerByte,
-    network
+    network,
+    publicKey: pubKey,
+    outputs
   })
-  const fee = feeEstimator.calculateNetworkFee()
 
-  const remainingBalance = inputSats - outputSats - fee
-  if (remainingBalance < 0) {
-    throw new Error(`Insufficient balance. Available: ${inputSats}. Attemping to spend: ${outputSats}. Fees: ${fee}`)
-  }
-
-  const isChangeOwed = remainingBalance > MINIMUM_AMOUNT_IN_SATS
-  if (isChangeOwed) {
-    outputs.push({
-      address,
-      cardinals: remainingBalance
-    })
-  }
-
-  // add outputs
-  outputs.forEach((out) => {
-    psbt.addOutput({
-      address: out.address,
-      value: out.cardinals
-    })
-  })
+  enableRBF ? psbt.enableRBF() : psbt.disableRBF()
+  await psbt.prepare()
 
   return {
     hex: psbt.toHex(),
@@ -251,10 +200,7 @@ export type InputType = LegacyInputType | SegwitInputType | NestedSegwitInputTyp
 export type CreatePsbtOptions = {
   satsPerByte: number
   address: string
-  outputs: {
-    address: string
-    cardinals: number
-  }[]
+  outputs: Output[]
   enableRBF?: boolean
   pubKey: string
   network: Network
