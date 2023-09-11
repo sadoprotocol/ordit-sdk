@@ -41,6 +41,9 @@ importers:
       bitcoinjs-message:
         specifier: 2.2.0
         version: 2.2.0
+      buffer-reverse:
+        specifier: ^1.0.1
+        version: 1.0.1
       cross-fetch:
         specifier: 3.1.6
         version: 3.1.6
@@ -637,6 +640,10 @@ packages:
   /buffer-equals@1.0.4:
     resolution: {integrity: sha512-99MsCq0j5+RhubVEtKQgKaD6EM+UP3xJgIvQqwJ3SOLDUekzxMX1ylXBng+Wa2sh7mGT0W6RUly8ojjr1Tt6nA==}
     engines: {node: '>=0.10.0'}
+    dev: false
+
+  /buffer-reverse@1.0.1:
+    resolution: {integrity: sha512-M87YIUBsZ6N924W57vDwT/aOu8hw7ZgdByz6ijksLjmHJELBASmYTTlNHRgjE+pTsT9oJXGaDSgqqwfdHotDUg==}
     dev: false
 
   /buffer-xor@1.0.3:
