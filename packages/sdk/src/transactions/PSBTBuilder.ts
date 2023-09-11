@@ -1,8 +1,9 @@
 import { networks, Psbt } from "bitcoinjs-lib"
 
-import { calculateTxFee, convertSatoshisToBTC, generateTxUniqueIdentifier, getNetwork, OrditApi } from ".."
+import { convertSatoshisToBTC, generateTxUniqueIdentifier, getNetwork, OrditApi } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import FeeEstimator from "../fee/FeeEstimator"
 import { InputType, processInput } from "."
 import { Output, UTXOLimited } from "./types"
 
@@ -14,7 +15,7 @@ interface PSBTBuilderOptions {
   publicKey: string
 }
 
-export class PSBTBuilder {
+export class PSBTBuilder extends FeeEstimator {
   private nativeNetwork: networks.Network
 
   address: string
@@ -33,6 +34,10 @@ export class PSBTBuilder {
   usedUTXOs: string[] = []
 
   constructor({ address, feeRate, network, publicKey, outputs }: PSBTBuilderOptions) {
+    super({
+      feeRate,
+      network
+    })
     this.address = address
     this.network = network
     this.outputs = outputs
@@ -127,16 +132,6 @@ export class PSBTBuilder {
     if (this.noMoreUTXOS) {
       throw new Error(`Insufficient balance. Decrease the output amount by ${this.changeAmount * -1} sats`)
     }
-  }
-
-  private calculateNetworkFee() {
-    this.fee = calculateTxFee({
-      psbt: this.psbt,
-      satsPerByte: this.feeRate,
-      network: this.network
-    })
-
-    return this.fee
   }
 
   private getReservedUTXOs() {
