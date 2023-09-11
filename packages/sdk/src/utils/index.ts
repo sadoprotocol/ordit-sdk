@@ -5,15 +5,8 @@ import ECPairFactory from "ecpair"
 
 import { AddressFormats, AddressTypes, addressTypeToName } from "../addresses/formats"
 import { Network } from "../config/types"
-import {
-  BufferOrHex,
-  CalculateTxFeeOptions,
-  CalculateTxVirtualSizeOptions,
-  EncodeDecodeObjectOptions,
-  NestedObject,
-  OneOfAllDataFormats,
-  PSBTComponents
-} from "./types"
+import { UTXO } from "../transactions/types"
+import { BufferOrHex, EncodeDecodeObjectOptions, NestedObject, OneOfAllDataFormats } from "./types"
 
 export function getNetwork(value: Network) {
   if (value === "mainnet") {
@@ -98,83 +91,9 @@ export function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
   return bitcoin.crypto.taggedHash("TapTweak", Buffer.concat(h ? [pubKey, h] : [pubKey]))
 }
 
-export function calculateTxFee({ psbt, satsPerByte, network, witnesses }: CalculateTxFeeOptions): number {
-  const txWeight = calculateTxVirtualSize({ psbt, network, witnesses })
-  return txWeight * satsPerByte
-}
-
-export function analyzePSBTComponents(psbt: bitcoin.Psbt, network: Network) {
-  const inputs = psbt.data.inputs
-  const outputs = psbt.txOutputs
-  const result: PSBTComponents = {
-    inputs: [],
-    outputs: []
-  }
-
-  inputs.forEach((input) => {
-    const script =
-      input.witnessUtxo && input.witnessUtxo.script
-        ? input.witnessUtxo.script
-        : input.nonWitnessUtxo
-        ? input.nonWitnessUtxo
-        : null
-
-    if (!script) {
-      throw new Error("Invalid input. Script not found")
-    }
-
-    result.inputs.push(getScriptType(script, network))
-  })
-
-  outputs.forEach((output) => {
-    result.outputs.push(getScriptType(output.script, network))
-  })
-
-  return result
-}
-
-export function calculateTxVirtualSize({ psbt, network, witnesses }: CalculateTxVirtualSizeOptions) {
-  const prioritiesByTxType: AddressFormats[] = ["taproot", "nested-segwit", "segwit", "legacy"]
-  const { inputs, outputs } = analyzePSBTComponents(psbt, network)
-  const uniqueInputTypes = [...new Set(...[inputs])] // remove dupes
-  const txType = prioritiesByTxType.find((type) => uniqueInputTypes.includes(type)) as AddressFormats
-  const { input, txHeader, output } = getInputOutputBaseSizeByType(txType)
-
-  const inputVBytes = input * inputs.length
-  const outputVBytes = output * outputs.length
-  const baseVBytes = inputVBytes + outputVBytes + txHeader
-  const additionalVBytes =
-    ["taproot"].includes(txType) && witnesses?.length
-      ? witnesses.reduce((acc, script) => (acc += script.byteLength), 0) || 0
-      : 0
-
-  const weight = 3 * baseVBytes + (baseVBytes + additionalVBytes)
-  const vSize = Math.ceil(weight / 4)
-
-  return vSize
-}
-
-export function getInputOutputBaseSizeByType(type: AddressFormats) {
-  switch (type) {
-    case "taproot":
-      return { input: 57.5, output: 43, txHeader: 10.5 }
-
-    case "segwit":
-      return { input: 68, output: 31, txHeader: 10.5 }
-
-    case "nested-segwit":
-      return { input: 91, output: 32, txHeader: 10.5 }
-
-    case "legacy":
-      return { input: 146, output: 33, txHeader: 10.5 }
-
-    default:
-      throw new Error("Invalid type")
-  }
-}
-
 export const isObject = (o: any) => o?.constructor === Object
 export const isString = (s: any) => s instanceof String || typeof s === "string"
+export const isFloat = (n: number) => Number(n) === n && n % 1 !== 0
 
 function encodeDecodeObject(obj: NestedObject, { encode, depth = 0 }: EncodeDecodeObjectOptions) {
   const maxDepth = 5

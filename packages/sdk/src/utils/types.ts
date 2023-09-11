@@ -1,26 +1,3 @@
-import { Psbt } from "bitcoinjs-lib"
-
-import { AddressFormats } from ".."
-import { Network } from "../config/types"
-
-export interface CalculateTxFeeOptions {
-  psbt: Psbt
-  satsPerByte: number
-  network: Network
-  witnesses?: Buffer[]
-}
-
-export interface CalculateTxVirtualSizeOptions {
-  psbt: Psbt
-  network: Network
-  witnesses?: Buffer[]
-}
-
-export interface PSBTComponents {
-  inputs: AddressFormats[]
-  outputs: AddressFormats[]
-}
-
 export interface NestedObject {
   [key: string]: NestedObject | any
 }
