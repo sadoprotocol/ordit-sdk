@@ -120,7 +120,6 @@ export class PSBTBuilder extends FeeEstimator {
 
     this.changeOutputIndex = this.outputs.length - 1
 
-    this.calculateNetworkFee()
     this.calculateChangeAmount()
   }
 
@@ -132,7 +131,6 @@ export class PSBTBuilder extends FeeEstimator {
 
   private async calculateChangeAmount() {
     this.changeAmount = Math.floor(this.inputAmount - this.outputAmount - this.fee)
-
     await this.addChangeOutput()
   }
 
@@ -198,13 +196,14 @@ export class PSBTBuilder extends FeeEstimator {
     await this.retrieveUTXOs()
     await this.prepareInputs()
 
-    // calculate network fee
-    this.calculateNetworkFee()
-
-    // calculate change amount
     await this.calculateChangeAmount()
 
+    await this.build()
+
+    await this.calculateChangeAmount()
     this.calculateOutputAmount()
+
+    await this.build()
   }
 
   build() {
@@ -217,6 +216,7 @@ export class PSBTBuilder extends FeeEstimator {
     )
 
     this.psbt.setMaximumFeeRate(this.feeRate)
+    this.calculateNetworkFee()
 
     return this
   }
