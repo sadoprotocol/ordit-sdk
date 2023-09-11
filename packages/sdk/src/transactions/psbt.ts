@@ -109,7 +109,7 @@ export async function processInput({
       return generateNestedSegwitInput({ utxo, pubKey, network, sighashType })
 
     case "pubkeyhash":
-      return generateLegacyInput({ utxo, sighashType, network })
+      return generateLegacyInput({ utxo, sighashType, network, pubKey })
 
     default:
       throw new Error("invalid script pub type")
@@ -186,18 +186,25 @@ function generateNestedSegwitInput({ utxo, pubKey, network, sighashType }: Proce
 async function generateLegacyInput({
   utxo,
   sighashType,
-  network
-}: Omit<ProcessInputOptions, "pubKey">): Promise<LegacyInputType> {
+  network,
+  pubKey
+}: ProcessInputOptions): Promise<LegacyInputType> {
   const { rawTx } = await OrditApi.fetchTx({ txId: utxo.txid, network, hex: true })
   if (!rawTx) {
     throw new Error("Unable to process legacy input")
   }
+
+  const p2pkh = createTransaction(Buffer.from(pubKey, "hex"), "p2pkh", network)
 
   return {
     type: "legacy",
     hash: utxo.txid,
     index: utxo.n,
     nonWitnessUtxo: rawTx?.toBuffer(),
+    witnessUtxo: {
+      script: p2pkh.output!,
+      value: utxo.sats
+    },
     ...(sighashType ? { sighashType } : undefined)
   }
 }
@@ -212,6 +219,10 @@ interface BaseInputType {
 type LegacyInputType = BaseInputType & {
   type: "legacy"
   nonWitnessUtxo?: Buffer
+  witnessUtxo?: {
+    script: Buffer
+    value: number
+  }
 }
 
 type SegwitInputType = BaseInputType & {
