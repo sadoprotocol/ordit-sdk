@@ -2,6 +2,7 @@ import { Psbt } from "bitcoinjs-lib"
 
 import { AddressFormats, getNetwork, getScriptType, isFloat } from ".."
 import { Network } from "../config/types"
+import { MAXIMUM_FEE } from "../constants"
 import { FeeEstimatorOptions } from "./types"
 
 export default class FeeEstimator {
@@ -9,11 +10,10 @@ export default class FeeEstimator {
   network: Network
   psbt!: Psbt
   witnesses?: Buffer[] = []
+  fee = 0
 
   private virtualSize = 0
   private weight = 0
-  private fee = 0
-  private maxFee = 5000000 // Sats- 0.05 BTC
 
   constructor({ feeRate, network, psbt, witnesses }: FeeEstimatorOptions) {
     if (feeRate < 0 || isFloat(feeRate)) {
@@ -27,7 +27,7 @@ export default class FeeEstimator {
   }
 
   private sanityCheckFee() {
-    if (this.fee > this.maxFee) {
+    if (this.fee > MAXIMUM_FEE) {
       throw new Error("Error while calculating fees")
     }
   }
