@@ -27,6 +27,7 @@ export class PSBTBuilder extends FeeEstimator {
   inputs: InputType[] = []
   inputAmount = 0
   outputs: Output[] = []
+  outputAmount = 0
   network: Network
   noMoreUTXOS = false
   psbt: Psbt
@@ -138,14 +139,9 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private calculateOutputAmount() {
-    return this.outputAmount
-  }
+    this.outputAmount = Math.floor(this.outputs.reduce((acc, curr) => (acc += curr.value), 0))
 
-  protected get outputAmount() {
-    const outputAmount = Math.floor(this.outputs.reduce((acc, curr) => (acc += curr.value), 0))
     this.validateOutputAmount()
-
-    return outputAmount
   }
 
   private async calculateChangeAmount() {
