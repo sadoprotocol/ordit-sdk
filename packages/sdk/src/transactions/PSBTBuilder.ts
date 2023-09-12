@@ -217,12 +217,12 @@ export class PSBTBuilder extends FeeEstimator {
 
     await this.calculateChangeAmount()
 
-    await this.build()
+    await this.process()
 
     await this.calculateChangeAmount()
     this.calculateOutputAmount()
 
-    await this.build()
+    await this.process()
   }
 
   private async process() {
