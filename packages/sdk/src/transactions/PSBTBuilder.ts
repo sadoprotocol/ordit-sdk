@@ -166,10 +166,10 @@ export class PSBTBuilder extends FeeEstimator {
     return this.utxos.map((utxo) => generateTxUniqueIdentifier(utxo.txid, utxo.n))
   }
 
-  private async retrieveUTXOs() {
-    const amount = this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
+  private async retrieveUTXOs(address?: string, amount?: number) {
+    amount = amount || this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
     const utxos = await OrditApi.fetchSpendables({
-      address: this.address,
+      address: address || this.address,
       value: convertSatoshisToBTC(amount),
       network: this.network,
       filter: this.getReservedUTXOs()
@@ -178,6 +178,14 @@ export class PSBTBuilder extends FeeEstimator {
     this.noMoreUTXOS = utxos.length === 0
 
     this.utxos.push(...utxos)
+  }
+
+  protected async retrieveSelectedUTXOs(address: string, amount: number) {
+    await this.retrieveUTXOs(address, amount)
+    const selectedUTXOs = this.utxos.find((utxo) => utxo.sats >= amount)
+    this.utxos = selectedUTXOs ? [selectedUTXOs] : []
+
+    return this.utxos
   }
 
   private async prepareInputs() {
