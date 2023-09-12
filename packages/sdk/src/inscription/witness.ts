@@ -56,22 +56,16 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
     })
   }
 
-  try {
-    if (recover) {
-      return bitcoin.script.compile([Buffer.from(options.xkey, "hex"), bitcoin.opcodes.OP_CHECKSIG])
-    }
-
-    return bitcoin.script.compile([
-      ...baseStackElements,
-      ...contentStackElements,
-      bitcoin.opcodes.OP_ENDIF,
-      ...metaStackElements
-    ])
-  } catch (error) {
-    //fail silently
+  if (recover) {
+    return bitcoin.script.compile([Buffer.from(options.xkey, "hex"), bitcoin.opcodes.OP_CHECKSIG])
   }
 
-  return false
+  return bitcoin.script.compile([
+    ...baseStackElements,
+    ...contentStackElements,
+    bitcoin.opcodes.OP_ENDIF,
+    ...metaStackElements
+  ])
 }
 
 function opPush(str: string, encoding: BufferEncoding = "utf8") {
