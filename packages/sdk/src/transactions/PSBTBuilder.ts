@@ -75,6 +75,7 @@ export class PSBTBuilder extends FeeEstimator {
 
   protected initPSBT() {
     this.psbt = new Psbt({ network: getNetwork(this.network) }) // create new PSBT
+    this.psbt.setMaximumFeeRate(this.feeRate)
   }
 
   protected getInputSequence() {
@@ -102,6 +103,15 @@ export class PSBTBuilder extends FeeEstimator {
     if (this.outputAmount < MINIMUM_AMOUNT_IN_SATS) {
       throw new Error(`Output amount too low. Minimum output amount needs to be ${MINIMUM_AMOUNT_IN_SATS} sats`)
     }
+  }
+
+  private addOutputs() {
+    this.outputs.forEach((output) =>
+      this.psbt.addOutput({
+        address: output.address,
+        value: output.value
+      })
+    )
   }
 
   private adjustChangeOutput() {
@@ -233,14 +243,8 @@ export class PSBTBuilder extends FeeEstimator {
     this.initPSBT()
 
     this.addInputs()
-    this.outputs.forEach((output) =>
-      this.psbt.addOutput({
-        address: output.address,
-        value: output.value
-      })
-    )
+    this.addOutputs()
 
-    this.psbt.setMaximumFeeRate(this.feeRate)
     this.calculateNetworkFee()
 
     return this
