@@ -62,12 +62,12 @@ export class PSBTBuilder extends FeeEstimator {
     return this.psbt.toBase64()
   }
 
-  protected enableRBF() {
+  enableRBF() {
     this.rbf = true
     this.addInputs()
   }
 
-  protected disableRBF() {
+  disableRBF() {
     this.rbf = false
     this.addInputs()
   }
