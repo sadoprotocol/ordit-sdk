@@ -50,6 +50,10 @@ export class PSBTBuilder extends FeeEstimator {
     this.psbt = new Psbt({ network: this.nativeNetwork })
   }
 
+  toPSBT() {
+    return this.psbt
+  }
+
   toHex() {
     return this.psbt.toHex()
   }
