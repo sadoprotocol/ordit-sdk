@@ -10,6 +10,7 @@ import { Output, UTXOLimited } from "./types"
 
 interface PSBTBuilderOptions {
   address: string
+  changeAddress?: string
   feeRate: number
   network: Network
   outputs: Output[]
@@ -20,6 +21,7 @@ export class PSBTBuilder extends FeeEstimator {
   private nativeNetwork: networks.Network
 
   address: string
+  changeAddress?: string
   changeAmount = 0
   changeOutputIndex = -1
   inputs: InputType[] = []
@@ -34,12 +36,13 @@ export class PSBTBuilder extends FeeEstimator {
   utxos: UTXOLimited[] = []
   usedUTXOs: string[] = []
 
-  constructor({ address, feeRate, network, publicKey, outputs }: PSBTBuilderOptions) {
+  constructor({ address, changeAddress, feeRate, network, publicKey, outputs }: PSBTBuilderOptions) {
     super({
       feeRate,
       network
     })
     this.address = address
+    this.changeAddress = changeAddress
     this.network = network
     this.outputs = outputs
     this.nativeNetwork = getNetwork(network)
@@ -114,7 +117,7 @@ export class PSBTBuilder extends FeeEstimator {
     }
 
     this.outputs.push({
-      address: this.address,
+      address: this.changeAddress || this.address,
       value: this.changeAmount
     })
 
