@@ -126,11 +126,16 @@ export class PSBTBuilder extends FeeEstimator {
     this.outputs = this.outputs.filter((_, index) => !indexes.includes(index))
   }
 
+  private removeChangeOutput() {
+    this.changeOutputIndex > -1 && this.removeOutputsByIndex([this.changeOutputIndex])
+    this.changeOutputIndex = -1
+  }
+
   protected async addChangeOutput() {
     await this.isNegativeChange()
 
     if (this.changeAmount < MINIMUM_AMOUNT_IN_SATS) {
-      this.changeOutputIndex > -1 && this.removeOutputsByIndex([this.changeOutputIndex])
+      this.removeChangeOutput()
       return
     }
 
