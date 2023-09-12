@@ -68,6 +68,10 @@ export class PSBTBuilder extends FeeEstimator {
     this.addInputs()
   }
 
+  protected getInputSequence() {
+    return this.rbf ? 0xfffffffd : 0xffffffff
+  }
+
   private async addInputs() {
     const existingInputHashes = this.psbt.txInputs.map((input) => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -81,7 +85,7 @@ export class PSBTBuilder extends FeeEstimator {
       if (existingInputHashes.includes(generateTxUniqueIdentifier(input.hash, input.index))) continue
 
       this.psbt.addInput(input)
-      this.psbt.setInputSequence(index, this.rbf ? 0xfffffffd : 0xffffffff)
+      this.psbt.setInputSequence(index, this.getInputSequence())
     }
   }
 
