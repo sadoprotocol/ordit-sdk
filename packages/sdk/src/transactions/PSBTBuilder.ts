@@ -93,7 +93,7 @@ export class PSBTBuilder extends FeeEstimator {
     const changeOutput = this.outputs[this.changeOutputIndex]
     this.outputs[this.changeOutputIndex] = {
       ...changeOutput,
-      cardinals: this.changeAmount
+      value: this.changeAmount
     }
   }
 
@@ -115,7 +115,7 @@ export class PSBTBuilder extends FeeEstimator {
 
     this.outputs.push({
       address: this.address,
-      cardinals: this.changeAmount
+      value: this.changeAmount
     })
 
     this.changeOutputIndex = this.outputs.length - 1
@@ -124,7 +124,7 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private calculateOutputAmount() {
-    this.outputAmount = Math.floor(this.outputs.reduce((acc, curr) => (acc += curr.cardinals), 0))
+    this.outputAmount = Math.floor(this.outputs.reduce((acc, curr) => (acc += curr.value), 0))
 
     this.validateOutputAmount()
   }
@@ -213,7 +213,7 @@ export class PSBTBuilder extends FeeEstimator {
     this.outputs.forEach((output) =>
       this.psbt.addOutput({
         address: output.address,
-        value: output.cardinals
+        value: output.value
       })
     )
 

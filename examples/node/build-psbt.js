@@ -15,7 +15,7 @@ async function buildPSBT() {
         publicKey: wallet.publicKey,
         outputs: [{
             address: 'mwwTsmPhVcJzbW6dCeLVYoJQMraW1EeeuN',
-            cardinals: 600
+            value: 600
         }]
     })
 

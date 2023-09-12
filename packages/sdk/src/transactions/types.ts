@@ -74,5 +74,5 @@ export type UTXOLimited = Pick<UTXO, "txid" | "n" | "value" | "sats" | "scriptPu
 
 export interface Output {
   address: string
-  cardinals: number
+  value: number
 }
