@@ -110,9 +110,9 @@ function validateInscriptions(inscriptions: CollectionInscription[] = []) {
 }
 
 export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
-  feeRate?: number
-  postage?: number
-  mediaType?: string
+  feeRate: number
+  postage: number
+  mediaType: string
   mediaContent: string
   destination: string
   changeAddress: string
@@ -127,7 +127,7 @@ export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
     email?: string
     address: string
   }
-  network?: Network
+  network: Network
   publicKey: string
   outs?: Outputs
   encodeMetadata?: boolean
@@ -141,9 +141,9 @@ export type CollectionInscription = {
 }
 
 export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
-  feeRate?: number
-  postage?: number
-  mediaType?: string
+  feeRate: number
+  postage: number
+  mediaType: string
   mediaContent: string
   destination: string
   changeAddress: string
@@ -152,7 +152,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   nonce: number
   publisherIndex: number
   signature: string
-  network?: Network
+  network: Network
   publicKey: string
   outs?: Outputs
   traits?: any
