@@ -192,18 +192,21 @@ export class OrdTransaction extends PSBTBuilder {
     }
   }
 
-  private preview({ activate }: Record<"activate", boolean> = { activate: true }) {
+  private async preview({ activate }: Record<"activate", boolean> = { activate: true }) {
     if (activate) {
       this.suitableUnspent = getDummyP2TRInput()
-      this.build()
+      this.ready = true
+      await this.build()
     } else {
       this.initPSBT()
       this.suitableUnspent = null
+      this.ready = false
       this.inputsToSign.signingIndexes.pop() // remove last added index
+      this.outputs.pop()
     }
   }
 
-  generateCommit() {
+  async generateCommit() {
     this.buildTaprootTree()
     const payment = bitcoin.payments.p2tr({
       internalPubkey: Buffer.from(this.xKey, "hex"),
@@ -212,9 +215,9 @@ export class OrdTransaction extends PSBTBuilder {
       redeem: this.getInscriptionRedeemScript()
     })
 
-    this.preview()
-
+    await this.preview()
     this.calculateNetworkFee()
+    await this.preview({ activate: false })
 
     this.preview({ activate: false })
 
@@ -227,7 +230,7 @@ export class OrdTransaction extends PSBTBuilder {
     }
   }
 
-  recover() {
+  async recover() {
     this.buildTaprootTree()
 
     const payment = createTransaction(Buffer.from(this.xKey, "hex"), "p2tr", this.network, {
@@ -235,9 +238,9 @@ export class OrdTransaction extends PSBTBuilder {
       redeem: this.getRecoveryRedeemScript()
     })
 
-    this.preview()
+    await this.preview()
     this.calculateNetworkFee()
-    this.preview({ activate: false })
+    await this.preview({ activate: false })
 
     this.payment = payment
     this.recovery = true
