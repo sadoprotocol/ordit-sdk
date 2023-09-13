@@ -111,26 +111,25 @@ export class OrdTransaction extends PSBTBuilder {
       throw new Error("Failed to build PSBT. Transaction not ready")
     }
 
-    const networkObj = getNetwork(this.network)
-    const psbt = new bitcoin.Psbt({ network: networkObj })
-
-    psbt.addInput({
-      sequence: this.getInputSequence(),
-      hash: this.suitableUnspent.txid,
-      index: this.suitableUnspent.n,
-      tapInternalKey: Buffer.from(this.xKey, "hex"),
-      witnessUtxo: {
-        script: this.payment.output!,
-        value: this.suitableUnspent.sats
-      },
-      tapLeafScript: [
-        {
-          leafVersion: this.payment.redeemVersion!,
-          script: this.payment.redeem!.output!,
-          controlBlock: this.payment.witness![this.payment.witness!.length - 1]
-        }
-      ]
-    })
+    this.inputs = [
+      {
+        type: "taproot",
+        hash: this.suitableUnspent.txid,
+        index: this.suitableUnspent.n,
+        tapInternalKey: Buffer.from(this.xKey, "hex"),
+        witnessUtxo: {
+          script: this.payment.output!,
+          value: this.suitableUnspent.sats
+        },
+        tapLeafScript: [
+          {
+            leafVersion: this.payment.redeemVersion!,
+            script: this.payment.redeem!.output!,
+            controlBlock: this.payment.witness![this.payment.witness!.length - 1]
+          }
+        ]
+      }
+    ]
 
     this.inputsToSign.signingIndexes.push(0) // hardcoding because there will always be one input
 
@@ -147,8 +146,6 @@ export class OrdTransaction extends PSBTBuilder {
     }
 
     await this.prepare() // prepare PSBT using PSBTBuilder
-
-    this.psbt = psbt
   }
 
   private isBuilt() {
