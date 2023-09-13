@@ -103,7 +103,7 @@ export default class FeeEstimator {
 
       return acc
     }, 0)
-    const witnessSize = this.witnesses?.length ? this.calculateScriptWitnessSize() : inputVBytes.witness
+    const witnessSize = inputVBytes.witness + (this.witnesses?.length ? this.calculateScriptWitnessSize() : 0)
 
     return {
       baseSize: inputVBytes.input + inputVBytes.txHeader + outputVBytes,
