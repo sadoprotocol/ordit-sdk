@@ -15,10 +15,12 @@ interface PSBTBuilderOptions {
   network: Network
   outputs: Output[]
   publicKey: string
+  inscriberMode?: boolean
 }
 
 export class PSBTBuilder extends FeeEstimator {
   private nativeNetwork: networks.Network
+  private inscriberMode: boolean
 
   address: string
   changeAddress?: string
@@ -36,7 +38,15 @@ export class PSBTBuilder extends FeeEstimator {
   utxos: UTXOLimited[] = []
   usedUTXOs: string[] = []
 
-  constructor({ address, changeAddress, feeRate, network, publicKey, outputs }: PSBTBuilderOptions) {
+  constructor({
+    address,
+    changeAddress,
+    feeRate,
+    network,
+    publicKey,
+    outputs,
+    inscriberMode = false
+  }: PSBTBuilderOptions) {
     super({
       feeRate,
       network
@@ -47,6 +57,7 @@ export class PSBTBuilder extends FeeEstimator {
     this.outputs = outputs
     this.nativeNetwork = getNetwork(network)
     this.publicKey = publicKey
+    this.inscriberMode = inscriberMode
 
     this.psbt = new Psbt({ network: this.nativeNetwork })
   }
@@ -160,6 +171,8 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async calculateChangeAmount() {
+    if (this.inscriberMode) return
+
     this.changeAmount = Math.floor(this.inputAmount - this.outputAmount - this.fee)
     await this.addChangeOutput()
   }
@@ -178,7 +191,10 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async retrieveUTXOs(address?: string, amount?: number) {
-    amount = amount || this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
+    if (this.inscriberMode && !address) return
+
+    amount = amount && amount > 0 ? amount : this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
+
     const utxos = await OrditApi.fetchSpendables({
       address: address || this.address,
       value: convertSatoshisToBTC(amount),
@@ -200,6 +216,8 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async prepareInputs() {
+    if (this.inscriberMode) return
+
     const promises: Promise<InputType>[] = []
 
     for (const utxo of this.utxos) {
