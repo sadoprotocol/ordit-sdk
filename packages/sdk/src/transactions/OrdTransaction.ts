@@ -10,13 +10,13 @@ import {
   getDummyP2TRInput,
   getNetwork,
   GetWalletOptions,
-  OnOffUnion,
-  PSBTBuilder
+  OnOffUnion
 } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { InputsToSign } from "../inscription/types"
 import { NestedObject } from "../utils/types"
+import { PSBTBuilder } from "./PSBTBuilder"
 import { UTXOLimited } from "./types"
 
 bitcoin.initEccLib(ecc)
