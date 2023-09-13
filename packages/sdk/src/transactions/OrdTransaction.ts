@@ -208,25 +208,22 @@ export class OrdTransaction extends PSBTBuilder {
 
   async generateCommit() {
     this.buildTaprootTree()
-    const payment = bitcoin.payments.p2tr({
+    this.payment = bitcoin.payments.p2tr({
       internalPubkey: Buffer.from(this.xKey, "hex"),
       network: getNetwork(this.network),
       scriptTree: this.taprootTree,
       redeem: this.getInscriptionRedeemScript()
     })
+    this.witnesses = this.payment.witness
 
     await this.preview()
     this.calculateNetworkFee()
     await this.preview({ activate: false })
 
-    this.preview({ activate: false })
-
-    this.commitAddress = payment.address!
-    this.payment = payment
-
+    this.commitAddress = this.payment.address!
     return {
-      address: payment.address!,
-      revealFee: this.postage + this.fee + this.outputAmount
+      address: this.payment.address!,
+      revealFee: this.fee + this.outputAmount
     }
   }
 
@@ -263,7 +260,7 @@ export class OrdTransaction extends PSBTBuilder {
   async fetchAndSelectSuitableUnspent() {
     this.isBuilt()
 
-    const amount = this.postage + this.fee + this.outputAmount
+    const amount = this.fee + this.outputAmount
     const [utxo] = await this.retrieveSelectedUTXOs(this.commitAddress!, amount)
     this.suitableUnspent = utxo
     this.ready = true
