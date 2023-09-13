@@ -187,6 +187,7 @@ type TaprootInputType = BaseInputType &
   Omit<SegwitInputType, "type"> & {
     type: "taproot"
     tapInternalKey: Buffer
+    tapLeafScript?: TapLeafScript[]
   }
 
 type NestedSegwitInputType = BaseInputType &
@@ -213,4 +214,13 @@ interface ProcessInputOptions {
   network: Network
   sighashType?: number
   witnesses?: Buffer[]
+}
+
+interface TapScript {
+  leafVersion: number
+  script: Buffer
+}
+export declare type ControlBlock = Buffer
+export interface TapLeafScript extends TapScript {
+  controlBlock: ControlBlock
 }
