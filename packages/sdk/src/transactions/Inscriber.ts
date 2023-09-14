@@ -43,6 +43,7 @@ export class Inscriber extends PSBTBuilder {
   private recovery = false
   private safeMode: OnOffUnion
   private encodeMetadata: boolean
+  private previewMode = false
 
   private witnessScripts: Record<"inscription" | "recovery", Buffer | null> = {
     inscription: null,
@@ -169,7 +170,6 @@ export class Inscriber extends PSBTBuilder {
 
   buildTaprootTree() {
     this.buildWitness()
-
     this.taprootTree = [{ output: this.witnessScripts.inscription! }, { output: this.witnessScripts.recovery! }]
   }
 
@@ -189,6 +189,7 @@ export class Inscriber extends PSBTBuilder {
 
   private async preview({ activate }: Record<"activate", boolean> = { activate: true }) {
     if (activate) {
+      this.previewMode = true
       this.suitableUnspent = getDummyP2TRInput()
       this.ready = true
       await this.build()
@@ -198,6 +199,13 @@ export class Inscriber extends PSBTBuilder {
       this.ready = false
       this.inputsToSign.signingIndexes.pop() // remove last added index
       this.outputs.pop()
+      this.previewMode = false
+    }
+  }
+
+  private restrictUsageInPreviewMode() {
+    if (this.previewMode) {
+      throw new Error("Unable to process request in preview mode")
     }
   }
 
@@ -253,6 +261,7 @@ export class Inscriber extends PSBTBuilder {
   }
 
   async fetchAndSelectSuitableUnspent() {
+    this.restrictUsageInPreviewMode()
     this.isBuilt()
 
     const amount = this.fee + this.outputAmount
