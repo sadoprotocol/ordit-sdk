@@ -103,10 +103,6 @@ export class Inscriber extends PSBTBuilder {
     }
   }
 
-  get outs() {
-    return this.outputs
-  }
-
   private getMetadata() {
     return this.meta && this.encodeMetadata ? encodeObject(this.meta) : this.meta
   }
@@ -277,7 +273,6 @@ export class Inscriber extends PSBTBuilder {
 /**
  * @deprecated `OrdTransaction` class has been renamed to `Inscriber`
  */
-
 export class OrdTransaction extends Inscriber {
   constructor(args: InscriberArgOptions) {
     super(args)
