@@ -209,6 +209,12 @@ export class Inscriber extends PSBTBuilder {
     }
   }
 
+  private async calculateNetworkFeeUsingPreviewMode() {
+    await this.preview()
+    this.calculateNetworkFee()
+    await this.preview({ activate: false })
+  }
+
   async generateCommit() {
     this.buildTaprootTree()
     this.payment = bitcoin.payments.p2tr({
@@ -219,9 +225,7 @@ export class Inscriber extends PSBTBuilder {
     })
     this.witnesses = this.payment.witness
 
-    await this.preview()
-    this.calculateNetworkFee()
-    await this.preview({ activate: false })
+    await this.calculateNetworkFeeUsingPreviewMode()
 
     this.commitAddress = this.payment.address!
     return {
@@ -231,19 +235,15 @@ export class Inscriber extends PSBTBuilder {
   }
 
   async recover() {
+    this.recovery = true
     this.buildTaprootTree()
 
-    const payment = createTransaction(Buffer.from(this.xKey, "hex"), "p2tr", this.network, {
+    this.payment = createTransaction(Buffer.from(this.xKey, "hex"), "p2tr", this.network, {
       scriptTree: this.taprootTree,
       redeem: this.getRecoveryRedeemScript()
     })
 
-    await this.preview()
-    this.calculateNetworkFee()
-    await this.preview({ activate: false })
-
-    this.payment = payment
-    this.recovery = true
+    await this.calculateNetworkFeeUsingPreviewMode()
   }
 
   async isReady() {
