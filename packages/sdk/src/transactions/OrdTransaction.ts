@@ -60,7 +60,7 @@ export class Inscriber extends PSBTBuilder {
     outs = [],
     encodeMetadata = false,
     ...otherOptions
-  }: OrdTransactionOptions) {
+  }: InscriberArgOptions) {
     const { xkey, address } = getAddressesFromPublicKey(publicKey, network, "p2tr")[0]
     super({
       address: address!,
@@ -275,13 +275,13 @@ export class Inscriber extends PSBTBuilder {
  */
 
 export class OrdTransaction extends Inscriber {
-  constructor(args: OrdTransactionOptions) {
+  constructor(args: InscriberArgOptions) {
     super(args)
     console.error("DEPRECATION WARNING: 'OrdTransaction' class has been renamed to 'Inscriber'")
   }
 }
 
-export type OrdTransactionOptions = Pick<GetWalletOptions, "safeMode"> & {
+export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   feeRate: number
   postage: number
   mediaType: string
