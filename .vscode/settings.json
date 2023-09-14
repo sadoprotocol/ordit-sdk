@@ -23,5 +23,9 @@
   },
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "search.exclude": {
+    "**/dist": true,
+    "**/node_modules": true
   }
 }
