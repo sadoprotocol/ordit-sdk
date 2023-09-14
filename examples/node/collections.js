@@ -14,6 +14,8 @@ async function publish() {
 
   //publish
   const transaction = await Ordit.collection.publish({
+    network: "testnet",
+    feeRate: 2,
     title: "Collection Name",
     description: "Lorem ipsum something else",
     slug: "collection-name",
@@ -44,24 +46,22 @@ async function publish() {
     mediaType: "text/plain"
   });
 
-  const depositDetails = transaction.generateCommit();
+  const depositDetails = await transaction.generateCommit();
   console.log(depositDetails);
 
-  //   // confirm if deposit address has been funded
+  // confirm if deposit address has been funded
   const ready = await transaction.isReady(); //- true/false
-
+  
   if (ready || transaction.ready) {
     // build transaction
-    transaction.build();
+    await transaction.build();
 
     // sign transaction
-    const psbtHex = transaction.toHex();
-    const sig = wallet.signPsbt(psbtHex, { isRevealTx: true });
-    // console.log(JSON.stringify(sig, null, 2))
+    const signedTx = wallet.signPsbt(transaction.toHex(), { isRevealTx: true });
+
     // Broadcast transaction
-    const submittedTx = await wallet.relayTx(sig, "testnet");
-    console.log(submittedTx);
-    //{"txid": "<TX_ID>"}
+    const txId = await wallet.relayTx(signedTx, "testnet");
+    console.log({ txId });
   }
 }
 
@@ -79,17 +79,17 @@ async function mint() {
 
   //set default taproot
   userWallet.setDefaultAddress("taproot");
-  // pubWallet.setDefaultAddress("taproot");
+  pubWallet.setDefaultAddress("legacy");
 
   // details of mint
-  const col = "04a0d2c4215607f2a16a5a458d0bd8e0528de0b7990bd9d52659d7d5c6263a54:0";
-  const sigMsg = `${col} el-01 1`; // COLLECTION_OUT INSCRIPTION_IID NONCE
+  const collectionId = "94cd24aede3294ba0d6aac135a9b1701ae63ac12b1205567627246ea4091f553:0";
+  const sigMsg = `${collectionId.split(":")[0]} el-01 1`; // COLLECTION_OUT INSCRIPTION_IID NONCE
   const sig = pubWallet.signMessage(sigMsg);
-
-  pubWallet.setDefaultAddress("taproot");
+  
   //publish
   const transaction = await Ordit.collection.mint({
-    collectionOutpoint: col,
+    network: "testnet",
+    collectionOutpoint: collectionId,
     inscriptionIid: "el-01",
     nonce: 1,
     publisherIndex: 0,
@@ -98,29 +98,28 @@ async function mint() {
     destination: userWallet.selectedAddress,
     changeAddress: userWallet.selectedAddress,
     postage: 1000,
+    feeRate: 2,
     mediaContent: 'Sample content',
     mediaType: "text/plain",
     outs: [{address: 'tb1pk6yxhcwzzjg9gwsumnlrh3l9q3ajxk657e7kqwmwpd8mklmnmehsrn3hu2', value: 1000}]
   });
 
-  const depositDetails = transaction.generateCommit();
+  const depositDetails = await transaction.generateCommit();
   console.log(depositDetails);
 
-  //   // confirm if deposit address has been funded
+  // confirm if deposit address has been funded
   const ready = await transaction.isReady(); //- true/false
 
   if (ready || transaction.ready) {
     // build transaction
-    transaction.build();
+    await transaction.build();
 
     // sign transaction
     const psbtHex = transaction.toHex();
-    const sig = userWallet.signPsbt(psbtHex, { isRevealTx: true });
-    // console.log(JSON.stringify(sig, null, 2))
+    const signedTx = userWallet.signPsbt(psbtHex, { isRevealTx: true });
     // Broadcast transaction
-    const submittedTx = await userWallet.relayTx(sig, "testnet");
-    console.log(submittedTx);
-    //{"txid": "<TX_ID>"}
+    const txId = await userWallet.relayTx(signedTx, "testnet");
+    console.log({ txId });
   }
 }
 
