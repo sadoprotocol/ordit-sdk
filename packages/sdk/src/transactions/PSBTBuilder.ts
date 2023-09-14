@@ -8,7 +8,7 @@ import FeeEstimator from "../fee/FeeEstimator"
 import { InputType, processInput } from "."
 import { Output, UTXOLimited } from "./types"
 
-interface PSBTBuilderOptions {
+export interface PSBTBuilderOptions {
   address: string
   changeAddress?: string
   feeRate: number
