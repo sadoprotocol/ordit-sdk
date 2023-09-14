@@ -1,3 +1,3 @@
-export * from "./OrdTransaction"
+export * from "./Inscriber"
 export * from "./psbt"
 export * from "./relay"
