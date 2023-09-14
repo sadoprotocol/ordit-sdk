@@ -13,7 +13,6 @@ import {
   OnOffUnion
 } from ".."
 import { Network } from "../config/types"
-import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { InputsToSign } from "../inscription/types"
 import { NestedObject } from "../utils/types"
 import { PSBTBuilder } from "./PSBTBuilder"
@@ -139,11 +138,6 @@ export class Inscriber extends PSBTBuilder {
         address: this.destinationAddress,
         value: this.postage
       })
-    }
-
-    this.changeAmount = this.suitableUnspent.sats - this.fee - this.outputAmount - this.postage
-    if (this.changeAmount > MINIMUM_AMOUNT_IN_SATS) {
-      await this.addChangeOutput()
     }
 
     await this.prepare() // prepare PSBT using PSBTBuilder
