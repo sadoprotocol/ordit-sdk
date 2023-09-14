@@ -52,14 +52,18 @@ export class Inscriber extends PSBTBuilder {
   private taprootTree!: [Tapleaf, Tapleaf]
 
   constructor({
+    network,
     feeRate,
     postage,
-    mediaType = "text/plain;charset=utf-8",
-    network = "testnet",
+    mediaContent,
+    mediaType,
     publicKey,
-    outs = [],
+    outputs = [],
     encodeMetadata = false,
-    ...otherOptions
+    changeAddress,
+    destination,
+    safeMode,
+    meta
   }: InscriberArgOptions) {
     const { xkey, address } = getAddressesFromPublicKey(publicKey, network, "p2tr")[0]
     super({
@@ -67,10 +71,10 @@ export class Inscriber extends PSBTBuilder {
       feeRate,
       network,
       publicKey,
-      outputs: outs,
+      outputs,
       inscriberMode: true
     })
-    if (!publicKey || !otherOptions.changeAddress || !otherOptions.destination || !otherOptions.mediaContent) {
+    if (!publicKey || !changeAddress || !destination || !mediaContent) {
       throw new Error("Invalid options provided")
     }
 
@@ -78,13 +82,13 @@ export class Inscriber extends PSBTBuilder {
     this.feeRate = feeRate
     this.mediaType = mediaType
     this.network = network
-    this.changeAddress = otherOptions.changeAddress
-    this.destinationAddress = otherOptions.destination
-    this.mediaContent = otherOptions.mediaContent
-    this.meta = otherOptions.meta
+    this.changeAddress = changeAddress
+    this.destinationAddress = destination
+    this.mediaContent = mediaContent
+    this.meta = meta
     this.postage = postage
-    this.outputs = outs
-    this.safeMode = !otherOptions.safeMode ? "on" : otherOptions.safeMode
+    this.outputs = outputs
+    this.safeMode = !safeMode ? "on" : safeMode
     this.encodeMetadata = encodeMetadata
 
     if (!xkey) {
@@ -282,6 +286,7 @@ export class OrdTransaction extends Inscriber {
 }
 
 export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
+  network: Network
   feeRate: number
   postage: number
   mediaType: string
@@ -289,9 +294,8 @@ export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   destination: string
   changeAddress: string
   meta?: NestedObject
-  network: Network
   publicKey: string
-  outs?: Outputs
+  outputs?: Outputs
   encodeMetadata?: boolean
 }
 
