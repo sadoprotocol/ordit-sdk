@@ -67,7 +67,8 @@ export class OrdTransaction extends PSBTBuilder {
       feeRate,
       network,
       publicKey,
-      outputs: outs
+      outputs: outs,
+      inscriberMode: true
     })
     if (!publicKey || !otherOptions.changeAddress || !otherOptions.destination || !otherOptions.mediaContent) {
       throw new Error("Invalid options provided")
