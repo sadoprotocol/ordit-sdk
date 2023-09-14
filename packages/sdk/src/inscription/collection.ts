@@ -1,4 +1,4 @@
-import { GetWalletOptions, OrditApi, OrdTransaction, verifyMessage } from ".."
+import { GetWalletOptions, Inscriber, OrditApi, verifyMessage } from ".."
 import { Network } from "../config/types"
 
 export async function publishCollection({
@@ -28,7 +28,7 @@ export async function publishCollection({
     insc: inscriptions
   }
 
-  return new OrdTransaction({ ...options, meta: collectionMeta })
+  return new Inscriber({ ...options, meta: collectionMeta })
 }
 
 export async function mintFromCollection(options: MintFromCollectionOptions) {
@@ -94,7 +94,7 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
 
   meta.sig = options.signature
 
-  return new OrdTransaction({ ...options, meta })
+  return new Inscriber({ ...options, meta })
 }
 
 function validateInscriptions(inscriptions: CollectionInscription[] = []) {

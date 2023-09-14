@@ -24,7 +24,7 @@ import {
 import { OrditApi } from "../api"
 import { Network } from "../config/types"
 import { Inscription } from "../inscription/types"
-import { InscriberArgOptions, OrdTransaction } from "../transactions"
+import { Inscriber, InscriberArgOptions } from "../transactions"
 
 bitcoin.initEccLib(ecc)
 const ECPair = ECPairFactory(ecc)
@@ -267,7 +267,7 @@ export class Ordit {
   }
 
   static inscription = {
-    new: (options: InscriberArgOptions) => new OrdTransaction(options),
+    new: (options: InscriberArgOptions) => new Inscriber(options),
     fetchInscriptions: (outpoint: string, network: Network = "testnet") => {
       if (!outpoint) {
         throw new Error("Outpoint is required.")
