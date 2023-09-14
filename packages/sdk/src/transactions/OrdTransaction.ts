@@ -21,7 +21,7 @@ import { UTXOLimited } from "./types"
 
 bitcoin.initEccLib(ecc)
 
-export class OrdTransaction extends PSBTBuilder {
+export class Inscriber extends PSBTBuilder {
   network: Network
 
   mediaType: string
@@ -267,6 +267,17 @@ export class OrdTransaction extends PSBTBuilder {
     this.ready = true
 
     return this.suitableUnspent
+  }
+}
+
+/**
+ * @deprecated `OrdTransaction` class has been renamed to `Inscriber`
+ */
+
+export class OrdTransaction extends Inscriber {
+  constructor(args: OrdTransactionOptions) {
+    super(args)
+    console.error("DEPRECATION WARNING: 'OrdTransaction' class has been renamed to 'Inscriber'")
   }
 }
 
