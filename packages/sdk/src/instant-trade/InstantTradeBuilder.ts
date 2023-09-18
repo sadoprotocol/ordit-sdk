@@ -25,7 +25,7 @@ export class InstantTradeBuilder extends PSBTBuilder {
     this.inscriptionOutpoint = inscriptionOutpoint
   }
 
-  protected setPrice(value: number) {
+  setPrice(value: number) {
     this.validatePrice(value)
     this.price = parseInt(value.toString())
   }
