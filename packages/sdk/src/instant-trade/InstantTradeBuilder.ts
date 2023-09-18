@@ -17,7 +17,8 @@ export class InstantTradeBuilder extends PSBTBuilder {
       feeRate: 0,
       network,
       publicKey,
-      outputs: []
+      outputs: [],
+      instantTradeMode: true
     })
 
     this.address = address
