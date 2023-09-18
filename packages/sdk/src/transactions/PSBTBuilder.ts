@@ -23,11 +23,13 @@ export interface PSBTBuilderOptions {
   outputs: Output[]
   publicKey: string
   inscriberMode?: boolean
+  instantTradeMode?: boolean
 }
 
 export class PSBTBuilder extends FeeEstimator {
   private nativeNetwork: networks.Network
   private inscriberMode: boolean
+  private instantTradeMode: boolean
 
   address: string
   changeAddress?: string
@@ -52,7 +54,8 @@ export class PSBTBuilder extends FeeEstimator {
     network,
     publicKey,
     outputs,
-    inscriberMode = false
+    inscriberMode = false,
+    instantTradeMode = false
   }: PSBTBuilderOptions) {
     super({
       feeRate,
@@ -65,6 +68,7 @@ export class PSBTBuilder extends FeeEstimator {
     this.nativeNetwork = getNetwork(network)
     this.publicKey = publicKey
     this.inscriberMode = inscriberMode
+    this.instantTradeMode = instantTradeMode
 
     this.psbt = new Psbt({ network: this.nativeNetwork })
   }
