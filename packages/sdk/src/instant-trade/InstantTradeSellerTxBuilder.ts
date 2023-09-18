@@ -48,8 +48,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     this.outputs = [{ address: this.receiveAddress || this.address, value: this.price + this.postage }]
   }
 
-  async build(price: number) {
-    this.setPrice(price)
+  async build() {
     this.utxo = await this.verifyAndFindInscriptionUTXO()
 
     await this.generatSellerInputs()
