@@ -2,6 +2,7 @@ import { Psbt } from "bitcoinjs-lib"
 
 import { decodePSBT, INSTANT_BUY_SELLER_INPUT_INDEX, OrditApi, processInput } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import { Output } from "../transactions/types"
 import { InstantTradeBuilder, InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
 interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
@@ -131,6 +132,41 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     this.bindInscriptionOutput()
     this.mergePSBTs()
     this.bindStandardUTXOs()
+
+    await this.prepare()
+  }
+
+  async splitUTXOsForTrade() {
+    const { totalUTXOs, spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
+      address: this.address,
+      network: this.network
+    })
+    if (!totalUTXOs) {
+      throw new Error("No UTXOs found")
+    }
+
+    const utxo = spendableUTXOs.sort((a, b) => b.sats - a.sats)[0] // Largest UTXO
+    const input = await processInput({ utxo, pubKey: this.publicKey, network: this.network })
+    const totalOutputs = 3
+    const outputs: Output[] = []
+    this.inputs = [input]
+
+    for (let i = 0; i < totalOutputs; i++) {
+      const usedAmount = outputs.reduce((acc, curr) => (acc += curr.value), 0)
+      const remainingAmount = utxo.sats - usedAmount
+      const amount = [0, 1].includes(i) ? MINIMUM_AMOUNT_IN_SATS : remainingAmount
+
+      if (amount < MINIMUM_AMOUNT_IN_SATS) {
+        throw new Error(
+          `Not enough sats to generate ${totalOutputs} UTXOs with at least ${MINIMUM_AMOUNT_IN_SATS} sats per UTXO. Try decreasing the count or deposit more BTC`
+        )
+      }
+
+      outputs.push({
+        address: this.receiveAddress || this.address,
+        value: amount
+      })
+    }
 
     await this.prepare()
   }
