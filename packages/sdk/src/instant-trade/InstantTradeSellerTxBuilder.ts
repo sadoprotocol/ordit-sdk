@@ -49,7 +49,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
   }
 
   async build(price: number) {
-    this.validatePrice(price)
+    this.setPrice(price)
     this.utxo = await this.verifyAndFindInscriptionUTXO()
 
     await this.generatSellerInputs()

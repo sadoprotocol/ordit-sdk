@@ -25,6 +25,11 @@ export class InstantTradeBuilder extends PSBTBuilder {
     this.inscriptionOutpoint = inscriptionOutpoint
   }
 
+  protected setPrice(value: number) {
+    this.validatePrice(value)
+    this.price = parseInt(value.toString())
+  }
+
   protected async verifyAndFindInscriptionUTXO() {
     const { totalUTXOs, unspendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
       address: this.address,
@@ -50,7 +55,5 @@ export class InstantTradeBuilder extends PSBTBuilder {
     if (isNaN(price) || price < MINIMUM_AMOUNT_IN_SATS) {
       throw new Error("Invalid price")
     }
-
-    this.price = parseInt(price.toString())
   }
 }
