@@ -1,7 +1,14 @@
 import { networks, Psbt } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
-import { convertSatoshisToBTC, generateTxUniqueIdentifier, getNetwork, OrditApi } from ".."
+import {
+  convertSatoshisToBTC,
+  generateTxUniqueIdentifier,
+  getNetwork,
+  InputsToSign,
+  INSTANT_BUY_SELLER_INPUT_INDEX,
+  OrditApi
+} from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import FeeEstimator from "../fee/FeeEstimator"
@@ -82,6 +89,22 @@ export class PSBTBuilder extends FeeEstimator {
   disableRBF() {
     this.rbf = false
     this.addInputs()
+  }
+
+  get inputsToSign() {
+    return this.psbt.txInputs.reduce(
+      (acc, _, index) => {
+        if (!this.instantTradeMode || (this.instantTradeMode && index !== INSTANT_BUY_SELLER_INPUT_INDEX)) {
+          acc.signingIndexes = acc.signingIndexes.concat(index)
+        }
+
+        return acc
+      },
+      {
+        address: this.address,
+        signingIndexes: []
+      } as InputsToSign
+    )
   }
 
   protected initPSBT() {
