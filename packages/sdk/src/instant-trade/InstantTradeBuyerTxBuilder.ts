@@ -136,7 +136,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     await this.prepare()
   }
 
-  async splitUTXOsForTrade() {
+  async splitUTXOsForTrade(destinationAddress: string) {
     const { totalUTXOs, spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
       address: this.address,
       network: this.network
@@ -163,7 +163,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
       }
 
       outputs.push({
-        address: this.receiveAddress || this.address,
+        address: destinationAddress || this.address,
         value: amount
       })
     }
