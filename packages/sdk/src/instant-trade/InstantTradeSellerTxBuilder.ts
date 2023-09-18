@@ -5,11 +5,11 @@ import { UTXO } from "../transactions/types"
 import { InstantTradeBuilder, InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
 interface InstantTradeSellerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
-  receiveAddress: string
+  receiveAddress?: string
 }
 
-export class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
-  private receiveAddress: string
+export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
+  private receiveAddress?: string
   private utxo?: UTXO
 
   constructor({
@@ -45,7 +45,7 @@ export class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
   }
 
   private generateSellerOutputs() {
-    this.outputs = [{ address: this.receiveAddress, value: this.price + this.postage }]
+    this.outputs = [{ address: this.receiveAddress || this.address, value: this.price + this.postage }]
   }
 
   async build(price: number) {
