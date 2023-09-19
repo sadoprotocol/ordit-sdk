@@ -258,7 +258,7 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async calculateChangeAmount() {
-    if (this.inscriberMode || this.instantTradeMode) return
+    if (this.inscriberMode) return
 
     this.changeAmount = Math.floor(this.inputAmount - this.outputAmount - this.fee)
     await this.addChangeOutput()
@@ -278,7 +278,7 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async retrieveUTXOs(address?: string, amount?: number) {
-    if ((this.inscriberMode && !address) || this.instantTradeMode) return
+    if (this.inscriberMode && !address) return
 
     amount = amount && amount > 0 ? amount : this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
 
@@ -303,7 +303,7 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async prepareInputs() {
-    if (this.inscriberMode || this.instantTradeMode) return
+    if (this.inscriberMode) return
 
     const promises: Promise<InputType>[] = []
 
