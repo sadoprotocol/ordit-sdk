@@ -249,7 +249,10 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private calculateOutputAmount() {
-    this.outputAmount = Math.floor(this.outputs.reduce((acc, curr) => (acc += curr.value), 0))
+    this.outputAmount = Math.floor(
+      this.outputs.reduce((acc, curr) => (acc += curr.value), 0) +
+        this.injectableOutputs.reduce((acc, curr) => (acc += curr.sats), 0)
+    )
 
     this.validateOutputAmount()
   }
@@ -318,6 +321,8 @@ export class PSBTBuilder extends FeeEstimator {
     }
 
     const response = await Promise.all(promises)
+
+    this.inputAmount += this.injectableInputs.reduce((acc, curr) => (acc += curr.sats), 0)
     for (const input of response) {
       if (this.usedUTXOs.includes(generateTxUniqueIdentifier(input.hash, input.index))) continue
       this.usedUTXOs.push(generateTxUniqueIdentifier(input.hash, input.index))
