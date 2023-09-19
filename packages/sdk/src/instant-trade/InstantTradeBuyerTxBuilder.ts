@@ -13,6 +13,7 @@ interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOpt
 export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   receiveAddress?: string
   sellerPSBT!: Psbt
+  sellerAddress?: string
 
   constructor({
     address,
@@ -35,6 +36,22 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
 
   private decodeSellerPSBT(hex: string) {
     this.sellerPSBT = decodePSBT({ hex })
+    this.inscriptionOutpoint = generateTxUniqueIdentifier(
+      reverseBuffer(this.sellerPSBT.txInputs[0].hash).toString("hex"),
+      this.sellerPSBT.txInputs[0].index
+    )
+
+    const [input] = this.sellerPSBT.data.inputs
+    if (!input?.witnessUtxo) {
+      throw new Error("invalid seller psbt")
+    }
+
+    const data = getScriptType(input.witnessUtxo.script, this.network)
+    this.sellerAddress = data.payload && data.payload.address ? data.payload.address : undefined
+    if (!this.sellerAddress) {
+      throw new Error("invalid seller psbt")
+    }
+
     this.validatePrice((this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value - this.postage)
   }
 
