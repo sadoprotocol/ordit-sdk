@@ -32,6 +32,13 @@ export type InjectableInput = {
   standardInput: InputType
 }
 
+export interface InjectableOutput {
+  injectionIndex: number
+  txOutput: any
+  sats: number
+  standardOutput: any
+}
+
 export class PSBTBuilder extends FeeEstimator {
   private nativeNetwork: networks.Network
   private inscriberMode: boolean
@@ -43,6 +50,7 @@ export class PSBTBuilder extends FeeEstimator {
   changeOutputIndex = -1
   inputs: InputType[] = []
   injectableInputs: InjectableInput[] = []
+  injectableOutputs: InjectableOutput[] = []
   inputAmount = 0
   outputs: Output[] = []
   outputAmount = 0
@@ -127,6 +135,13 @@ export class PSBTBuilder extends FeeEstimator {
     return this.rbf ? 0xfffffffd : 0xffffffff
   }
 
+  private injectOutput(injectable: InjectableOutput) {
+    // TODO: add type
+    // eslint-disable-next-line @typescript-eslint/no-extra-semi
+    ;(this.psbt.data.globalMap.unsignedTx as any).tx.outs[injectable.injectionIndex] = injectable.txOutput
+    this.psbt.data.outputs[injectable.injectionIndex] = injectable.standardOutput
+  }
+
   private async addInputs() {
     const reservedIndexes = this.injectableInputs.map((input) => input.injectionIndex)
 
@@ -158,12 +173,26 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private addOutputs() {
-    this.outputs.forEach((output) =>
+    const reservedIndexes = this.injectableOutputs.map((o) => o.injectionIndex)
+    const injectedIndexes: number[] = []
+
+    this.outputs.forEach((output, index) => {
+      if (reservedIndexes.includes(index)) {
+        const injectable = this.injectableOutputs.find((o) => o.injectionIndex === index)!
+        this.injectOutput(injectable)
+        injectedIndexes.push(injectable.injectionIndex)
+      }
+
       this.psbt.addOutput({
         address: output.address,
         value: output.value
       })
-    )
+    })
+
+    this.injectableOutputs.forEach((injectable) => {
+      if (injectedIndexes.includes(injectable.injectionIndex)) return
+      this.injectOutput(injectable)
+    })
   }
 
   private adjustChangeOutput() {
