@@ -61,14 +61,11 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     if (!this.sellerAddress) {
       throw new Error("invalid seller psbt")
     }
-
-    this.validatePrice((this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value - this.postage)
   }
 
-  private async generateBuyerInputs() {
-    this.inputs = await Promise.all(
-      this.utxos.map((utxo) => processInput({ utxo, pubKey: this.publicKey, network: this.network }))
-    )
+  private decodePrice() {
+    this.validatePrice((this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value - this.postage)
+    this.setPrice((this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value - this.postage)
   }
 
   private bindRefundableOutput() {
@@ -145,7 +142,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
       throw new Error("Not eligible")
     }
 
-    await this.generateBuyerInputs()
+    this.decodePrice()
     this.bindRefundableOutput()
     this.bindInscriptionOutput()
     this.mergePSBTs()
