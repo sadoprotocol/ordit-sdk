@@ -29,6 +29,7 @@ export interface PSBTBuilderOptions {
 export type InjectableInput = {
   injectionIndex: number
   txInput: any
+  sats: number
   standardInput: InputType
 }
 
@@ -135,6 +136,13 @@ export class PSBTBuilder extends FeeEstimator {
     return this.rbf ? 0xfffffffd : 0xffffffff
   }
 
+  private injectInput(injectable: InjectableInput) {
+    // TODO: add type
+    // eslint-disable-next-line @typescript-eslint/no-extra-semi
+    ;(this.psbt.data.globalMap.unsignedTx as any).tx.ins[injectable.injectionIndex] = injectable.txInput
+    this.psbt.data.inputs[injectable.injectionIndex] = injectable.standardInput
+  }
+
   private injectOutput(injectable: InjectableOutput) {
     // TODO: add type
     // eslint-disable-next-line @typescript-eslint/no-extra-semi
@@ -144,11 +152,18 @@ export class PSBTBuilder extends FeeEstimator {
 
   private async addInputs() {
     const reservedIndexes = this.injectableInputs.map((input) => input.injectionIndex)
+    const injectedIndexes: number[] = []
 
     for (let i = 0; i < this.inputs.length; i++) {
+      const indexReserved = reservedIndexes.includes(i)
+      if (indexReserved) {
+        const injectable = this.injectableInputs.find((o) => o.injectionIndex === i)!
+        this.injectInput(injectable)
+        injectedIndexes.push(injectable.injectionIndex)
+      }
+
       const existingInputHashes = this.psbt.txInputs.map((input) => {
         const hash = reverseBuffer(input.hash) as Buffer
-
         return generateTxUniqueIdentifier(hash.toString("hex"), input.index)
       })
 
@@ -156,13 +171,12 @@ export class PSBTBuilder extends FeeEstimator {
       if (existingInputHashes.includes(generateTxUniqueIdentifier(input.hash, input.index))) continue
 
       this.psbt.addInput(input)
-      this.psbt.setInputSequence(reservedIndexes.includes(i) ? i - 1 : i, this.getInputSequence())
+      this.psbt.setInputSequence(indexReserved ? i + 1 : i, this.getInputSequence())
     }
 
-    this.injectableInputs.forEach((injectableInput) => {
-      // eslint-disable-next-line @typescript-eslint/no-extra-semi
-      ;(this.psbt.data.globalMap.unsignedTx as any).tx.ins[injectableInput.injectionIndex] = injectableInput.txInput
-      this.psbt.data.inputs[injectableInput.injectionIndex] = injectableInput.standardInput
+    this.injectableInputs.forEach((injectable) => {
+      if (injectedIndexes.includes(injectable.injectionIndex)) return
+      this.injectInput(injectable)
     })
   }
 
