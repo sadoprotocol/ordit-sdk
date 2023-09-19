@@ -21,7 +21,7 @@ async function buildPSBT() {
 
     await psbt.prepare()
 
-    const hex = psbt.build().toHex()
+    const hex = psbt.toHex()
     const signature = wallet.signPsbt(hex)
     const txId = await OrditApi.relayTx({ hex: signature, network: 'testnet' })
 
