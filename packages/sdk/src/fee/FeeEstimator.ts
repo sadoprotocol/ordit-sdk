@@ -107,11 +107,7 @@ export default class FeeEstimator {
 
     return {
       baseSize: inputVBytes.input + inputVBytes.txHeader + outputVBytes,
-      witnessSize: this.witness?.length
-        ? witnessSize
-        : witnessSize > 0
-        ? witnessHeaderSize + witnessSize * inputTypes.length
-        : 0
+      witnessSize: this.witness?.length ? witnessSize : witnessSize > 0 ? witnessHeaderSize + witnessSize : 0
     }
   }
 
