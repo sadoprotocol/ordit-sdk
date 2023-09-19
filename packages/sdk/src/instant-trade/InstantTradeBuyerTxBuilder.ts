@@ -6,6 +6,7 @@ import { Output } from "../transactions/types"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
 interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
+  feeRate: number
   sellerPSBT: string
   receiveAddress?: string
 }
@@ -19,17 +20,17 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     address,
     network,
     publicKey,
-    inscriptionOutpoint,
     receiveAddress,
-    sellerPSBT
+    sellerPSBT,
+    feeRate
   }: InstantTradeBuyerTxBuilderArgOptions) {
     super({
       address,
       network,
-      publicKey,
-      inscriptionOutpoint
+      publicKey
     })
 
+    this.feeRate = feeRate
     this.receiveAddress = receiveAddress
     this.decodeSellerPSBT(sellerPSBT)
   }
@@ -123,12 +124,16 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   }
 
   async isEligible() {
-    const [utxos] = await Promise.all([this.findUTXOs(), this.verifyAndFindInscriptionUTXO()])
+    const [utxos] = await Promise.all([this.findUTXOs(), this.verifyAndFindInscriptionUTXO(this.sellerAddress)])
     const sortedUTXOs = utxos.sort((a, b) => a.sats - b.sats)
     const [refundableUTXOOne, refundableUTXOTwo, ...restUTXOs] = sortedUTXOs
     const refundables = [refundableUTXOOne, refundableUTXOTwo]
     const spendables = restUTXOs.reduce((acc, curr) => (acc += curr.sats), 0)
     const eligible = refundables.length === 2 && spendables > 0
+
+    if (eligible) {
+      this.utxos = utxos
+    }
 
     return {
       eligible,

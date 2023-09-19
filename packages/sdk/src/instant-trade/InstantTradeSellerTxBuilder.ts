@@ -27,6 +27,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     })
 
     this.receiveAddress = receiveAddress
+    this.feeRate = 0 // seller in instant-trade does not pay network fee
   }
 
   private async generatSellerInputs() {
