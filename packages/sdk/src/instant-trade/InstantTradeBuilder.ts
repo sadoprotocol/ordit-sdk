@@ -6,7 +6,7 @@ export interface InstantTradeBuilderArgOptions extends Pick<PSBTBuilderOptions, 
   inscriptionOutpoint: string
 }
 
-export class InstantTradeBuilder extends PSBTBuilder {
+export default class InstantTradeBuilder extends PSBTBuilder {
   protected inscriptionOutpoint: string
   protected price = 0
   protected postage = 0

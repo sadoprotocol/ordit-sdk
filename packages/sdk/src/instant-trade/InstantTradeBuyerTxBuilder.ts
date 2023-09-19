@@ -3,7 +3,7 @@ import { Psbt } from "bitcoinjs-lib"
 import { decodePSBT, INSTANT_BUY_SELLER_INPUT_INDEX, OrditApi, processInput } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { Output } from "../transactions/types"
-import { InstantTradeBuilder, InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
+import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
 interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
   sellerPSBT: string

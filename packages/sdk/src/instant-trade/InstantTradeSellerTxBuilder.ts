@@ -2,7 +2,7 @@ import * as bitcoin from "bitcoinjs-lib"
 
 import { processInput } from ".."
 import { UTXO } from "../transactions/types"
-import { InstantTradeBuilder, InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
+import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
 interface InstantTradeSellerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
   receiveAddress?: string
