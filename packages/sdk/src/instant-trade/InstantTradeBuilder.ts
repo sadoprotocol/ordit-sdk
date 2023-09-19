@@ -30,9 +30,9 @@ export default class InstantTradeBuilder extends PSBTBuilder {
     this.price = parseInt(value.toString())
   }
 
-  protected async verifyAndFindInscriptionUTXO() {
+  protected async verifyAndFindInscriptionUTXO(address?: string) {
     const { totalUTXOs, unspendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
-      address: this.address,
+      address: address || this.address,
       network: this.network,
       type: "all"
     })
