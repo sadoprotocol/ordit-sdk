@@ -10,7 +10,7 @@ import {
   processInput
 } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
-import { InjectableInput } from "../transactions/PSBTBuilder"
+import { InjectableInput, InjectableOutput } from "../transactions/PSBTBuilder"
 import { Output } from "../transactions/types"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
@@ -95,9 +95,20 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
           index
         },
         txInput: (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.ins[0],
+        sats: this.sellerPSBT.data.inputs[0].witnessUtxo?.value,
         injectionIndex: INSTANT_BUY_SELLER_INPUT_INDEX
       }
     ] as unknown as InjectableInput[]
+
+    //outputs
+    this.injectableOutputs = [
+      {
+        standardOutput: this.sellerPSBT.data.outputs[0],
+        txOutput: (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0],
+        sats: (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value,
+        injectionIndex: INSTANT_BUY_SELLER_INPUT_INDEX
+      }
+    ] as InjectableOutput[]
   }
 
   private async findUTXOs() {
