@@ -93,7 +93,6 @@ export function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
 
 export const isObject = (o: any) => o?.constructor === Object
 export const isString = (s: any) => s instanceof String || typeof s === "string"
-export const isFloat = (n: number) => Number(n) === n && n % 1 !== 0
 
 function encodeDecodeObject(obj: NestedObject, { encode, depth = 0 }: EncodeDecodeObjectOptions) {
   const maxDepth = 5

@@ -1,6 +1,6 @@
 import { Psbt } from "bitcoinjs-lib"
 
-import { AddressFormats, getNetwork, getScriptType, isFloat } from ".."
+import { AddressFormats, getNetwork, getScriptType } from ".."
 import { Network } from "../config/types"
 import { MAXIMUM_FEE } from "../constants"
 import { FeeEstimatorOptions } from "./types"
@@ -16,11 +16,11 @@ export default class FeeEstimator {
   private weight = 0
 
   constructor({ feeRate, network, psbt, witnesses }: FeeEstimatorOptions) {
-    if (feeRate < 0 || isFloat(feeRate)) {
+    if (feeRate < 0 || !Number.isSafeInteger(feeRate)) {
       throw new Error("Invalid feeRate")
     }
 
-    this.feeRate = feeRate
+    this.feeRate = +feeRate // convert decimal to whole number that might have passed Number.isSafeInteger check due to precision loss
     this.network = network
     this.witnesses = witnesses || []
     this.psbt = psbt || new Psbt({ network: getNetwork(this.network) })
