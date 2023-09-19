@@ -122,9 +122,9 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     const [utxos] = await Promise.all([this.findUTXOs(), this.verifyAndFindInscriptionUTXO(this.sellerAddress)])
     const sortedUTXOs = utxos.sort((a, b) => a.sats - b.sats)
     const [refundableUTXOOne, refundableUTXOTwo, ...restUTXOs] = sortedUTXOs
-    const refundables = [refundableUTXOOne, refundableUTXOTwo]
+    const refundables = [refundableUTXOOne, refundableUTXOTwo].reduce((acc, curr) => (acc += curr.sats), 0)
     const spendables = restUTXOs.reduce((acc, curr) => (acc += curr.sats), 0)
-    const eligible = refundables.length === 2 && spendables > 0
+    const eligible = refundables >= MINIMUM_AMOUNT_IN_SATS * 2 && spendables >= MINIMUM_AMOUNT_IN_SATS
 
     if (eligible) {
       this.utxos = utxos
