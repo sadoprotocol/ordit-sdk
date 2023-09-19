@@ -6,7 +6,14 @@ import ECPairFactory from "ecpair"
 import { AddressFormats, AddressTypes, addressTypeToName } from "../addresses/formats"
 import { Network } from "../config/types"
 import { UTXO } from "../transactions/types"
-import { BufferOrHex, EncodeDecodeObjectOptions, NestedObject, OneOfAllDataFormats } from "./types"
+import {
+  BufferOrHex,
+  EncodeDecodeObjectOptions,
+  GetScriptTypeResponse,
+  IsBitcoinPaymentResponse,
+  NestedObject,
+  OneOfAllDataFormats
+} from "./types"
 
 export function getNetwork(value: Network) {
   if (value === "mainnet") {
@@ -154,29 +161,79 @@ export function decodeTx({ hex, buffer }: BufferOrHex): bitcoin.Transaction {
 function isPaymentFactory(payment: bitcoin.PaymentCreator, network: Network) {
   return (script: Buffer) => {
     try {
-      payment({ output: script, network: getNetwork(network) })
-      return true
-    } catch (err) {
+      return payment({ output: script, network: getNetwork(network) })
+    } catch (error) {
       return false
     }
   }
 }
-export const isP2MS = (network: Network) => isPaymentFactory(bitcoin.payments.p2ms, network)
-export const isP2PK = (network: Network) => isPaymentFactory(bitcoin.payments.p2pk, network)
-export const isP2PKH = (network: Network) => isPaymentFactory(bitcoin.payments.p2pkh, network)
-export const isP2WPKH = (network: Network) => isPaymentFactory(bitcoin.payments.p2wpkh, network)
-export const isP2WSHScript = (network: Network) => isPaymentFactory(bitcoin.payments.p2wsh, network)
-export const isP2SHScript = (network: Network) => isPaymentFactory(bitcoin.payments.p2sh, network)
-export const isP2TR = (network: Network) => isPaymentFactory(bitcoin.payments.p2tr, network)
-export function getScriptType(script: Buffer, network: Network): AddressFormats {
-  if (isP2PKH(network)(script)) {
-    return addressTypeToName["p2pkh"]
-  } else if (isP2WPKH(network)(script)) {
-    return addressTypeToName["p2wpkh"]
-  } else if (isP2SHScript(network)(script)) {
-    return addressTypeToName["p2sh"]
-  } else if (isP2TR(network)(script)) {
-    return addressTypeToName["p2tr"]
+
+export const isP2PKH = (script: Buffer, network: Network): IsBitcoinPaymentResponse => {
+  const p2pkh = isPaymentFactory(bitcoin.payments.p2pkh, network)(script)
+  return {
+    type: "p2pkh",
+    payload: p2pkh
+  }
+}
+export const isP2WPKH = (script: Buffer, network: Network): IsBitcoinPaymentResponse => {
+  const p2wpkh = isPaymentFactory(bitcoin.payments.p2wpkh, network)(script)
+  return {
+    type: "p2wpkh",
+    payload: p2wpkh
+  }
+}
+export const isP2WSHScript = (script: Buffer, network: Network): IsBitcoinPaymentResponse => {
+  const p2wsh = isPaymentFactory(bitcoin.payments.p2wsh, network)(script)
+  return {
+    type: "p2sh",
+    payload: p2wsh
+  }
+}
+export const isP2SHScript = (script: Buffer, network: Network): IsBitcoinPaymentResponse => {
+  const p2sh = isPaymentFactory(bitcoin.payments.p2sh, network)(script)
+  return {
+    type: "p2sh",
+    payload: p2sh
+  }
+}
+export const isP2TR = (script: Buffer, network: Network): IsBitcoinPaymentResponse => {
+  const p2tr = isPaymentFactory(bitcoin.payments.p2tr, network)(script)
+  return {
+    type: "p2tr",
+    payload: p2tr
+  }
+}
+export function getScriptType(script: Buffer, network: Network): GetScriptTypeResponse {
+  const p2pkh = isP2PKH(script, network)
+  if (p2pkh.payload) {
+    return {
+      format: addressTypeToName["p2pkh"],
+      ...p2pkh
+    }
+  }
+
+  const p2wpkh = isP2WPKH(script, network)
+  if (p2wpkh.payload) {
+    return {
+      format: addressTypeToName["p2wpkh"],
+      ...p2wpkh
+    }
+  }
+
+  const p2sh = isP2SHScript(script, network)
+  if (p2sh.payload) {
+    return {
+      format: addressTypeToName["p2sh"],
+      ...p2sh
+    }
+  }
+
+  const p2tr = isP2TR(script, network)
+  if (p2tr.payload) {
+    return {
+      format: addressTypeToName["p2tr"],
+      ...p2tr
+    }
   }
 
   throw new Error("Unsupported input")

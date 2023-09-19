@@ -60,11 +60,11 @@ export default class FeeEstimator {
         throw new Error("Invalid script")
       }
 
-      inputTypes.push(getScriptType(script, this.network))
+      inputTypes.push(getScriptType(script, this.network).format)
     })
 
     outputs.forEach((output) => {
-      outputTypes.push(getScriptType(output.script, this.network))
+      outputTypes.push(getScriptType(output.script, this.network).format)
     })
 
     return {
