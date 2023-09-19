@@ -114,7 +114,8 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
       throw new Error("No suitable UTXOs found")
     }
 
-    return utxos
+    // bind minimum utxos. PSBTBuilder will add more if needed
+    return utxos.slice(0, 3)
   }
 
   async isEligible() {
