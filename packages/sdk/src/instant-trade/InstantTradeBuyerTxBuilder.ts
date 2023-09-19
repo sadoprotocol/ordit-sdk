@@ -1,7 +1,16 @@
 import { Psbt } from "bitcoinjs-lib"
+import reverseBuffer from "buffer-reverse"
 
-import { decodePSBT, INSTANT_BUY_SELLER_INPUT_INDEX, OrditApi, processInput } from ".."
+import {
+  decodePSBT,
+  generateTxUniqueIdentifier,
+  getScriptType,
+  INSTANT_BUY_SELLER_INPUT_INDEX,
+  OrditApi,
+  processInput
+} from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import { InjectableInput } from "../transactions/PSBTBuilder"
 import { Output } from "../transactions/types"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
@@ -62,12 +71,6 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     )
   }
 
-  private bindBuyerOwnedRefundableUTXOs() {
-    for (let i = 0; i < 2; i++) {
-      this.psbt.addInput(this.inputs[i])
-    }
-  }
-
   private bindRefundableOutput() {
     this.outputs = [
       {
@@ -75,14 +78,6 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
         value: this.utxos.reduce((acc, curr, index) => (acc += [0, 1].includes(index) ? curr.sats : 0), 0)
       }
     ]
-  }
-
-  private bindStandardUTXOs() {
-    this.utxos.forEach((utxo, index) => {
-      if (index <= 2) return
-
-      this.psbt.addInput(this.inputs[index])
-    })
   }
 
   private bindInscriptionOutput() {
@@ -93,17 +88,19 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   }
 
   private mergePSBTs() {
-    // eslint-disable-next-line @typescript-eslint/no-extra-semi
-    ;(this.psbt.data.globalMap.unsignedTx as any).tx.ins[INSTANT_BUY_SELLER_INPUT_INDEX] = (
-      this.sellerPSBT.data.globalMap.unsignedTx as any
-    ).tx.ins[0]
-    this.psbt.data.inputs[INSTANT_BUY_SELLER_INPUT_INDEX] = this.sellerPSBT.data.inputs[0]
-
-    // outputs
-    ;(this.psbt.data.globalMap.unsignedTx as any).tx.outs[INSTANT_BUY_SELLER_INPUT_INDEX] = (
-      this.sellerPSBT.data.globalMap.unsignedTx as any
-    ).tx.outs[0]
-    this.psbt.data.outputs[INSTANT_BUY_SELLER_INPUT_INDEX] = this.sellerPSBT.data.outputs[0]
+    const hash = reverseBuffer(this.sellerPSBT.txInputs[0].hash).toString("hex")
+    const index = this.sellerPSBT.txInputs[0].index
+    this.injectableInputs = [
+      {
+        standardInput: {
+          ...this.sellerPSBT.data.inputs[0],
+          hash,
+          index
+        },
+        txInput: (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.ins[0],
+        injectionIndex: INSTANT_BUY_SELLER_INPUT_INDEX
+      }
+    ] as unknown as InjectableInput[]
   }
 
   private async findUTXOs() {
@@ -149,11 +146,9 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     }
 
     await this.generateBuyerInputs()
-    this.bindBuyerOwnedRefundableUTXOs()
     this.bindRefundableOutput()
     this.bindInscriptionOutput()
     this.mergePSBTs()
-    this.bindStandardUTXOs()
 
     await this.prepare()
   }
