@@ -266,6 +266,10 @@ export class Ordit {
     }, [] as Inscription[])
   }
 
+  /**
+   * @deprecated `Ordit.inscription.new` has been deprecated and will be removed in future release. Use `Inscriber` class.
+   * @deprecated `Ordit.inscription.fetchInscriptions` has been deprecated and will be removed in future release. Use `OrditApi.fetchInscriptions`
+   */
   static inscription = {
     new: (options: InscriberArgOptions) => new Inscriber(options),
     fetchInscriptions: (outpoint: string, network: Network = "testnet") => {
