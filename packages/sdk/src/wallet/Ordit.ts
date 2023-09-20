@@ -24,7 +24,7 @@ import {
 import { OrditApi } from "../api"
 import { Network } from "../config/types"
 import { Inscription } from "../inscription/types"
-import { OrdTransaction, OrdTransactionOptions } from "../transactions"
+import { Inscriber, InscriberArgOptions } from "../transactions"
 
 bitcoin.initEccLib(ecc)
 const ECPair = ECPairFactory(ecc)
@@ -266,8 +266,12 @@ export class Ordit {
     }, [] as Inscription[])
   }
 
+  /**
+   * @deprecated `Ordit.inscription.new` has been deprecated and will be removed in future release. Use `Inscriber` class.
+   * @deprecated `Ordit.inscription.fetchInscriptions` has been deprecated and will be removed in future release. Use `OrditApi.fetchInscriptions`
+   */
   static inscription = {
-    new: (options: OrdTransactionOptions) => new OrdTransaction(options),
+    new: (options: InscriberArgOptions) => new Inscriber(options),
     fetchInscriptions: (outpoint: string, network: Network = "testnet") => {
       if (!outpoint) {
         throw new Error("Outpoint is required.")
