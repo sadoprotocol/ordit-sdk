@@ -223,7 +223,7 @@ export class Inscriber extends PSBTBuilder {
       scriptTree: this.taprootTree,
       redeem: this.getInscriptionRedeemScript()
     })
-    this.witnesses = this.payment.witness
+    this.witness = this.payment.witness
 
     await this.calculateNetworkFeeUsingPreviewMode()
 
