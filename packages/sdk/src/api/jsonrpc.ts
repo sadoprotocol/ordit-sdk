@@ -50,7 +50,8 @@ class JsonRpc {
     if (response.status === 200) {
       const json = await response.json()
       if (json.error) {
-        throw new Error(json.error.data || json.error.message)
+        const error = typeof json.error.data === "string" ? json.error.data : json.error.message
+        throw new Error(error)
       }
       return json.result
     }

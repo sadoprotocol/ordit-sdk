@@ -4,7 +4,6 @@ import {
   AddressFormats,
   addressNameToType,
   AddressTypes,
-  calculateTxFee,
   convertBTCToSatoshis,
   generateTxUniqueIdentifier,
   getAddressesFromPublicKey,
@@ -16,6 +15,7 @@ import {
 } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import FeeEstimator from "../fee/FeeEstimator"
 import { InputsToSign } from "./types"
 
 export async function generateSellerPsbt({
@@ -107,7 +107,6 @@ export async function generateBuyerPsbt({
 
   const psbt = new bitcoin.Psbt({ network: networkObj })
   let totalInput = postage
-  const witnessScripts: Buffer[] = []
   const usedUTXOTxIds: string[] = []
   const refundableUTXOs = [utxos[0]].concat(utxos[1])
   for (let i = 0; i < refundableUTXOs.length; i++) {
@@ -154,21 +153,18 @@ export async function generateBuyerPsbt({
     if (usedUTXOTxIds.includes(generateTxUniqueIdentifier(utxo.txid, utxo.n))) continue
 
     const input = await processInput({ utxo, pubKey: publicKey, network })
-    input.witnessUtxo?.script && witnessScripts.push(input.witnessUtxo?.script)
-
     usedUTXOTxIds.push(generateTxUniqueIdentifier(input.hash, input.index))
 
     psbt.addInput(input)
     totalInput += utxo.sats
   }
 
-  const fee = calculateTxFee({
-    totalInputs: psbt.txInputs.length,
-    totalOutputs: psbt.txOutputs.length,
-    satsPerByte: feeRate,
-    type: pubKeyType,
-    additional: { witnessScripts }
+  const feeEstimator = new FeeEstimator({
+    psbt,
+    feeRate,
+    network
   })
+  const fee = feeEstimator.calculateNetworkFee()
 
   const totalOutput = psbt.txOutputs.reduce((partialSum, a) => partialSum + a.value, 0)
 
@@ -227,27 +223,24 @@ export async function generateRefundableUTXOs({
 
   const utxo = spendableUTXOs.sort((a, b) => b.sats - a.sats)[0] // Largest UTXO
   const psbt = new bitcoin.Psbt({ network: networkObj })
-  const witnessScripts: Buffer[] = []
   const input = await processInput({ utxo, pubKey: publicKey, network })
   const totalOutputs = 3
   const outputs: { address: string; cardinals: number }[] = []
 
-  input.witnessUtxo?.script && witnessScripts.push(input.witnessUtxo?.script)
   psbt.addInput(input)
 
   if (enableRBF) {
     psbt.setInputSequence(0, 0xfffffffd) // hardcoded index because input is just one
   }
 
-  const fees = calculateTxFee({
-    totalInputs: 1,
-    totalOutputs,
-    satsPerByte: feeRate,
-    type: pubKeyType,
-    additional: { witnessScripts }
+  const feeEstimator = new FeeEstimator({
+    psbt,
+    feeRate,
+    network
   })
+  const fee = feeEstimator.calculateNetworkFee()
 
-  const remainingSats = utxo.sats - fees
+  const remainingSats = utxo.sats - fee
   for (let i = 0; i < totalOutputs; i++) {
     const usedAmount = outputs.reduce((acc, curr) => (acc += curr.cardinals), 0)
     const remainingAmount = remainingSats - usedAmount
