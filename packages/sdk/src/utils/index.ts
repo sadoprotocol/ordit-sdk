@@ -3,16 +3,10 @@ import { BIP32Interface } from "bip32"
 import * as bitcoin from "bitcoinjs-lib"
 import ECPairFactory from "ecpair"
 
-import { AddressFormats, AddressTypes } from "../addresses/formats"
+import { AddressFormats, AddressTypes, addressTypeToName } from "../addresses/formats"
 import { Network } from "../config/types"
-import {
-  BufferOrHex,
-  CalculateTxFeeOptions,
-  CalculateTxVirtualSizeOptions,
-  EncodeDecodeObjectOptions,
-  NestedObject,
-  OneOfAllDataFormats
-} from "./types"
+import { UTXO } from "../transactions/types"
+import { BufferOrHex, EncodeDecodeObjectOptions, NestedObject, OneOfAllDataFormats } from "./types"
 
 export function getNetwork(value: Network) {
   if (value === "mainnet") {
@@ -97,55 +91,6 @@ export function tapTweakHash(pubKey: Buffer, h: Buffer | undefined): Buffer {
   return bitcoin.crypto.taggedHash("TapTweak", Buffer.concat(h ? [pubKey, h] : [pubKey]))
 }
 
-export function calculateTxFee({
-  totalInputs,
-  totalOutputs,
-  satsPerByte,
-  type,
-  additional: { witnessScripts = [] } = {}
-}: CalculateTxFeeOptions): number {
-  const txWeight = calculateTxVirtualSize({ totalInputs, totalOutputs, type, additional: { witnessScripts } })
-  return txWeight * satsPerByte
-}
-
-export function calculateTxVirtualSize({
-  totalInputs,
-  totalOutputs,
-  type,
-  additional: { witnessScripts = [] } = {}
-}: CalculateTxVirtualSizeOptions) {
-  const baseWeight = getInputOutputBaseSizeByType(type)
-
-  const inputVBytes = baseWeight.input * totalInputs
-  const outputVBytes = baseWeight.output * totalOutputs
-  const baseVBytes = inputVBytes + outputVBytes + baseWeight.txHeader
-  const additionalVBytes = witnessScripts.reduce((acc, script) => (acc += script.byteLength), 0) || 0
-
-  const weight = 3 * baseVBytes + (baseVBytes + additionalVBytes)
-  const vSize = Math.ceil(weight / 4)
-
-  return vSize
-}
-
-export function getInputOutputBaseSizeByType(type: AddressFormats) {
-  switch (type) {
-    case "taproot":
-      return { input: 57.5, output: 43, txHeader: 10.5 }
-
-    case "segwit":
-      return { input: 68, output: 31, txHeader: 10.5 }
-
-    case "nested-segwit":
-      return { input: 68, output: 32, txHeader: 10.5 }
-
-    case "legacy":
-      return { input: 147.5, output: 34, txHeader: 10.5 }
-
-    default:
-      throw new Error("Invalid type")
-  }
-}
-
 export const isObject = (o: any) => o?.constructor === Object
 export const isString = (s: any) => s instanceof String || typeof s === "string"
 
@@ -204,4 +149,56 @@ export function decodeTx({ hex, buffer }: BufferOrHex): bitcoin.Transaction {
   if (buffer) return bitcoin.Transaction.fromBuffer(buffer)
 
   throw new Error("Invalid options")
+}
+
+function isPaymentFactory(payment: bitcoin.PaymentCreator, network: Network) {
+  return (script: Buffer) => {
+    try {
+      payment({ output: script, network: getNetwork(network) })
+      return true
+    } catch (err) {
+      return false
+    }
+  }
+}
+export const isP2MS = (network: Network) => isPaymentFactory(bitcoin.payments.p2ms, network)
+export const isP2PK = (network: Network) => isPaymentFactory(bitcoin.payments.p2pk, network)
+export const isP2PKH = (network: Network) => isPaymentFactory(bitcoin.payments.p2pkh, network)
+export const isP2WPKH = (network: Network) => isPaymentFactory(bitcoin.payments.p2wpkh, network)
+export const isP2WSHScript = (network: Network) => isPaymentFactory(bitcoin.payments.p2wsh, network)
+export const isP2SHScript = (network: Network) => isPaymentFactory(bitcoin.payments.p2sh, network)
+export const isP2TR = (network: Network) => isPaymentFactory(bitcoin.payments.p2tr, network)
+export function getScriptType(script: Buffer, network: Network): AddressFormats {
+  if (isP2PKH(network)(script)) {
+    return addressTypeToName["p2pkh"]
+  } else if (isP2WPKH(network)(script)) {
+    return addressTypeToName["p2wpkh"]
+  } else if (isP2SHScript(network)(script)) {
+    return addressTypeToName["p2sh"]
+  } else if (isP2TR(network)(script)) {
+    return addressTypeToName["p2tr"]
+  }
+
+  throw new Error("Unsupported input")
+}
+
+export function getDummyP2TRInput(): UTXO {
+  return {
+    n: 1,
+    txHash: "3045867081e53f33a4dbd930bf0c121fe30155c767e98895470a572eefc4b7dd",
+    blockHash: "0000000000002764723466e6584169a56703591befb5b435ed0bc1197b57a982",
+    blockN: 2476710,
+    sats: 2885,
+    scriptPubKey: {
+      asm: "1 29dacd26920d003a894d5f7f263877046a618ce2e7408657b24c74c42b7b80f8",
+      desc: "rawtr(29dacd26920d003a894d5f7f263877046a618ce2e7408657b24c74c42b7b80f8)#68kgcmxp",
+      hex: "512029dacd26920d003a894d5f7f263877046a618ce2e7408657b24c74c42b7b80f8",
+      address: "tb1p98dv6f5jp5qr4z2dtaljvwrhq34xrr8zuaqgv4ajf36vg2mmsruqt5m3lv",
+      type: "witness_v1_taproot"
+    },
+    txid: "3045867081e53f33a4dbd930bf0c121fe30155c767e98895470a572eefc4b7dd",
+    value: 0.00002885,
+    safeToSpend: true,
+    confirmation: 10
+  }
 }

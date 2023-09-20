@@ -17,3 +17,5 @@ type MetaMask = {
   isMetaMask: boolean
   request: (options: { method: string; params?: any }) => Promise<any>
 }
+
+declare module "buffer-reverse" {}
