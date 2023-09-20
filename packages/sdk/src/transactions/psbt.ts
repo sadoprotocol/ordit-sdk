@@ -44,11 +44,11 @@ export async function processInput({
   pubKey,
   network,
   sighashType,
-  witnesses
+  witness
 }: ProcessInputOptions): Promise<InputType> {
   switch (utxo.scriptPubKey.type) {
     case "witness_v1_taproot":
-      return generateTaprootInput({ utxo, pubKey, network, sighashType, witnesses })
+      return generateTaprootInput({ utxo, pubKey, network, sighashType, witness })
 
     case "witness_v0_scripthash":
     case "witness_v0_keyhash":
@@ -65,13 +65,7 @@ export async function processInput({
   }
 }
 
-function generateTaprootInput({
-  utxo,
-  pubKey,
-  network,
-  sighashType,
-  witnesses
-}: ProcessInputOptions): TaprootInputType {
+function generateTaprootInput({ utxo, pubKey, network, sighashType, witness }: ProcessInputOptions): TaprootInputType {
   const chainCode = Buffer.alloc(32)
   chainCode.fill(1)
 
@@ -91,7 +85,7 @@ function generateTaprootInput({
       script: Buffer.from(utxo.scriptPubKey.hex, "hex"),
       value: utxo.sats
     },
-    witnesses,
+    witness,
     ...(sighashType ? { sighashType } : undefined)
   }
 }
@@ -180,7 +174,7 @@ type SegwitInputType = BaseInputType & {
     script: Buffer
     value: number
   }
-  witnesses?: Buffer[]
+  witness?: Buffer[]
 }
 
 type TaprootInputType = BaseInputType &
@@ -213,7 +207,7 @@ interface ProcessInputOptions {
   pubKey: string
   network: Network
   sighashType?: number
-  witnesses?: Buffer[]
+  witness?: Buffer[]
 }
 
 interface TapScript {

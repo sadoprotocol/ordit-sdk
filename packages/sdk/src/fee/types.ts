@@ -6,5 +6,5 @@ export interface FeeEstimatorOptions {
   feeRate: number
   network: Network
   psbt?: Psbt
-  witnesses?: Buffer[]
+  witness?: Buffer[]
 }

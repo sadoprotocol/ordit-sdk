@@ -107,7 +107,6 @@ export async function generateBuyerPsbt({
 
   const psbt = new bitcoin.Psbt({ network: networkObj })
   let totalInput = postage
-  const witnesses: Buffer[] = []
   const usedUTXOTxIds: string[] = []
   const refundableUTXOs = [utxos[0]].concat(utxos[1])
   for (let i = 0; i < refundableUTXOs.length; i++) {
@@ -154,8 +153,6 @@ export async function generateBuyerPsbt({
     if (usedUTXOTxIds.includes(generateTxUniqueIdentifier(utxo.txid, utxo.n))) continue
 
     const input = await processInput({ utxo, pubKey: publicKey, network })
-    input.type === "taproot" && input.witnesses && witnesses.push(...input.witnesses)
-
     usedUTXOTxIds.push(generateTxUniqueIdentifier(input.hash, input.index))
 
     psbt.addInput(input)
@@ -226,12 +223,10 @@ export async function generateRefundableUTXOs({
 
   const utxo = spendableUTXOs.sort((a, b) => b.sats - a.sats)[0] // Largest UTXO
   const psbt = new bitcoin.Psbt({ network: networkObj })
-  const witnesses: Buffer[] = []
   const input = await processInput({ utxo, pubKey: publicKey, network })
   const totalOutputs = 3
   const outputs: { address: string; cardinals: number }[] = []
 
-  input.type === "taproot" && input.witnesses && witnesses.push(...input.witnesses)
   psbt.addInput(input)
 
   if (enableRBF) {

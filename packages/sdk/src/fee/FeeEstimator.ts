@@ -9,20 +9,20 @@ export default class FeeEstimator {
   feeRate: number
   network: Network
   psbt!: Psbt
-  witnesses?: Buffer[] = []
+  witness?: Buffer[] = []
   fee = 0
 
   private virtualSize = 0
   private weight = 0
 
-  constructor({ feeRate, network, psbt, witnesses }: FeeEstimatorOptions) {
+  constructor({ feeRate, network, psbt, witness }: FeeEstimatorOptions) {
     if (feeRate < 0 || !Number.isSafeInteger(feeRate)) {
       throw new Error("Invalid feeRate")
     }
 
     this.feeRate = +feeRate // convert decimal to whole number that might have passed Number.isSafeInteger check due to precision loss
     this.network = network
-    this.witnesses = witnesses || []
+    this.witness = witness || []
     this.psbt = psbt || new Psbt({ network: getNetwork(this.network) })
   }
 
@@ -74,8 +74,8 @@ export default class FeeEstimator {
   }
 
   private calculateScriptWitnessSize() {
-    return this.analyzePSBTComponents().inputTypes.includes("taproot") && this.witnesses?.length
-      ? this.witnesses.reduce((acc, witness) => (acc += witness.byteLength), 0) || 0
+    return this.analyzePSBTComponents().inputTypes.includes("taproot") && this.witness?.length
+      ? this.witness.reduce((acc, witness) => (acc += witness.byteLength), 0) || 0
       : 0
   }
 
@@ -103,11 +103,11 @@ export default class FeeEstimator {
 
       return acc
     }, 0)
-    const witnessSize = inputVBytes.witness + (this.witnesses?.length ? this.calculateScriptWitnessSize() : 0)
+    const witnessSize = inputVBytes.witness + (this.witness?.length ? this.calculateScriptWitnessSize() : 0)
 
     return {
       baseSize: inputVBytes.input + inputVBytes.txHeader + outputVBytes,
-      witnessSize: this.witnesses?.length
+      witnessSize: this.witness?.length
         ? witnessSize
         : witnessSize > 0
         ? witnessHeaderSize + witnessSize * inputTypes.length
