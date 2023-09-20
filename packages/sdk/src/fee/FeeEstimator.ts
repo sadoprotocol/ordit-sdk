@@ -60,11 +60,11 @@ export default class FeeEstimator {
         throw new Error("Invalid script")
       }
 
-      inputTypes.push(getScriptType(script, this.network))
+      inputTypes.push(getScriptType(script, this.network).format)
     })
 
     outputs.forEach((output) => {
-      outputTypes.push(getScriptType(output.script, this.network))
+      outputTypes.push(getScriptType(output.script, this.network).format)
     })
 
     return {
@@ -107,11 +107,7 @@ export default class FeeEstimator {
 
     return {
       baseSize: inputVBytes.input + inputVBytes.txHeader + outputVBytes,
-      witnessSize: this.witness?.length
-        ? witnessSize
-        : witnessSize > 0
-        ? witnessHeaderSize + witnessSize * inputTypes.length
-        : 0
+      witnessSize: this.witness?.length ? witnessSize : witnessSize > 0 ? witnessHeaderSize + witnessSize : 0
     }
   }
 

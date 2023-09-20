@@ -1,3 +1,7 @@
+import { payments } from "bitcoinjs-lib"
+
+import { AddressFormats, AddressTypes } from ".."
+
 export interface NestedObject {
   [key: string]: NestedObject | any
 }
@@ -20,3 +24,12 @@ interface BaseDataFormat {
 
 export type OneOfAllDataFormats = RequireAtLeastOne<BaseDataFormat, "base64" | "buffer" | "hex">
 export type BufferOrHex = RequireAtLeastOne<BaseDataFormat, "buffer" | "hex">
+
+export interface IsBitcoinPaymentResponse {
+  type: AddressTypes
+  payload: false | payments.Payment
+}
+
+export interface GetScriptTypeResponse extends IsBitcoinPaymentResponse {
+  format: AddressFormats
+}

@@ -18,4 +18,6 @@ type MetaMask = {
   request: (options: { method: string; params?: any }) => Promise<any>
 }
 
-declare module "buffer-reverse" {}
+declare module "buffer-reverse" {
+  export = (_: Buffer): Buffer => {}
+}

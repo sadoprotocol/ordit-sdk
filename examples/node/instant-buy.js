@@ -1,4 +1,4 @@
-import { OrditApi, Ordit } from '@sadoprotocol/ordit-sdk'
+import { Ordit, InstantTradeBuyerTxBuilder, InstantTradeSellerTxBuilder } from '@sadoprotocol/ordit-sdk'
 
 const BUYER_MNEMONIC = `<12-WORDS-PHRASE>`
 const SELLER_MNEMONIC = `<12-WORDS-PHRASE>`
@@ -8,7 +8,7 @@ const sellerWallet = new Ordit({
     bip39: SELLER_MNEMONIC,
     network: 'testnet'
 })
-sellerWallet.setDefaultAddress('taproot') // Switch to address that owns inscription
+sellerWallet.setDefaultAddress('nested-segwit') // Switch to address that owns inscription
 
 // Initialise buyer wallet
 const buyerWallet = new Ordit({
@@ -21,57 +21,43 @@ buyerWallet.setDefaultAddress('taproot')
 
 async function createSellOrder() {
     // replace w/ inscription outputpoint you'd like to sell, price, and address to receive sell proceeds
-    const { hex: sellerPSBT } = await Ordit.instantBuy.generateSellerPsbt({
-        inscriptionOutPoint: '8d4a576aecb33b809c208d672a43fd6b175478d9454df4455ed0a2dc7eb7cbf6:0', 
-        price: 4000, // Total sale proceeds will be price + inscription output value (4000 + 2000 = 6000 sats)
-        receiveAddress: sellerWallet.selectedAddress,
-        pubKeyType: sellerWallet.selectedAddressType,
+    const instantTrade = new InstantTradeSellerTxBuilder({
+        network: 'testnet',
+        address: sellerWallet.selectedAddress,
         publicKey: sellerWallet.publicKey,
-        network: 'testnet'
+        inscriptionOutpoint: '58434bd163e5b87c871e5b17c316a3cf141e0e10c3979f0b5ed2530d1d274040:1', 
     })
+    instantTrade.setPrice(1234)
+    await instantTrade.build()
 
+    const sellerPSBT = instantTrade.toHex()
     const signedSellerPSBT = sellerWallet.signPsbt(sellerPSBT, { finalize: false, extractTx: false })
 
-    return signedSellerPSBT // hex
+    return signedSellerPSBT;
 }
 
 async function createBuyOrder({ sellerPSBT }) {    
-    await checkForExistingRefundableUTXOs(buyerWallet.selectedAddress)
-
-    const { hex: buyerPSBT } = await Ordit.instantBuy.generateBuyerPsbt({
-        sellerPsbt: sellerPSBT,
-        publicKey: buyerWallet.publicKey,
-        pubKeyType: buyerWallet.selectedAddressType,
-        feeRate: 10, // set correct rate to prevent tx from getting stuck in mempool
+    const instantTrade = new InstantTradeBuyerTxBuilder({
         network: 'testnet',
-        inscriptionOutPoint: '0f3891f61b944c31fb48b0d9e770dc9e66a4b49097027be53b078be67aca72d4:0'
+        address: buyerWallet.selectedAddress,
+        publicKey: buyerWallet.publicKey,
+        sellerPSBT,
+        feeRate: 2, // set correct rate to prevent tx from getting stuck in mempool
     })
-    
-    const signature = buyerWallet.signPsbt(buyerPSBT)
-    const tx = await buyerWallet.relayTx(signature, 'testnet')
+    await instantTrade.build()
+
+    const buyerPSBT = instantTrade.toHex()
+    const signedTx = buyerWallet.signPsbt(buyerPSBT)
+    const tx = await buyerWallet.relayTx(signedTx, 'testnet')
 
     return tx
-}
-
-async function checkForExistingRefundableUTXOs(address) {
-    const { spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
-        address,
-        network: 'testnet'
-    })
-
-    const filteredUTXOs = spendableUTXOs
-        .filter(utxo => utxo.sats > 600)
-
-    if(filteredUTXOs.length < 2) {
-        throw new Error("Not enough UTXOs in 600-1000 sats range. Use Ordit.instantBuy.generateDummyUtxos() to generate dummy utxos.")
-    }
 }
 
 async function main() {
     const signedSellerPSBT = await createSellOrder()
     const tx = await createBuyOrder({ sellerPSBT: signedSellerPSBT })
 
-    console.log(tx) // 6dc768015dda40c3752bfc011077ae9b1445d0c9cb5b385fda6ee26dab6cb267
+    console.log(tx)
 }
 
 ;(async() => {

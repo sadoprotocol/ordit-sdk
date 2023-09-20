@@ -13,7 +13,6 @@ import {
   OnOffUnion
 } from ".."
 import { Network } from "../config/types"
-import { InputsToSign } from "../inscription/types"
 import { NestedObject } from "../utils/types"
 import { PSBTBuilder } from "./PSBTBuilder"
 import { UTXOLimited } from "./types"
@@ -32,7 +31,6 @@ export class Inscriber extends PSBTBuilder {
   publicKey: string
   destinationAddress: string
   changeAddress: string
-  inputsToSign: InputsToSign
 
   private ready = false
 
@@ -97,10 +95,6 @@ export class Inscriber extends PSBTBuilder {
 
     this.xKey = xkey
     this.address = address!
-    this.inputsToSign = {
-      address: this.address,
-      signingIndexes: []
-    }
   }
 
   private getMetadata() {
@@ -131,8 +125,6 @@ export class Inscriber extends PSBTBuilder {
         ]
       }
     ]
-
-    this.inputsToSign.signingIndexes.push(0) // hardcoding because there will always be one input
 
     if (!this.recovery) {
       this.outputs.push({
@@ -197,7 +189,6 @@ export class Inscriber extends PSBTBuilder {
       this.initPSBT()
       this.suitableUnspent = null
       this.ready = false
-      this.inputsToSign.signingIndexes.pop() // remove last added index
       this.outputs.pop()
       this.previewMode = false
     }
