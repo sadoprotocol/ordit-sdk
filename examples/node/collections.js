@@ -1,4 +1,4 @@
-import { Inscriber, Ordit } from "@sadoprotocol/ordit-sdk";
+import { Ordit, mintFromCollection, publishCollection } from "@sadoprotocol/ordit-sdk";
 
 const mnemonic = "<MNEMONIC PHRASE>";
 const network = "testnet"
@@ -17,26 +17,26 @@ const publisherWallet = new Ordit({
 
 // set default address types for both wallets
 userWallet.setDefaultAddress("taproot");
-publisherWallet.setDefaultAddress("taproot");
+publisherWallet.setDefaultAddress("nested-segwit");
 
 async function publish() {
   const getPublisherLegacyAddress = () => {
     publisherWallet.setDefaultAddress("legacy")
     const legacyAddress = publisherWallet.selectedAddress
-    publisherWallet.setDefaultAddress("taproot") // switch back to default
+    publisherWallet.setDefaultAddress("nested-segwit") // switch back to default
 
     return legacyAddress
   }
 
   //publish
-  const transaction = await Inscriber({
+  const transaction = await publishCollection({
     network,
     feeRate: 2,
     title: "Collection Name",
     description: "Lorem ipsum something else",
     slug: "collection-name",
     creator: {
-      address: wallet.selectedAddress,
+      address: publisherWallet.selectedAddress,
       email: "your-email@example.com",
       name: "Your Name"
     },
@@ -54,9 +54,9 @@ async function publish() {
       }
     ],
     url: "https://example.com",
-    publicKey: wallet.publicKey,
-    destination: wallet.selectedAddress,
-    changeAddress: wallet.selectedAddress,
+    publicKey: publisherWallet.publicKey,
+    destination: publisherWallet.selectedAddress,
+    changeAddress: publisherWallet.selectedAddress,
     postage: 1000,
     mediaContent: 'Collection Name', // this will be inscribed on-chain as primary content
     mediaType: "text/plain"
@@ -72,22 +72,22 @@ async function publish() {
     await transaction.build();
 
     // sign transaction
-    const signedTx = wallet.signPsbt(transaction.toHex(), { isRevealTx: true });
+    const signedTx = publisherWallet.signPsbt(transaction.toHex(), { isRevealTx: true });
 
     // Broadcast transaction
-    const txId = await wallet.relayTx(signedTx, network);
+    const txId = await publisherWallet.relayTx(signedTx, network);
     console.log({ txId });
   }
 }
 
 async function mint() {
   // replace this w/ the resulting txId:index of above publish() fn
-  const collectionId = "94cd24aede3294ba0d6aac135a9b1701ae63ac12b1205567627246ea4091f553:0";
+  const collectionId = "";
   const message = `${collectionId.split(":")[0]} el-01 1`; // COLLECTION_OUT INSCRIPTION_IID NONCE
   const signature = publisherWallet.signMessage(message);
   
-  //publish
-  const transaction = await Inscriber({
+  // publish
+  const transaction = await mintFromCollection({
     network,
     collectionOutpoint: collectionId,
     inscriptionIid: "el-01",
@@ -101,10 +101,7 @@ async function mint() {
     feeRate: 2,
     mediaContent: 'Sample content',
     mediaType: "text/plain",
-    outputs: [{
-      address: 'tb1pk6yxhcwzzjg9gwsumnlrh3l9q3ajxk657e7kqwmwpd8mklmnmehsrn3hu2', 
-      value: 1000
-    }]
+    outputs: [],
   });
 
   const depositDetails = await transaction.generateCommit();
