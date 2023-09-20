@@ -18,6 +18,9 @@ import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import FeeEstimator from "../fee/FeeEstimator"
 import { InputsToSign } from "./types"
 
+/**
+ * @deprecated `generateSellerPsbt` has been deprecated and will be removed in future release. Use `InstantTradeSellerTxBuilder` class
+ */
 export async function generateSellerPsbt({
   inscriptionOutPoint,
   price,
@@ -59,6 +62,9 @@ export async function generateSellerPsbt({
   }
 }
 
+/**
+ * @deprecated `generateBuyerPsbt` has been deprecated and will be removed in future release. Use `InstantTradeBuyerTxBuilder` class
+ */
 export async function generateBuyerPsbt({
   publicKey,
   pubKeyType,
@@ -204,6 +210,9 @@ export async function generateBuyerPsbt({
   }
 }
 
+/**
+ * @deprecated `generateRefundableUTXOs` has been deprecated and will be removed in future release. Use `InstantTradeBuyerTxBuilder.splitUTXOsForTrade`
+ */
 export async function generateRefundableUTXOs({
   publicKey,
   pubKeyType,

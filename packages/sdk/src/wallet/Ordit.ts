@@ -284,6 +284,9 @@ export class Ordit {
     }
   }
 
+  /**
+   * @deprecated `Ordit.instantBuy.*` has been deprecated and will be removed in future release. Use relevant `InstantTrader` sub-class
+   */
   static instantBuy = {
     generateBuyerPsbt,
     generateSellerPsbt,
