@@ -14,10 +14,10 @@ async function main() {
         address: 'tb1p98dv6f5jp5qr4z2dtaljvwrhq34xrr8zuaqgv4ajf36vg2mmsruqt5m3lv',
         outputs: [{
             address: 'tb1qatkgzm0hsk83ysqja5nq8ecdmtwl73zwurawww',
-            cardinals: 1200
+            value: 1200
         }],
         network: 'testnet',
-        satsPerByte: 9,
+        satsPerByte: 2,
         format: 'p2tr'
     })
 
