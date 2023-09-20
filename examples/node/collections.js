@@ -1,20 +1,36 @@
-import { Ordit } from "@sadoprotocol/ordit-sdk";
+import { Inscriber, Ordit } from "@sadoprotocol/ordit-sdk";
 
-const WORDS = "<MNEMONIC PHRASE>";
+const mnemonic = "<MNEMONIC PHRASE>";
+const network = "testnet"
+
+// User is the party who would mint the assets from a collection
+const userWallet = new Ordit({
+  bip39: mnemonic,
+  network
+});
+
+// Publisher is the marketplace and any party owning the on-chain collection
+const publisherWallet = new Ordit({
+  bip39: mnemonic,
+  network
+});
+
+// set default address types for both wallets
+userWallet.setDefaultAddress("taproot");
+publisherWallet.setDefaultAddress("taproot");
 
 async function publish() {
-  // Load wallet
-  const wallet = new Ordit({
-    bip39: WORDS,
-    network: "testnet"
-  });
+  const getPublisherLegacyAddress = () => {
+    publisherWallet.setDefaultAddress("legacy")
+    const legacyAddress = publisherWallet.selectedAddress
+    publisherWallet.setDefaultAddress("taproot") // switch back to default
 
-  //set default taproot
-  wallet.setDefaultAddress("taproot");
+    return legacyAddress
+  }
 
   //publish
-  const transaction = await Ordit.collection.publish({
-    network: "testnet",
+  const transaction = await Inscriber({
+    network,
     feeRate: 2,
     title: "Collection Name",
     description: "Lorem ipsum something else",
@@ -24,7 +40,7 @@ async function publish() {
       email: "your-email@example.com",
       name: "Your Name"
     },
-    publishers: ["<publisher-legacy-address>"],
+    publishers: [getPublisherLegacyAddress()],
     inscriptions: [
       {
         iid: "el-01",
@@ -51,7 +67,6 @@ async function publish() {
 
   // confirm if deposit address has been funded
   const ready = await transaction.isReady(); //- true/false
-  
   if (ready || transaction.ready) {
     // build transaction
     await transaction.build();
@@ -60,40 +75,25 @@ async function publish() {
     const signedTx = wallet.signPsbt(transaction.toHex(), { isRevealTx: true });
 
     // Broadcast transaction
-    const txId = await wallet.relayTx(signedTx, "testnet");
+    const txId = await wallet.relayTx(signedTx, network);
     console.log({ txId });
   }
 }
 
 async function mint() {
-  // Load wallet
-  const userWallet = new Ordit({
-    bip39: "<MNEMONIC PHRASE>",
-    network: "testnet"
-  });
-
-  const pubWallet = new Ordit({
-    bip39: "<MNEMONIC PHRASE>",
-    network: "testnet"
-  });
-
-  //set default taproot
-  userWallet.setDefaultAddress("taproot");
-  pubWallet.setDefaultAddress("legacy");
-
-  // details of mint
+  // replace this w/ the resulting txId:index of above publish() fn
   const collectionId = "94cd24aede3294ba0d6aac135a9b1701ae63ac12b1205567627246ea4091f553:0";
-  const sigMsg = `${collectionId.split(":")[0]} el-01 1`; // COLLECTION_OUT INSCRIPTION_IID NONCE
-  const sig = pubWallet.signMessage(sigMsg);
+  const message = `${collectionId.split(":")[0]} el-01 1`; // COLLECTION_OUT INSCRIPTION_IID NONCE
+  const signature = publisherWallet.signMessage(message);
   
   //publish
-  const transaction = await Ordit.collection.mint({
-    network: "testnet",
+  const transaction = await Inscriber({
+    network,
     collectionOutpoint: collectionId,
     inscriptionIid: "el-01",
     nonce: 1,
     publisherIndex: 0,
-    signature: sig,
+    signature,
     publicKey: userWallet.publicKey,
     destination: userWallet.selectedAddress,
     changeAddress: userWallet.selectedAddress,
@@ -101,7 +101,10 @@ async function mint() {
     feeRate: 2,
     mediaContent: 'Sample content',
     mediaType: "text/plain",
-    outs: [{address: 'tb1pk6yxhcwzzjg9gwsumnlrh3l9q3ajxk657e7kqwmwpd8mklmnmehsrn3hu2', value: 1000}]
+    outputs: [{
+      address: 'tb1pk6yxhcwzzjg9gwsumnlrh3l9q3ajxk657e7kqwmwpd8mklmnmehsrn3hu2', 
+      value: 1000
+    }]
   });
 
   const depositDetails = await transaction.generateCommit();
@@ -109,19 +112,18 @@ async function mint() {
 
   // confirm if deposit address has been funded
   const ready = await transaction.isReady(); //- true/false
-
   if (ready || transaction.ready) {
     // build transaction
     await transaction.build();
 
     // sign transaction
-    const psbtHex = transaction.toHex();
-    const signedTx = userWallet.signPsbt(psbtHex, { isRevealTx: true });
+    const signedTx = userWallet.signPsbt(transaction.toHex(), { isRevealTx: true });
+
     // Broadcast transaction
-    const txId = await userWallet.relayTx(signedTx, "testnet");
+    const txId = await userWallet.relayTx(signedTx, network);
     console.log({ txId });
   }
 }
 
-publish();
-mint();
+publish(); // comment this after collection is created
+// mint(); // uncomment this after collection is created on chain using publish()
