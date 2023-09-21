@@ -17,19 +17,20 @@ const publisherWallet = new Ordit({
 
 // set default address types for both wallets
 userWallet.setDefaultAddress("taproot");
-publisherWallet.setDefaultAddress("nested-segwit");
+publisherWallet.setDefaultAddress("taproot");
 
 async function publish() {
   const getPublisherLegacyAddress = () => {
     publisherWallet.setDefaultAddress("legacy")
     const legacyAddress = publisherWallet.selectedAddress
-    publisherWallet.setDefaultAddress("nested-segwit") // switch back to default
+    publisherWallet.setDefaultAddress("taproot") // switch back to default
 
     return legacyAddress
   }
 
   //publish
   const transaction = await publishCollection({
+    address: publisherWallet.selectedAddress,
     network,
     feeRate: 2,
     title: "Collection Name",
@@ -87,6 +88,7 @@ async function mint() {
   
   // publish
   const transaction = await mintFromCollection({
+    address: userWallet.selectedAddress,
     network,
     collectionOutpoint: collectionId,
     inscriptionIid: "el-01",
