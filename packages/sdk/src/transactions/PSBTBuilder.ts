@@ -280,6 +280,10 @@ export class PSBTBuilder extends FeeEstimator {
     }
   }
 
+  private getRetrievedUTXOsValue() {
+    return this.utxos.reduce((acc, utxo) => (acc += utxo.sats), 0)
+  }
+
   private getReservedUTXOs() {
     return this.utxos.map((utxo) => generateTxUniqueIdentifier(utxo.txid, utxo.n))
   }
@@ -288,6 +292,8 @@ export class PSBTBuilder extends FeeEstimator {
     if (!this.autoAdjustment && !address) return
 
     amount = amount && amount > 0 ? amount : this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
+
+    if (this.getRetrievedUTXOsValue() > amount) return
 
     const utxos = await OrditApi.fetchSpendables({
       address: address || this.address,
