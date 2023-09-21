@@ -16,12 +16,12 @@ export async function publishCollection({
     throw new Error("Invalid inscriptions supplied.")
   }
 
-  // 0 = 0%, 10 = 1000%
-  if (royalty && (royalty.pct < 0 || royalty.pct > 10)) {
-    throw new Error("Invalid royalty %")
-  }
-
   if (royalty) {
+    // 0 = 0%, 10 = 1000%
+    if (isNaN(royalty.pct) || royalty.pct < 0 || royalty.pct > 10) {
+      throw new Error("Invalid royalty %")
+    }
+
     royalty.pct = +new Intl.NumberFormat("en", {
       maximumFractionDigits: 5,
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
