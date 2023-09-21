@@ -149,7 +149,7 @@ export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   }
   network: Network
   publicKey: string
-  outs?: Outputs
+  outputs?: Outputs
   encodeMetadata?: boolean
   enableRBF?: boolean
 }
@@ -174,7 +174,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   signature: string
   network: Network
   publicKey: string
-  outs?: Outputs
+  outputs?: Outputs
   traits?: any
   encodeMetadata?: boolean
   enableRBF?: boolean
