@@ -40,17 +40,16 @@ async function publish() {
       email: "your-email@example.com",
       name: "Your Name"
     },
+    royalty: {
+      address: publisherWallet.selectedAddress,
+      pct: 0.05
+    },
     publishers: [getPublisherLegacyAddress()],
     inscriptions: [
       {
         iid: "el-01",
         lim: 10,
         sri: "sha256-Ujac9y464/qlFmtfLDxORaUtIDH8wrHgv8L9bpPeb28="
-      },
-      {
-        iid: "el-02",
-        lim: 2,
-        sri: "sha256-zjQXDuk++5sICrObmfWqAM5EibidXd2emZoUcU2l5Pg="
       }
     ],
     url: "https://example.com",
@@ -58,7 +57,7 @@ async function publish() {
     destination: publisherWallet.selectedAddress,
     changeAddress: publisherWallet.selectedAddress,
     postage: 1000,
-    mediaContent: 'Collection Name', // this will be inscribed on-chain as primary content
+    mediaContent: '5% Royalty Collection', // this will be inscribed on-chain as primary content
     mediaType: "text/plain"
   });
 
