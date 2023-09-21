@@ -65,7 +65,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     }
 
     const collection = await OrditApi.fetchInscription({
-      id: this.utxo.inscriptions[0].meta.col,
+      id: `${this.utxo.inscriptions[0].meta.col}i0`,
       network: this.network
     })
     const royalty = collection.meta?.royalty
