@@ -17,16 +17,18 @@ export async function publishCollection({
   }
 
   // 0 = 0%, 10 = 1000%
-  if (royalty.pct < 0 || royalty.pct > 10) {
+  if (royalty && (royalty.pct < 0 || royalty.pct > 10)) {
     throw new Error("Invalid royalty %")
   }
 
-  royalty.pct = +new Intl.NumberFormat("en", {
-    maximumFractionDigits: 5,
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    roundingMode: "trunc"
-  }).format(royalty.pct)
+  if (royalty) {
+    royalty.pct = +new Intl.NumberFormat("en", {
+      maximumFractionDigits: 5,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      roundingMode: "trunc"
+    }).format(royalty.pct)
+  }
 
   const collectionMeta = {
     p: "vord", // protocol
@@ -141,7 +143,7 @@ export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
     email?: string
     address: string
   }
-  royalty: {
+  royalty?: {
     address: string
     pct: number
   }
