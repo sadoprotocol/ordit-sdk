@@ -10,6 +10,7 @@ export default class InstantTradeBuilder extends PSBTBuilder {
   protected inscriptionOutpoint?: string
   protected price = 0
   protected postage = 0
+  protected royalty = 0
 
   constructor({ address, network, publicKey, inscriptionOutpoint }: InstantTradeBuilderArgOptions) {
     super({
@@ -28,6 +29,10 @@ export default class InstantTradeBuilder extends PSBTBuilder {
   setPrice(value: number) {
     this.validatePrice(value)
     this.price = parseInt(value.toString())
+  }
+
+  setRoyalty(value: number) {
+    this.royalty = value
   }
 
   protected async verifyAndFindInscriptionUTXO(address?: string) {

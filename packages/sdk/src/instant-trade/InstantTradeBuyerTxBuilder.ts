@@ -68,6 +68,11 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     this.setPrice((this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value - this.postage)
   }
 
+  private decodeRoyalty() {
+    const royaltyOutput = (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[1]
+    royaltyOutput && this.setRoyalty(royaltyOutput.value)
+  }
+
   private bindRefundableOutput() {
     this.outputs = [
       {
@@ -155,6 +160,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     }
 
     this.decodePrice()
+    this.decodeRoyalty()
     this.bindRefundableOutput()
     this.bindInscriptionOutput()
     this.mergePSBTs()
