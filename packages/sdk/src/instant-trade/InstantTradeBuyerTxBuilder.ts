@@ -98,17 +98,17 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
         sats: this.sellerPSBT.data.inputs[0].witnessUtxo?.value,
         injectionIndex: INSTANT_BUY_SELLER_INPUT_INDEX
       }
-    ] as unknown as InjectableInput[]
+    ] as InjectableInput[]
 
-    //outputs
-    this.injectableOutputs = [
-      {
-        standardOutput: this.sellerPSBT.data.outputs[0],
-        txOutput: (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0],
-        sats: (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value,
-        injectionIndex: INSTANT_BUY_SELLER_INPUT_INDEX
-      }
-    ] as InjectableOutput[]
+    // outputs
+    this.injectableOutputs = this.sellerPSBT.data.outputs.map((standardOutput, index) => {
+      return {
+        standardOutput,
+        txOutput: (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[index],
+        sats: (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[index].value,
+        injectionIndex: INSTANT_BUY_SELLER_INPUT_INDEX + index
+      } as InjectableOutput
+    })
   }
 
   private async findUTXOs() {
