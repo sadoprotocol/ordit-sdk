@@ -22,7 +22,7 @@ export interface PSBTBuilderOptions {
   network: Network
   outputs: Output[]
   publicKey: string
-  inscriberMode?: boolean
+  autoAdjustment?: boolean
   instantTradeMode?: boolean
 }
 
@@ -42,7 +42,7 @@ export interface InjectableOutput {
 
 export class PSBTBuilder extends FeeEstimator {
   private nativeNetwork: networks.Network
-  private inscriberMode: boolean
+  private autoAdjustment: boolean
   private instantTradeMode: boolean
 
   address: string
@@ -70,7 +70,7 @@ export class PSBTBuilder extends FeeEstimator {
     network,
     publicKey,
     outputs,
-    inscriberMode = false,
+    autoAdjustment = true,
     instantTradeMode = false
   }: PSBTBuilderOptions) {
     super({
@@ -83,7 +83,7 @@ export class PSBTBuilder extends FeeEstimator {
     this.outputs = outputs
     this.nativeNetwork = getNetwork(network)
     this.publicKey = publicKey
-    this.inscriberMode = inscriberMode
+    this.autoAdjustment = autoAdjustment
     this.instantTradeMode = instantTradeMode
 
     this.psbt = new Psbt({ network: this.nativeNetwork })
@@ -258,7 +258,7 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async calculateChangeAmount() {
-    if (this.inscriberMode) return
+    if (!this.autoAdjustment) return
 
     this.changeAmount = Math.floor(this.inputAmount - this.outputAmount - this.fee)
     await this.addChangeOutput()
@@ -278,7 +278,7 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async retrieveUTXOs(address?: string, amount?: number) {
-    if (this.inscriberMode && !address) return
+    if (!this.autoAdjustment && !address) return
 
     amount = amount && amount > 0 ? amount : this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
 
@@ -303,7 +303,7 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async prepareInputs() {
-    if (this.inscriberMode) return
+    if (!this.autoAdjustment) return
 
     const promises: Promise<InputType>[] = []
 
@@ -344,7 +344,6 @@ export class PSBTBuilder extends FeeEstimator {
     await this.calculateChangeAmount()
 
     await this.process()
-
     await this.calculateChangeAmount()
     this.calculateOutputAmount()
 
@@ -354,7 +353,7 @@ export class PSBTBuilder extends FeeEstimator {
   private async process() {
     this.initPSBT()
 
-    this.addInputs()
+    await this.addInputs()
     this.addOutputs()
 
     this.calculateNetworkFee()

@@ -70,7 +70,7 @@ export class Inscriber extends PSBTBuilder {
       network,
       publicKey,
       outputs,
-      inscriberMode: true
+      autoAdjustment: false
     })
     if (!publicKey || !changeAddress || !destination || !mediaContent) {
       throw new Error("Invalid options provided")

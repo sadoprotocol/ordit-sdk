@@ -24,7 +24,8 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
       address,
       network,
       publicKey,
-      inscriptionOutpoint
+      inscriptionOutpoint,
+      autoAdjustment: false // Prevents PSBTBuilder from adding additional input and change output
     })
 
     this.receiveAddress = receiveAddress
@@ -86,7 +87,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
 
     this.utxo = await this.verifyAndFindInscriptionUTXO()
     await this.generatSellerInputs()
-    this.generateSellerOutputs()
+    await this.generateSellerOutputs()
 
     await this.prepare()
   }
