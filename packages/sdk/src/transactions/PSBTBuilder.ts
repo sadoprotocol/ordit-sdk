@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-extra-semi */
 import { networks, Psbt } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
@@ -137,17 +138,21 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private injectInput(injectable: InjectableInput) {
-    // TODO: add type
-    // eslint-disable-next-line @typescript-eslint/no-extra-semi
     ;(this.psbt.data.globalMap.unsignedTx as any).tx.ins[injectable.injectionIndex] = injectable.txInput
     this.psbt.data.inputs[injectable.injectionIndex] = injectable.standardInput
   }
 
   private injectOutput(injectable: InjectableOutput) {
-    // TODO: add type
-    // eslint-disable-next-line @typescript-eslint/no-extra-semi
-    ;(this.psbt.data.globalMap.unsignedTx as any).tx.outs[injectable.injectionIndex] = injectable.txOutput
-    this.psbt.data.outputs[injectable.injectionIndex] = injectable.standardOutput
+    let potentialIndex = injectable.injectionIndex
+
+    do {
+      const isReserved = !!(this.psbt.data.globalMap.unsignedTx as any).tx.outs[potentialIndex]
+      if (!isReserved) {
+        ;(this.psbt.data.globalMap.unsignedTx as any).tx.outs[potentialIndex] = injectable.txOutput
+        this.psbt.data.outputs[potentialIndex] = injectable.standardOutput
+        break
+      }
+    } while (potentialIndex++)
   }
 
   private async addInputs() {
@@ -177,6 +182,7 @@ export class PSBTBuilder extends FeeEstimator {
     this.injectableInputs.forEach((injectable) => {
       if (injectedIndexes.includes(injectable.injectionIndex)) return
       this.injectInput(injectable)
+      injectedIndexes.push(injectable.injectionIndex)
     })
   }
 
@@ -206,6 +212,7 @@ export class PSBTBuilder extends FeeEstimator {
     this.injectableOutputs.forEach((injectable) => {
       if (injectedIndexes.includes(injectable.injectionIndex)) return
       this.injectOutput(injectable)
+      injectedIndexes.push(injectable.injectionIndex)
     })
   }
 
