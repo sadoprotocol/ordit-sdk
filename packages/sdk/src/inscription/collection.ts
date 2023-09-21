@@ -7,6 +7,7 @@ export async function publishCollection({
   url,
   slug,
   creator,
+  royalty,
   publishers,
   inscriptions,
   ...options
@@ -15,15 +16,28 @@ export async function publishCollection({
     throw new Error("Invalid inscriptions supplied.")
   }
 
+  // 0 = 0%, 10 = 1000%
+  if (royalty.pct < 0 || royalty.pct > 10) {
+    throw new Error("Invalid royalty %")
+  }
+
+  royalty.pct = +new Intl.NumberFormat("en", {
+    maximumFractionDigits: 2,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    roundingMode: "trunc"
+  }).format(royalty.pct)
+
   const collectionMeta = {
     p: "vord", // protocol
     v: 1, // version
     ty: "col",
-    title: title,
+    title,
     desc: description,
-    url: url,
-    slug: slug,
-    creator: creator,
+    url,
+    slug,
+    creator,
+    royalty,
     publ: publishers,
     insc: inscriptions
   }
@@ -126,6 +140,10 @@ export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
     name?: string
     email?: string
     address: string
+  }
+  royalty: {
+    address: string
+    pct: number
   }
   network: Network
   publicKey: string
