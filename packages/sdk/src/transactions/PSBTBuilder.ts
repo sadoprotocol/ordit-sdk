@@ -8,7 +8,8 @@ import {
   getNetwork,
   InputsToSign,
   INSTANT_BUY_SELLER_INPUT_INDEX,
-  OrditApi
+  OrditApi,
+  toXOnly
 } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
@@ -42,27 +43,26 @@ export interface InjectableOutput {
 }
 
 export class PSBTBuilder extends FeeEstimator {
-  private nativeNetwork: networks.Network
+  protected address: string
+  protected changeAddress?: string
+  protected changeAmount = 0
+  protected changeOutputIndex = -1
+  protected injectableInputs: InjectableInput[] = []
+  protected injectableOutputs: InjectableOutput[] = []
+  protected inputAmount = 0
+  protected inputs: InputType[] = []
+  protected outputAmount = 0
+  protected outputs: Output[] = []
+  protected psbt: Psbt
+  protected publicKey: string
+  protected rbf = true
+  protected utxos: UTXOLimited[] = []
+  protected usedUTXOs: string[] = []
+
   private autoAdjustment: boolean
   private instantTradeMode: boolean
-
-  address: string
-  changeAddress?: string
-  changeAmount = 0
-  changeOutputIndex = -1
-  inputs: InputType[] = []
-  injectableInputs: InjectableInput[] = []
-  injectableOutputs: InjectableOutput[] = []
-  inputAmount = 0
-  outputs: Output[] = []
-  outputAmount = 0
-  network: Network
-  noMoreUTXOS = false
-  psbt: Psbt
-  publicKey: string
-  rbf = true
-  utxos: UTXOLimited[] = []
-  usedUTXOs: string[] = []
+  private nativeNetwork: networks.Network
+  private noMoreUTXOS = false
 
   constructor({
     address,
@@ -80,10 +80,10 @@ export class PSBTBuilder extends FeeEstimator {
     })
     this.address = address
     this.changeAddress = changeAddress
-    this.network = network
     this.outputs = outputs
     this.nativeNetwork = getNetwork(network)
     this.publicKey = publicKey
+
     this.autoAdjustment = autoAdjustment
     this.instantTradeMode = instantTradeMode
 
@@ -110,6 +110,10 @@ export class PSBTBuilder extends FeeEstimator {
   disableRBF() {
     this.rbf = false
     this.addInputs()
+  }
+
+  get xKey() {
+    return toXOnly(Buffer.from(this.publicKey, "hex")).toString("hex")
   }
 
   get inputsToSign() {

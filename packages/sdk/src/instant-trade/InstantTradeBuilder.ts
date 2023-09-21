@@ -3,7 +3,7 @@ import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { PSBTBuilder, PSBTBuilderOptions } from "../transactions/PSBTBuilder"
 
 export interface InstantTradeBuilderArgOptions
-  extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address" | "autoAdjustment"> {
+  extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address" | "autoAdjustment" | "feeRate"> {
   inscriptionOutpoint?: string
 }
 

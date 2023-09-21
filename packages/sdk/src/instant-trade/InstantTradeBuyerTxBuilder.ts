@@ -15,7 +15,6 @@ import { Output } from "../transactions/types"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
 interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
-  feeRate: number
   sellerPSBT: string
   receiveAddress?: string
 }
@@ -36,10 +35,10 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     super({
       address,
       network,
-      publicKey
+      publicKey,
+      feeRate
     })
 
-    this.feeRate = feeRate
     this.receiveAddress = receiveAddress
     this.decodeSellerPSBT(sellerPSBT)
   }

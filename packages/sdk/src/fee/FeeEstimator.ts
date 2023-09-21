@@ -6,11 +6,11 @@ import { MAXIMUM_FEE } from "../constants"
 import { FeeEstimatorOptions } from "./types"
 
 export default class FeeEstimator {
-  feeRate: number
-  network: Network
-  psbt!: Psbt
-  witness?: Buffer[] = []
-  fee = 0
+  protected feeRate: number
+  protected network: Network
+  protected psbt: Psbt
+  protected witness?: Buffer[] = []
+  protected fee = 0
 
   private virtualSize = 0
   private weight = 0

@@ -6,7 +6,6 @@ import {
   buildWitnessScript,
   createTransaction,
   encodeObject,
-  getAddressesFromPublicKey,
   getDummyP2TRInput,
   getNetwork,
   GetWalletOptions,
@@ -20,21 +19,12 @@ import { UTXOLimited } from "./types"
 bitcoin.initEccLib(ecc)
 
 export class Inscriber extends PSBTBuilder {
-  network: Network
-
-  mediaType: string
-  mediaContent: string
-  meta?: NestedObject
-  postage: number
-
-  address: string
-  publicKey: string
-  destinationAddress: string
-  changeAddress: string
+  protected mediaType: string
+  protected mediaContent: string
+  protected meta?: NestedObject
+  protected postage: number
 
   private ready = false
-
-  private xKey!: string
   private commitAddress: string | null = null
   private payment: bitcoin.payments.Payment | null = null
   private suitableUnspent: UTXOLimited | null = null
@@ -51,50 +41,37 @@ export class Inscriber extends PSBTBuilder {
 
   constructor({
     network,
+    address,
+    changeAddress,
+    publicKey,
     feeRate,
     postage,
     mediaContent,
     mediaType,
-    publicKey,
     outputs = [],
     encodeMetadata = false,
-    changeAddress,
-    destination,
     safeMode,
     meta
   }: InscriberArgOptions) {
-    const { xkey, address } = getAddressesFromPublicKey(publicKey, network, "p2tr")[0]
     super({
-      address: address!,
+      address,
+      changeAddress,
       feeRate,
       network,
       publicKey,
       outputs,
       autoAdjustment: false
     })
-    if (!publicKey || !changeAddress || !destination || !mediaContent) {
+    if (!publicKey || !changeAddress || !mediaContent) {
       throw new Error("Invalid options provided")
     }
 
-    this.publicKey = publicKey
-    this.feeRate = feeRate
     this.mediaType = mediaType
-    this.network = network
-    this.changeAddress = changeAddress
-    this.destinationAddress = destination
     this.mediaContent = mediaContent
     this.meta = meta
     this.postage = postage
-    this.outputs = outputs
     this.safeMode = !safeMode ? "on" : safeMode
     this.encodeMetadata = encodeMetadata
-
-    if (!xkey) {
-      throw new Error("Failed to derive xKey from the provided public key")
-    }
-
-    this.xKey = xkey
-    this.address = address!
   }
 
   private getMetadata() {
@@ -128,7 +105,7 @@ export class Inscriber extends PSBTBuilder {
 
     if (!this.recovery) {
       this.outputs.push({
-        address: this.destinationAddress,
+        address: this.address,
         value: this.postage
       })
     }
@@ -276,6 +253,8 @@ export class OrdTransaction extends Inscriber {
 
 export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   network: Network
+  address: string
+  publicKey: string
   feeRate: number
   postage: number
   mediaType: string
@@ -283,7 +262,6 @@ export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   destination: string
   changeAddress: string
   meta?: NestedObject
-  publicKey: string
   outputs?: Outputs
   encodeMetadata?: boolean
 }

@@ -126,6 +126,7 @@ function validateInscriptions(inscriptions: CollectionInscription[] = []) {
 }
 
 export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
+  address: string
   feeRate: number
   postage: number
   mediaType: string
@@ -161,6 +162,7 @@ export type CollectionInscription = {
 }
 
 export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
+  address: string
   feeRate: number
   postage: number
   mediaType: string

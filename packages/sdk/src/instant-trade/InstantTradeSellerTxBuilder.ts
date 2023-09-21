@@ -25,11 +25,11 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
       network,
       publicKey,
       inscriptionOutpoint,
-      autoAdjustment: false // Prevents PSBTBuilder from adding additional input and change output
+      autoAdjustment: false, // Prevents PSBTBuilder from adding additional input and change output
+      feeRate: 0 // seller in instant-trade does not pay network fee
     })
 
     this.receiveAddress = receiveAddress
-    this.feeRate = 0 // seller in instant-trade does not pay network fee
   }
 
   private async generatSellerInputs() {
