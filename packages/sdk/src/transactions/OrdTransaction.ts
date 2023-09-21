@@ -298,14 +298,14 @@ export class OrdTransaction {
     this.#recovery = true
   }
 
-  async isReady() {
+  async isReady(skipStrictSatsCheck = false) {
     if (!this.#commitAddress || !this.#feeForWitnessData) {
       throw new Error("No commit address found. Please generate a commit address.")
     }
 
     if (!this.ready) {
       try {
-        await this.fetchAndSelectSuitableUnspent()
+        await this.fetchAndSelectSuitableUnspent(skipStrictSatsCheck)
       } catch (error) {
         return false
       }
@@ -314,7 +314,7 @@ export class OrdTransaction {
     return this.ready
   }
 
-  async fetchAndSelectSuitableUnspent() {
+  async fetchAndSelectSuitableUnspent(skipStrictSatsCheck = false) {
     if (!this.#commitAddress || !this.#feeForWitnessData) {
       throw new Error("No commit address found. Please generate a commit address.")
     }
@@ -329,7 +329,7 @@ export class OrdTransaction {
       type: this.#safeMode === "on" ? "spendable" : "all"
     })
 
-    const suitableUTXO = utxos.find((utxo) => utxo.sats >= amount)
+    const suitableUTXO = utxos.find((utxo) => skipStrictSatsCheck || (!skipStrictSatsCheck && utxo.sats >= amount))
     if (!suitableUTXO) {
       throw new Error("No suitable unspent found for reveal.")
     }
