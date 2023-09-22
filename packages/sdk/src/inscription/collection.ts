@@ -23,7 +23,7 @@ export async function publishCollection({
     }
 
     royalty.pct = +new Intl.NumberFormat("en", {
-      maximumFractionDigits: 5,
+      maximumFractionDigits: 8,
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       roundingMode: "trunc"
