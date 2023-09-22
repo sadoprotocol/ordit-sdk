@@ -37,7 +37,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
 
     id = id.includes(":") ? id.replace(":", "i") : !id.includes("i") ? `${id}i0` : id
 
-    let inscription = await rpc[this.network].call<Inscription>("GetInscription", { id }, rpc.id)
+    let inscription = await rpc[this.network].call<Inscription>("Ordinals.GetInscription", { id }, rpc.id)
     if (decodeMetadata) {
       inscription = DatasourceUtility.transformInscriptions([inscription])[0]
     }
@@ -81,7 +81,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     }
 
     return rpc[this.network].call<UTXOLimited[]>(
-      "GetSpendables",
+      "Address.GetSpendables",
       {
         address,
         value,
@@ -106,7 +106,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     }
 
     const tx = await rpc[this.network].call<Transaction>(
-      "GetTransaction",
+      "Transactions.GetTransaction",
       {
         txid: txId,
         options: {
