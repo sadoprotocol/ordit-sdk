@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-extra-semi */
 import { networks, Psbt } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
@@ -7,7 +8,8 @@ import {
   getNetwork,
   InputsToSign,
   INSTANT_BUY_SELLER_INPUT_INDEX,
-  OrditApi
+  OrditApi,
+  toXOnly
 } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
@@ -22,7 +24,7 @@ export interface PSBTBuilderOptions {
   network: Network
   outputs: Output[]
   publicKey: string
-  inscriberMode?: boolean
+  autoAdjustment?: boolean
   instantTradeMode?: boolean
 }
 
@@ -41,27 +43,26 @@ export interface InjectableOutput {
 }
 
 export class PSBTBuilder extends FeeEstimator {
-  private nativeNetwork: networks.Network
-  private inscriberMode: boolean
-  private instantTradeMode: boolean
+  protected address: string
+  protected changeAddress?: string
+  protected changeAmount = 0
+  protected changeOutputIndex = -1
+  protected injectableInputs: InjectableInput[] = []
+  protected injectableOutputs: InjectableOutput[] = []
+  protected inputAmount = 0
+  protected inputs: InputType[] = []
+  protected outputAmount = 0
+  protected outputs: Output[] = []
+  protected psbt: Psbt
+  protected publicKey: string
+  protected rbf = true
+  protected utxos: UTXOLimited[] = []
+  protected usedUTXOs: string[] = []
 
-  address: string
-  changeAddress?: string
-  changeAmount = 0
-  changeOutputIndex = -1
-  inputs: InputType[] = []
-  injectableInputs: InjectableInput[] = []
-  injectableOutputs: InjectableOutput[] = []
-  inputAmount = 0
-  outputs: Output[] = []
-  outputAmount = 0
-  network: Network
-  noMoreUTXOS = false
-  psbt: Psbt
-  publicKey: string
-  rbf = true
-  utxos: UTXOLimited[] = []
-  usedUTXOs: string[] = []
+  private autoAdjustment: boolean
+  private instantTradeMode: boolean
+  private nativeNetwork: networks.Network
+  private noMoreUTXOS = false
 
   constructor({
     address,
@@ -70,7 +71,7 @@ export class PSBTBuilder extends FeeEstimator {
     network,
     publicKey,
     outputs,
-    inscriberMode = false,
+    autoAdjustment = true,
     instantTradeMode = false
   }: PSBTBuilderOptions) {
     super({
@@ -79,11 +80,11 @@ export class PSBTBuilder extends FeeEstimator {
     })
     this.address = address
     this.changeAddress = changeAddress
-    this.network = network
     this.outputs = outputs
     this.nativeNetwork = getNetwork(network)
     this.publicKey = publicKey
-    this.inscriberMode = inscriberMode
+
+    this.autoAdjustment = autoAdjustment
     this.instantTradeMode = instantTradeMode
 
     this.psbt = new Psbt({ network: this.nativeNetwork })
@@ -109,6 +110,10 @@ export class PSBTBuilder extends FeeEstimator {
   disableRBF() {
     this.rbf = false
     this.addInputs()
+  }
+
+  get xKey() {
+    return toXOnly(Buffer.from(this.publicKey, "hex")).toString("hex")
   }
 
   get inputsToSign() {
@@ -137,17 +142,21 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private injectInput(injectable: InjectableInput) {
-    // TODO: add type
-    // eslint-disable-next-line @typescript-eslint/no-extra-semi
     ;(this.psbt.data.globalMap.unsignedTx as any).tx.ins[injectable.injectionIndex] = injectable.txInput
     this.psbt.data.inputs[injectable.injectionIndex] = injectable.standardInput
   }
 
   private injectOutput(injectable: InjectableOutput) {
-    // TODO: add type
-    // eslint-disable-next-line @typescript-eslint/no-extra-semi
-    ;(this.psbt.data.globalMap.unsignedTx as any).tx.outs[injectable.injectionIndex] = injectable.txOutput
-    this.psbt.data.outputs[injectable.injectionIndex] = injectable.standardOutput
+    let potentialIndex = injectable.injectionIndex
+
+    do {
+      const isReserved = !!(this.psbt.data.globalMap.unsignedTx as any).tx.outs[potentialIndex]
+      if (!isReserved) {
+        ;(this.psbt.data.globalMap.unsignedTx as any).tx.outs[potentialIndex] = injectable.txOutput
+        this.psbt.data.outputs[potentialIndex] = injectable.standardOutput
+        break
+      }
+    } while (potentialIndex++)
   }
 
   private async addInputs() {
@@ -177,6 +186,7 @@ export class PSBTBuilder extends FeeEstimator {
     this.injectableInputs.forEach((injectable) => {
       if (injectedIndexes.includes(injectable.injectionIndex)) return
       this.injectInput(injectable)
+      injectedIndexes.push(injectable.injectionIndex)
     })
   }
 
@@ -206,6 +216,7 @@ export class PSBTBuilder extends FeeEstimator {
     this.injectableOutputs.forEach((injectable) => {
       if (injectedIndexes.includes(injectable.injectionIndex)) return
       this.injectOutput(injectable)
+      injectedIndexes.push(injectable.injectionIndex)
     })
   }
 
@@ -258,7 +269,7 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async calculateChangeAmount() {
-    if (this.inscriberMode) return
+    if (!this.autoAdjustment) return
 
     this.changeAmount = Math.floor(this.inputAmount - this.outputAmount - this.fee)
     await this.addChangeOutput()
@@ -273,14 +284,20 @@ export class PSBTBuilder extends FeeEstimator {
     }
   }
 
+  private getRetrievedUTXOsValue() {
+    return this.utxos.reduce((acc, utxo) => (acc += utxo.sats), 0)
+  }
+
   private getReservedUTXOs() {
     return this.utxos.map((utxo) => generateTxUniqueIdentifier(utxo.txid, utxo.n))
   }
 
   private async retrieveUTXOs(address?: string, amount?: number) {
-    if (this.inscriberMode && !address) return
+    if (!this.autoAdjustment && !address) return
 
     amount = amount && amount > 0 ? amount : this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
+
+    if (this.getRetrievedUTXOsValue() > amount) return
 
     const utxos = await OrditApi.fetchSpendables({
       address: address || this.address,
@@ -303,7 +320,7 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private async prepareInputs() {
-    if (this.inscriberMode) return
+    if (!this.autoAdjustment) return
 
     const promises: Promise<InputType>[] = []
 
@@ -344,7 +361,6 @@ export class PSBTBuilder extends FeeEstimator {
     await this.calculateChangeAmount()
 
     await this.process()
-
     await this.calculateChangeAmount()
     this.calculateOutputAmount()
 
@@ -354,7 +370,7 @@ export class PSBTBuilder extends FeeEstimator {
   private async process() {
     this.initPSBT()
 
-    this.addInputs()
+    await this.addInputs()
     this.addOutputs()
 
     this.calculateNetworkFee()

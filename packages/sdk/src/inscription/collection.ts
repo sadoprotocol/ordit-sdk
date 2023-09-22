@@ -7,6 +7,7 @@ export async function publishCollection({
   url,
   slug,
   creator,
+  royalty,
   publishers,
   inscriptions,
   ...options
@@ -15,15 +16,30 @@ export async function publishCollection({
     throw new Error("Invalid inscriptions supplied.")
   }
 
+  if (royalty) {
+    // 0 = 0%, 10 = 1000%
+    if (isNaN(royalty.pct) || royalty.pct < 0 || royalty.pct > 10) {
+      throw new Error("Invalid royalty %")
+    }
+
+    royalty.pct = +new Intl.NumberFormat("en", {
+      maximumFractionDigits: 8,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      roundingMode: "trunc"
+    }).format(royalty.pct)
+  }
+
   const collectionMeta = {
     p: "vord", // protocol
     v: 1, // version
     ty: "col",
-    title: title,
+    title,
     desc: description,
-    url: url,
-    slug: slug,
-    creator: creator,
+    url,
+    slug,
+    creator,
+    royalty,
     publ: publishers,
     insc: inscriptions
   }
@@ -110,6 +126,7 @@ function validateInscriptions(inscriptions: CollectionInscription[] = []) {
 }
 
 export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
+  address: string
   feeRate: number
   postage: number
   mediaType: string
@@ -127,9 +144,13 @@ export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
     email?: string
     address: string
   }
+  royalty?: {
+    address: string
+    pct: number
+  }
   network: Network
   publicKey: string
-  outs?: Outputs
+  outputs?: Outputs
   encodeMetadata?: boolean
   enableRBF?: boolean
 }
@@ -141,6 +162,7 @@ export type CollectionInscription = {
 }
 
 export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
+  address: string
   feeRate: number
   postage: number
   mediaType: string
@@ -154,7 +176,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   signature: string
   network: Network
   publicKey: string
-  outs?: Outputs
+  outputs?: Outputs
   traits?: any
   encodeMetadata?: boolean
   enableRBF?: boolean

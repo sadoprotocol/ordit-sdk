@@ -1,6 +1,7 @@
 import * as bitcoin from "bitcoinjs-lib"
 
-import { processInput } from ".."
+import { OrditApi, processInput } from ".."
+import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { UTXO } from "../transactions/types"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
@@ -23,11 +24,12 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
       address,
       network,
       publicKey,
-      inscriptionOutpoint
+      inscriptionOutpoint,
+      autoAdjustment: false, // Prevents PSBTBuilder from adding additional input and change output
+      feeRate: 0 // seller in instant-trade does not pay network fee
     })
 
     this.receiveAddress = receiveAddress
-    this.feeRate = 0 // seller in instant-trade does not pay network fee
   }
 
   private async generatSellerInputs() {
@@ -45,15 +47,47 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     this.inputs = [input]
   }
 
-  private generateSellerOutputs() {
+  private async generateSellerOutputs() {
+    const royalty = await this.calculateRoyalty()
     this.outputs = [{ address: this.receiveAddress || this.address, value: this.price + this.postage }]
+
+    if (royalty && royalty.amount >= MINIMUM_AMOUNT_IN_SATS) {
+      this.outputs.push({
+        address: royalty.address, // creator address
+        value: royalty.amount // royalty in sats to be paid to original creator
+      })
+    }
+  }
+
+  private async calculateRoyalty() {
+    if (!this.utxo?.inscriptions?.length || !this.utxo?.inscriptions[0]?.meta?.col) {
+      return
+    }
+
+    const collection = await OrditApi.fetchInscription({
+      id: `${this.utxo.inscriptions[0].meta.col}i0`,
+      network: this.network
+    })
+    const royalty = collection.meta?.royalty
+    if (!royalty || !royalty.address || !royalty.pct) {
+      return
+    }
+    const amount = Math.ceil(royalty.pct * this.price)
+
+    return {
+      address: royalty.address as string,
+      amount: amount >= MINIMUM_AMOUNT_IN_SATS ? amount : 0
+    }
   }
 
   async build() {
-    this.utxo = await this.verifyAndFindInscriptionUTXO()
+    if (isNaN(this.price) || this.price < MINIMUM_AMOUNT_IN_SATS) {
+      throw new Error("Invalid price")
+    }
 
+    this.utxo = await this.verifyAndFindInscriptionUTXO()
     await this.generatSellerInputs()
-    this.generateSellerOutputs()
+    await this.generateSellerOutputs()
 
     await this.prepare()
   }

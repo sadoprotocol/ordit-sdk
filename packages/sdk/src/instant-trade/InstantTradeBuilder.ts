@@ -2,7 +2,8 @@ import { OrditApi } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { PSBTBuilder, PSBTBuilderOptions } from "../transactions/PSBTBuilder"
 
-export interface InstantTradeBuilderArgOptions extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address"> {
+export interface InstantTradeBuilderArgOptions
+  extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address" | "autoAdjustment" | "feeRate"> {
   inscriptionOutpoint?: string
 }
 
@@ -10,14 +11,16 @@ export default class InstantTradeBuilder extends PSBTBuilder {
   protected inscriptionOutpoint?: string
   protected price = 0
   protected postage = 0
+  protected royalty = 0
 
-  constructor({ address, network, publicKey, inscriptionOutpoint }: InstantTradeBuilderArgOptions) {
+  constructor({ address, network, publicKey, inscriptionOutpoint, autoAdjustment }: InstantTradeBuilderArgOptions) {
     super({
       address,
       feeRate: 0,
       network,
       publicKey,
       outputs: [],
+      autoAdjustment,
       instantTradeMode: true
     })
 
@@ -28,6 +31,10 @@ export default class InstantTradeBuilder extends PSBTBuilder {
   setPrice(value: number) {
     this.validatePrice(value)
     this.price = parseInt(value.toString())
+  }
+
+  setRoyalty(value: number) {
+    this.royalty = value
   }
 
   protected async verifyAndFindInscriptionUTXO(address?: string) {

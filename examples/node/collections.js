@@ -17,19 +17,20 @@ const publisherWallet = new Ordit({
 
 // set default address types for both wallets
 userWallet.setDefaultAddress("taproot");
-publisherWallet.setDefaultAddress("nested-segwit");
+publisherWallet.setDefaultAddress("taproot");
 
 async function publish() {
   const getPublisherLegacyAddress = () => {
     publisherWallet.setDefaultAddress("legacy")
     const legacyAddress = publisherWallet.selectedAddress
-    publisherWallet.setDefaultAddress("nested-segwit") // switch back to default
+    publisherWallet.setDefaultAddress("taproot") // switch back to default
 
     return legacyAddress
   }
 
   //publish
   const transaction = await publishCollection({
+    address: publisherWallet.selectedAddress,
     network,
     feeRate: 2,
     title: "Collection Name",
@@ -40,17 +41,16 @@ async function publish() {
       email: "your-email@example.com",
       name: "Your Name"
     },
+    royalty: {
+      address: publisherWallet.selectedAddress,
+      pct: 0.05
+    },
     publishers: [getPublisherLegacyAddress()],
     inscriptions: [
       {
         iid: "el-01",
         lim: 10,
         sri: "sha256-Ujac9y464/qlFmtfLDxORaUtIDH8wrHgv8L9bpPeb28="
-      },
-      {
-        iid: "el-02",
-        lim: 2,
-        sri: "sha256-zjQXDuk++5sICrObmfWqAM5EibidXd2emZoUcU2l5Pg="
       }
     ],
     url: "https://example.com",
@@ -58,7 +58,7 @@ async function publish() {
     destination: publisherWallet.selectedAddress,
     changeAddress: publisherWallet.selectedAddress,
     postage: 1000,
-    mediaContent: 'Collection Name', // this will be inscribed on-chain as primary content
+    mediaContent: '5% Royalty Collection', // this will be inscribed on-chain as primary content
     mediaType: "text/plain"
   });
 
@@ -88,6 +88,7 @@ async function mint() {
   
   // publish
   const transaction = await mintFromCollection({
+    address: userWallet.selectedAddress,
     network,
     collectionOutpoint: collectionId,
     inscriptionIid: "el-01",

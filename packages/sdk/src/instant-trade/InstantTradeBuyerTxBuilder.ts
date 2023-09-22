@@ -15,7 +15,6 @@ import { Output } from "../transactions/types"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
 interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
-  feeRate: number
   sellerPSBT: string
   receiveAddress?: string
 }
@@ -36,10 +35,10 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     super({
       address,
       network,
-      publicKey
+      publicKey,
+      feeRate
     })
 
-    this.feeRate = feeRate
     this.receiveAddress = receiveAddress
     this.decodeSellerPSBT(sellerPSBT)
   }
@@ -66,6 +65,11 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   private decodePrice() {
     this.validatePrice((this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value - this.postage)
     this.setPrice((this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value - this.postage)
+  }
+
+  private decodeRoyalty() {
+    const royaltyOutput = (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[1]
+    royaltyOutput && this.setRoyalty(royaltyOutput.value)
   }
 
   private bindRefundableOutput() {
@@ -98,17 +102,17 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
         sats: this.sellerPSBT.data.inputs[0].witnessUtxo?.value,
         injectionIndex: INSTANT_BUY_SELLER_INPUT_INDEX
       }
-    ] as unknown as InjectableInput[]
+    ] as InjectableInput[]
 
-    //outputs
-    this.injectableOutputs = [
-      {
-        standardOutput: this.sellerPSBT.data.outputs[0],
-        txOutput: (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0],
-        sats: (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value,
-        injectionIndex: INSTANT_BUY_SELLER_INPUT_INDEX
-      }
-    ] as InjectableOutput[]
+    // outputs
+    this.injectableOutputs = this.sellerPSBT.data.outputs.map((standardOutput, index) => {
+      return {
+        standardOutput,
+        txOutput: (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[index],
+        sats: (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[index].value,
+        injectionIndex: INSTANT_BUY_SELLER_INPUT_INDEX + index
+      } as InjectableOutput
+    })
   }
 
   private async findUTXOs() {
@@ -155,6 +159,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     }
 
     this.decodePrice()
+    this.decodeRoyalty()
     this.bindRefundableOutput()
     this.bindInscriptionOutput()
     this.mergePSBTs()
