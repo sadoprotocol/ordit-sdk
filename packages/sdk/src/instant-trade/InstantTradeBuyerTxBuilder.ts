@@ -1,7 +1,14 @@
 import { Psbt } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
-import { decodePSBT, generateTxUniqueIdentifier, getScriptType, INSTANT_BUY_SELLER_INPUT_INDEX } from ".."
+import {
+  BaseDatasource,
+  decodePSBT,
+  generateTxUniqueIdentifier,
+  getScriptType,
+  INSTANT_BUY_SELLER_INPUT_INDEX,
+  JsonRpcDatasource
+} from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { InjectableInput, InjectableOutput } from "../transactions/PSBTBuilder"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
@@ -9,9 +16,12 @@ import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTra
 interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
   sellerPSBT: string
   receiveAddress?: string
+  datasource: BaseDatasource
 }
 
 export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
+  protected datasource: BaseDatasource
+
   private receiveAddress?: string
   private sellerPSBT!: Psbt
   private sellerAddress?: string
@@ -33,6 +43,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
       feeRate
     })
 
+    this.datasource = datasource || new JsonRpcDatasource({ network: this.network })
     this.receiveAddress = receiveAddress
     this.decodeSellerPSBT(sellerPSBT)
   }
