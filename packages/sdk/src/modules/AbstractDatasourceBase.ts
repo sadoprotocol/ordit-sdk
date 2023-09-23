@@ -1,13 +1,9 @@
 import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
-import { decodeObject, Inscription } from ".."
+import { Inscription } from ".."
 import { FetchSpendablesOptions, FetchTxOptions, FetchUnspentUTXOsOptions } from "../api/types"
-import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
-
-interface SegregateUTXOsBySpendStatusArgOptions {
-  utxos: UTXO[]
-  decodeMetadata?: boolean
-}
+import { Transaction, UTXOLimited } from "../transactions/types"
+import { DatasourceUtility } from "."
 
 export default class AbstractDatasourceBase {
   constructor() {
@@ -38,42 +34,7 @@ export default class AbstractDatasourceBase {
 
   async getUnspents(
     _args: FetchUnspentUTXOsOptions
-  ): Promise<ReturnType<AbstractDatasourceBase["segregateUTXOsBySpendStatus"]>> {
+  ): Promise<ReturnType<typeof DatasourceUtility.segregateUTXOsBySpendStatus>> {
     throw new Error("define getUnspents in the derived class")
-  }
-
-  protected transformInscriptions(inscriptions?: Inscription[]) {
-    if (!inscriptions) return []
-
-    return inscriptions.map((inscription) => {
-      inscription.meta = inscription.meta ? decodeObject(inscription.meta) : inscription.meta
-      return inscription
-    })
-  }
-
-  protected segregateUTXOsBySpendStatus({ utxos, decodeMetadata }: SegregateUTXOsBySpendStatusArgOptions) {
-    const { spendableUTXOs, unspendableUTXOs } = utxos.reduce(
-      (acc, utxo) => {
-        if (utxo.inscriptions?.length && !utxo.safeToSpend) {
-          utxo.inscriptions = decodeMetadata ? this.transformInscriptions(utxo.inscriptions) : utxo.inscriptions
-
-          acc.unspendableUTXOs.push(utxo)
-        } else {
-          acc.spendableUTXOs.push(utxo)
-        }
-
-        return acc
-      },
-      {
-        spendableUTXOs: [],
-        unspendableUTXOs: []
-      } as Record<string, UTXO[]>
-    )
-
-    return {
-      totalUTXOs: utxos.length,
-      spendableUTXOs,
-      unspendableUTXOs
-    }
   }
 }

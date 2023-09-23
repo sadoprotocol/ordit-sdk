@@ -5,7 +5,7 @@ import { rpc } from "../api/jsonrpc"
 import { FetchSpendablesOptions, FetchTxOptions, FetchUnspentUTXOsOptions, RelayTxOptions } from "../api/types"
 import { Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
-import AbstractDatasourceBase from "./AbstractDatasourceBase"
+import { AbstractDatasourceBase, DatasourceUtility } from "."
 
 interface JsonRpcDatasourceOptions {
   network: Network
@@ -17,6 +17,9 @@ export default class JsonRpcDatasource extends AbstractDatasourceBase {
   constructor({ network }: JsonRpcDatasourceOptions) {
     super()
 
+    if (!network) {
+      throw new Error("network is required")
+    }
     this.network = network
   }
 
@@ -35,7 +38,7 @@ export default class JsonRpcDatasource extends AbstractDatasourceBase {
 
     let inscription = await rpc[this.network].call<Inscription>("GetInscription", { id }, rpc.id)
     if (decodeMetadata) {
-      inscription = this.transformInscriptions([inscription])[0]
+      inscription = DatasourceUtility.transformInscriptions([inscription])[0]
     }
 
     return inscription
@@ -47,7 +50,7 @@ export default class JsonRpcDatasource extends AbstractDatasourceBase {
     }
 
     const inscriptions = await rpc[this.network].call<Inscription[]>("GetInscriptions", { outpoint }, rpc.id)
-    return decodeMetadata ? this.transformInscriptions(inscriptions) : inscriptions
+    return decodeMetadata ? DatasourceUtility.transformInscriptions(inscriptions) : inscriptions
   }
 
   async getSpendables({
@@ -101,7 +104,9 @@ export default class JsonRpcDatasource extends AbstractDatasourceBase {
     )
 
     tx.vout = tx.vout.map((vout) => {
-      vout.inscriptions = decodeMetadata ? this.transformInscriptions(vout.inscriptions) : vout.inscriptions
+      vout.inscriptions = decodeMetadata
+        ? DatasourceUtility.transformInscriptions(vout.inscriptions)
+        : vout.inscriptions
       return vout
     })
 
@@ -138,7 +143,7 @@ export default class JsonRpcDatasource extends AbstractDatasourceBase {
       rpc.id
     )
 
-    return this.segregateUTXOsBySpendStatus({ utxos, decodeMetadata })
+    return DatasourceUtility.segregateUTXOsBySpendStatus({ utxos, decodeMetadata })
   }
 
   async relay({ hex, maxFeeRate }: RelayTxOptions) {
