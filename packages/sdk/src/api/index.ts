@@ -16,6 +16,9 @@ import {
   RelayTxOptions
 } from "./types"
 
+/**
+ * @deprecated `OrditApi` has been deprecated and will be removed in future release. Use `JsonRpcDatasource` instead
+ */
 export class OrditApi {
   static transformInscriptions(inscriptions: Inscription[] | undefined) {
     if (!inscriptions) return []
