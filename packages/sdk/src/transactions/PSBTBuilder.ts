@@ -3,6 +3,7 @@ import { networks, Psbt } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
 import {
+  AbstractDatasourceBase,
   convertSatoshisToBTC,
   generateTxUniqueIdentifier,
   getNetwork,
@@ -26,7 +27,7 @@ export interface PSBTBuilderOptions {
   publicKey: string
   autoAdjustment?: boolean
   instantTradeMode?: boolean
-  datasource?: JsonRpcDatasource
+  datasource?: AbstractDatasourceBase
 }
 
 export type InjectableInput = {
@@ -48,7 +49,7 @@ export class PSBTBuilder extends FeeEstimator {
   protected changeAddress?: string
   protected changeAmount = 0
   protected changeOutputIndex = -1
-  protected datasource: JsonRpcDatasource
+  protected datasource: AbstractDatasourceBase
   protected injectableInputs: InjectableInput[] = []
   protected injectableOutputs: InjectableOutput[] = []
   protected inputAmount = 0
