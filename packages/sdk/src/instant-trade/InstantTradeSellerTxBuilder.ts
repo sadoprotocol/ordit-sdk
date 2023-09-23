@@ -15,6 +15,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
 
   constructor({
     address,
+    datasource,
     network,
     publicKey,
     inscriptionOutpoint,
@@ -22,6 +23,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
   }: InstantTradeSellerTxBuilderArgOptions) {
     super({
       address,
+      datasource,
       network,
       publicKey,
       inscriptionOutpoint,

@@ -3,7 +3,7 @@ import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { PSBTBuilder, PSBTBuilderOptions } from "../transactions/PSBTBuilder"
 
 export interface InstantTradeBuilderArgOptions
-  extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address" | "autoAdjustment" | "feeRate"> {
+  extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address" | "autoAdjustment" | "feeRate" | "datasource"> {
   inscriptionOutpoint?: string
 }
 
@@ -13,9 +13,17 @@ export default class InstantTradeBuilder extends PSBTBuilder {
   protected postage = 0
   protected royalty = 0
 
-  constructor({ address, network, publicKey, inscriptionOutpoint, autoAdjustment }: InstantTradeBuilderArgOptions) {
+  constructor({
+    address,
+    datasource,
+    network,
+    publicKey,
+    inscriptionOutpoint,
+    autoAdjustment
+  }: InstantTradeBuilderArgOptions) {
     super({
       address,
+      datasource,
       feeRate: 0,
       network,
       publicKey,
