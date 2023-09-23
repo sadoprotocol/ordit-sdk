@@ -1,6 +1,6 @@
 import * as bitcoin from "bitcoinjs-lib"
 
-import { OrditApi, processInput } from ".."
+import { processInput } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { UTXO } from "../transactions/types"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
@@ -66,10 +66,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
       return
     }
 
-    const collection = await OrditApi.fetchInscription({
-      id: `${this.utxo.inscriptions[0].meta.col}i0`,
-      network: this.network
-    })
+    const collection = await this.datasource.getInscription(`${this.utxo.inscriptions[0].meta.col}i0`)
     const royalty = collection.meta?.royalty
     if (!royalty || !royalty.address || !royalty.pct) {
       return

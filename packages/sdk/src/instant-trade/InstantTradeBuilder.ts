@@ -1,4 +1,3 @@
-import { OrditApi } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { PSBTBuilder, PSBTBuilderOptions } from "../transactions/PSBTBuilder"
 
@@ -50,9 +49,8 @@ export default class InstantTradeBuilder extends PSBTBuilder {
       throw new Error("set inscription outpoint to the class")
     }
 
-    const { totalUTXOs, unspendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
+    const { totalUTXOs, unspendableUTXOs } = await this.datasource.getUnspents({
       address: address || this.address,
-      network: this.network,
       type: "all"
     })
     if (!totalUTXOs) {

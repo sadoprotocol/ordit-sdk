@@ -303,10 +303,9 @@ export class PSBTBuilder extends FeeEstimator {
 
     if (this.getRetrievedUTXOsValue() > amount) return
 
-    const utxos = await OrditApi.fetchSpendables({
+    const utxos = await this.datasource.getSpendables({
       address: address || this.address,
       value: convertSatoshisToBTC(amount),
-      network: this.network,
       filter: this.getReservedUTXOs()
     })
 
