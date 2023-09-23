@@ -15,6 +15,7 @@ export default class InstantTradeBuilder extends PSBTBuilder {
   constructor({
     address,
     datasource,
+    feeRate,
     network,
     publicKey,
     inscriptionOutpoint,
@@ -23,7 +24,7 @@ export default class InstantTradeBuilder extends PSBTBuilder {
     super({
       address,
       datasource,
-      feeRate: 0,
+      feeRate,
       network,
       publicKey,
       outputs: [],
