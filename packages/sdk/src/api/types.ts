@@ -11,6 +11,8 @@ export interface FetchUnspentUTXOsOptions {
   rarity?: Rarity[]
   decodeMetadata?: boolean
   sort?: "asc" | "desc"
+  limit?: number
+  next?: string | null
 }
 
 export interface FetchUnspentUTXOsResponse {

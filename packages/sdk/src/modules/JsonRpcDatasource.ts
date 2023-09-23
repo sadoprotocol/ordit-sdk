@@ -121,27 +121,44 @@ export default class JsonRpcDatasource extends AbstractDatasourceBase {
     type = "spendable",
     rarity = ["common"],
     decodeMetadata = true,
-    sort = "desc" // TODO: accept pagination cursor
+    sort = "desc",
+    limit = 50,
+    next = null
   }: FetchUnspentUTXOsOptions) {
     if (!address) {
       throw new Error("Invalid address")
     }
 
-    const utxos = await rpc[this.network].call<UTXO[]>(
-      "GetUnspents",
-      {
-        address,
-        options: {
-          allowedrarity: rarity,
-          safetospend: type === "spendable"
-        },
+    let utxos: UTXO[] = []
+    do {
+      const { unspents, pagination } = await rpc[this.network].call<{
+        unspents: UTXO[]
         pagination: {
-          limit: 50 // TODO: accept in args
+          limit: number
+          prev: string | null
+          next: string | null
+        }
+      }>(
+        "GetUnspents",
+        {
+          format: "next",
+          address,
+          options: {
+            allowedrarity: rarity,
+            safetospend: type === "spendable"
+          },
+          pagination: {
+            limit,
+            next
+          },
+          sort: { value: sort }
         },
-        sort: { value: sort }
-      },
-      rpc.id
-    )
+        rpc.id
+      )
+
+      utxos = utxos.concat(unspents)
+      next = pagination.next
+    } while (next != null)
 
     return DatasourceUtility.segregateUTXOsBySpendStatus({ utxos, decodeMetadata })
   }
