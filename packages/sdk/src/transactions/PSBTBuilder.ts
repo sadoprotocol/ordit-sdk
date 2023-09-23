@@ -8,7 +8,7 @@ import {
   getNetwork,
   InputsToSign,
   INSTANT_BUY_SELLER_INPUT_INDEX,
-  OrditApi,
+  JsonRpcDatasource,
   toXOnly
 } from ".."
 import { Network } from "../config/types"
@@ -26,6 +26,7 @@ export interface PSBTBuilderOptions {
   publicKey: string
   autoAdjustment?: boolean
   instantTradeMode?: boolean
+  datasource?: JsonRpcDatasource
 }
 
 export type InjectableInput = {
@@ -47,6 +48,7 @@ export class PSBTBuilder extends FeeEstimator {
   protected changeAddress?: string
   protected changeAmount = 0
   protected changeOutputIndex = -1
+  protected datasource: JsonRpcDatasource
   protected injectableInputs: InjectableInput[] = []
   protected injectableOutputs: InjectableOutput[] = []
   protected inputAmount = 0
@@ -67,6 +69,7 @@ export class PSBTBuilder extends FeeEstimator {
   constructor({
     address,
     changeAddress,
+    datasource,
     feeRate,
     network,
     publicKey,
@@ -80,6 +83,7 @@ export class PSBTBuilder extends FeeEstimator {
     })
     this.address = address
     this.changeAddress = changeAddress
+    this.datasource = datasource || new JsonRpcDatasource({ network: this.network })
     this.outputs = outputs
     this.nativeNetwork = getNetwork(network)
     this.publicKey = publicKey
