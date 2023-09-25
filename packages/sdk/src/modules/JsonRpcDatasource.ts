@@ -5,22 +5,15 @@ import { rpc } from "../api/jsonrpc"
 import { FetchSpendablesOptions, FetchTxOptions, FetchUnspentUTXOsOptions, RelayTxOptions } from "../api/types"
 import { Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
-import { AbstractDatasourceBase, DatasourceUtility } from "."
+import { BaseDatasource, DatasourceUtility } from "."
 
 interface JsonRpcDatasourceOptions {
   network: Network
 }
 
-export default class JsonRpcDatasource extends AbstractDatasourceBase {
-  private network: Network
-
+export default class JsonRpcDatasource extends BaseDatasource {
   constructor({ network }: JsonRpcDatasourceOptions) {
-    super()
-
-    if (!network) {
-      throw new Error("network is required")
-    }
-    this.network = network
+    super({ network })
   }
 
   async getBalance(address: string) {

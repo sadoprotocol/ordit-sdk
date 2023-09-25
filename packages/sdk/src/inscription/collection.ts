@@ -1,4 +1,4 @@
-import { AbstractDatasourceBase, GetWalletOptions, Inscriber, JsonRpcDatasource, verifyMessage } from ".."
+import { BaseDatasource, GetWalletOptions, Inscriber, JsonRpcDatasource, verifyMessage } from ".."
 import { Network } from "../config/types"
 
 export async function publishCollection({
@@ -175,7 +175,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   traits?: any
   encodeMetadata?: boolean
   enableRBF?: boolean
-  datasource?: AbstractDatasourceBase
+  datasource?: BaseDatasource
 }
 
 type Outputs = Array<{ address: string; value: number }>
