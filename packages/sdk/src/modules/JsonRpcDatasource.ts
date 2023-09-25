@@ -72,7 +72,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     )
   }
 
-  async getTx({
+  async getTransaction({
     txId, // TODO rename interface
     ordinals = true,
     hex = false,
