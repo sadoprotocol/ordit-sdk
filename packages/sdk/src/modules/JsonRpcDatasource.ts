@@ -80,7 +80,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     decodeMetadata = true
   }: FetchTxOptions) {
     if (!txId) {
-      throw new Error("Invalid txId")
+      throw new Error("Invalid request")
     }
 
     const tx = await rpc[this.network].call<Transaction>(
@@ -119,7 +119,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     next = null
   }: FetchUnspentUTXOsOptions) {
     if (!address) {
-      throw new Error("Invalid address")
+      throw new Error("Invalid request")
     }
 
     let utxos: UTXO[] = []
@@ -158,7 +158,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
 
   async relay({ hex, maxFeeRate }: RelayTxOptions) {
     if (!hex) {
-      throw new Error("Invalid tx hex")
+      throw new Error("Invalid request")
     }
 
     if (maxFeeRate && (maxFeeRate < 0 || isNaN(maxFeeRate))) {
