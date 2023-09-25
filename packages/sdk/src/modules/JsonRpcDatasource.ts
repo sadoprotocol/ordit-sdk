@@ -12,6 +12,7 @@ import {
 import { Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
 import { BaseDatasource, DatasourceUtility } from "."
+import { JsonRpcPagination } from "./types"
 
 interface JsonRpcDatasourceOptions {
   network: Network
@@ -27,7 +28,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new Error("Invalid request")
     }
 
-    return rpc[this.network].call<number>("GetBalance", { address }, rpc.id)
+    return rpc[this.network].call<number>("Address.GetBalance", { address }, rpc.id)
   }
 
   async getInscription(id: string, decodeMetadata = false) {
@@ -141,15 +142,10 @@ export default class JsonRpcDatasource extends BaseDatasource {
     do {
       const { unspents, pagination } = await rpc[this.network].call<{
         unspents: UTXO[]
-        pagination: {
-          limit: number
-          prev: string | null
-          next: string | null
-        }
+        pagination: JsonRpcPagination
       }>(
-        "GetUnspents",
+        "Address.GetUnspents",
         {
-          format: "next",
           address,
           options: {
             allowedrarity: rarity,
@@ -171,7 +167,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return DatasourceUtility.segregateUTXOsBySpendStatus({ utxos, decodeMetadata })
   }
 
-  async relay({ hex, maxFeeRate }: RelayTxOptions) {
+  async relay({ hex, maxFeeRate, validate = true }: RelayTxOptions) {
     if (!hex) {
       throw new Error("Invalid request")
     }
@@ -180,6 +176,6 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new Error("Invalid max fee rate")
     }
 
-    return rpc[this.network].call<string>("SendRawTransaction", { hex, maxFeeRate }, rpc.id)
+    return rpc[this.network].call<string>("Transactions.Relay", { hex, maxFeeRate, validate }, rpc.id)
   }
 }
