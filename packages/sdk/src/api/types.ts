@@ -60,6 +60,7 @@ export interface RelayTxOptions {
   hex: string
   maxFeeRate?: number
   network?: Network
+  validate?: boolean
 }
 
 export interface FetchSpendablesOptions {
