@@ -43,7 +43,8 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
       utxo: this.utxo,
       pubKey: this.publicKey,
       network: this.network,
-      sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY
+      sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY,
+      datasource: this.datasource
     })
 
     this.inputs = [input]

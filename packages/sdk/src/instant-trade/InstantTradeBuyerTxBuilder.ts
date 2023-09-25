@@ -170,7 +170,12 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     }
 
     const utxo = spendableUTXOs.sort((a, b) => b.sats - a.sats)[0] // Largest UTXO
-    const input = await processInput({ utxo, pubKey: this.publicKey, network: this.network })
+    const input = await processInput({
+      utxo,
+      pubKey: this.publicKey,
+      network: this.network,
+      datasource: this.datasource
+    })
     const totalOutputs = 3
     const outputs: Output[] = []
     this.inputs = [input]

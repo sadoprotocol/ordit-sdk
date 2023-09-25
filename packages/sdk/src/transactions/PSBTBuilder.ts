@@ -335,7 +335,8 @@ export class PSBTBuilder extends FeeEstimator {
       const promise = processInput({
         utxo,
         pubKey: this.publicKey,
-        network: this.network
+        network: this.network,
+        datasource: this.datasource
       }) // TODO: add sigHashType
 
       promises.push(promise)
