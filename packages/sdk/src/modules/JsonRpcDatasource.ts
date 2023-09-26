@@ -56,9 +56,34 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return rpc[this.network].call<UTXO>("Ordinals.GetInscriptionUtxo", { id }, rpc.id)
   }
 
-  async getInscriptions({ outpoint, decodeMetadata }: GetInscriptionsOptions) {
-    const inscriptions = await rpc[this.network].call<Inscription[]>("Ordinals.GetInscriptions", { outpoint }, rpc.id)
-
+  async getInscriptions({
+    creator,
+    owner,
+    mimeType,
+    mimeSubType,
+    outpoint,
+    decodeMetadata,
+    sort = "asc",
+    limit = 25,
+    next = null
+  }: GetInscriptionsOptions) {
+    let inscriptions: Inscription[] = []
+    do {
+      const { inscriptions: _inscriptions, pagination } = await rpc[this.network].call<{
+        inscriptions: Inscription[]
+        pagination: JsonRpcPagination
+      }>(
+        "Ordinals.GetInscriptions",
+        {
+          filter: { creator, owner, mimeType, mimeSubType, outpoint },
+          sort: { number: sort },
+          pagination: { limit, next }
+        },
+        rpc.id
+      )
+      inscriptions = inscriptions.concat(_inscriptions)
+      next = pagination.next
+    } while (next !== null)
     return decodeMetadata ? DatasourceUtility.transformInscriptions(inscriptions) : inscriptions
   }
 
@@ -129,7 +154,6 @@ export default class JsonRpcDatasource extends BaseDatasource {
     address, // TODO rename interface
     type = "spendable",
     rarity = ["common"],
-    decodeMetadata = false,
     sort = "desc",
     limit = 50,
     next = null
@@ -164,7 +188,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
       next = pagination.next
     } while (next !== null)
 
-    return DatasourceUtility.segregateUTXOsBySpendStatus({ utxos, decodeMetadata })
+    return DatasourceUtility.segregateUTXOsBySpendStatus({ utxos })
   }
 
   async relay({ hex, maxFeeRate, validate = true }: RelayTxOptions) {
