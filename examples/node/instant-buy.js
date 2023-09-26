@@ -1,28 +1,32 @@
+import { JsonRpcDatasource } from '@sadoprotocol/ordit-sdk'
 import { Ordit, InstantTradeBuyerTxBuilder, InstantTradeSellerTxBuilder } from '@sadoprotocol/ordit-sdk'
 
 const BUYER_MNEMONIC = `<12-WORDS-PHRASE>`
 const SELLER_MNEMONIC = `<12-WORDS-PHRASE>`
+const network = "testnet"
 
 // Initialise seller wallet
 const sellerWallet = new Ordit({
     bip39: SELLER_MNEMONIC,
-    network: 'testnet'
+    network
 })
 sellerWallet.setDefaultAddress('nested-segwit') // Switch to address that owns inscription
 
 // Initialise buyer wallet
 const buyerWallet = new Ordit({
     bip39: BUYER_MNEMONIC,
-    network: 'testnet'
+    network
 })
 
 // Switch to address that has enough BTC to cover the sell price + network fees
 buyerWallet.setDefaultAddress('taproot') 
 
+const datasource = new JsonRpcDatasource({ network })
+
 async function createSellOrder() {
     // replace w/ inscription outputpoint you'd like to sell, price, and address to receive sell proceeds
     const instantTrade = new InstantTradeSellerTxBuilder({
-        network: 'testnet',
+        network,
         address: sellerWallet.selectedAddress,
         publicKey: sellerWallet.publicKey,
         inscriptionOutpoint: '58434bd163e5b87c871e5b17c316a3cf141e0e10c3979f0b5ed2530d1d274040:1', 
@@ -38,7 +42,7 @@ async function createSellOrder() {
 
 async function createBuyOrder({ sellerPSBT }) {    
     const instantTrade = new InstantTradeBuyerTxBuilder({
-        network: 'testnet',
+        network,
         address: buyerWallet.selectedAddress,
         publicKey: buyerWallet.publicKey,
         sellerPSBT,
@@ -47,17 +51,17 @@ async function createBuyOrder({ sellerPSBT }) {
     await instantTrade.build()
 
     const buyerPSBT = instantTrade.toHex()
-    const signedTx = buyerWallet.signPsbt(buyerPSBT)
-    const tx = await buyerWallet.relayTx(signedTx, 'testnet')
+    const signedTxHex = buyerWallet.signPsbt(buyerPSBT)
+    const txId = await datasource.relay({ hex: signedTxHex })
 
-    return tx
+    return txId
 }
 
 async function main() {
     const signedSellerPSBT = await createSellOrder()
-    const tx = await createBuyOrder({ sellerPSBT: signedSellerPSBT })
+    const txId = await createBuyOrder({ sellerPSBT: signedSellerPSBT })
 
-    console.log(tx)
+    console.log({ txId })
 }
 
 ;(async() => {
