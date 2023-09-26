@@ -272,16 +272,6 @@ export class Inscriber extends PSBTBuilder {
   }
 }
 
-/**
- * @deprecated `OrdTransaction` class has been renamed to `Inscriber`
- */
-export class OrdTransaction extends Inscriber {
-  constructor(args: InscriberArgOptions) {
-    super(args)
-    console.error("DEPRECATION WARNING: 'OrdTransaction' class has been renamed to 'Inscriber'")
-  }
-}
-
 export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   network: Network
   address: string

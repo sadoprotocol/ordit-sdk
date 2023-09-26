@@ -10,9 +10,6 @@ import {
   Account,
   AddressFormats,
   addressNameToType,
-  generateBuyerPsbt,
-  generateRefundableUTXOs,
-  generateSellerPsbt,
   getAccountDataFromHdNode,
   getAddressesFromPublicKey,
   getAllAccountsFromHdNode,
@@ -21,10 +18,7 @@ import {
   publishCollection,
   tweakSigner
 } from ".."
-import { OrditApi } from "../api"
 import { Network } from "../config/types"
-import { Inscription } from "../inscription/types"
-import { Inscriber, InscriberArgOptions } from "../transactions"
 
 bitcoin.initEccLib(ecc)
 const ECPair = ECPairFactory(ecc)
@@ -241,56 +235,6 @@ export class Ordit {
     const signature = sign(message, legacyWallet.child.privateKey!, false)
 
     return signature.toString("base64")
-  }
-
-  async relayTx(hex: string, network?: Network, maxFeeRate?: number) {
-    return OrditApi.relayTx({ hex, network, maxFeeRate })
-  }
-
-  async getInscriptions() {
-    if (!this.selectedAddress) {
-      throw new Error("Wallet not fully initialized.")
-    }
-
-    const { unspendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
-      address: this.selectedAddress,
-      network: this.#network
-    })
-
-    return unspendableUTXOs.reduce((acc, curr) => {
-      if (curr.inscriptions) {
-        acc.push(...curr.inscriptions)
-      }
-
-      return acc
-    }, [] as Inscription[])
-  }
-
-  /**
-   * @deprecated `Ordit.inscription.new` has been deprecated and will be removed in future release. Use `Inscriber` class.
-   * @deprecated `Ordit.inscription.fetchInscriptions` has been deprecated and will be removed in future release. Use `OrditApi.fetchInscriptions`
-   */
-  static inscription = {
-    new: (options: InscriberArgOptions) => new Inscriber(options),
-    fetchInscriptions: (outpoint: string, network: Network = "testnet") => {
-      if (!outpoint) {
-        throw new Error("Outpoint is required.")
-      }
-
-      return OrditApi.fetchInscriptions({
-        outpoint,
-        network
-      })
-    }
-  }
-
-  /**
-   * @deprecated `Ordit.instantBuy.*` has been deprecated and will be removed in future release. Use relevant `InstantTrader` sub-class
-   */
-  static instantBuy = {
-    generateBuyerPsbt,
-    generateSellerPsbt,
-    generateRefundableUTXOs
   }
 
   static collection = {
