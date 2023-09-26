@@ -160,43 +160,4 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
 
     await this.prepare()
   }
-
-  async splitUTXOsForTrade(destinationAddress: string) {
-    const { totalUTXOs, spendableUTXOs } = await this.datasource.getUnspents({
-      address: this.address
-    })
-    if (!totalUTXOs) {
-      throw new Error("No UTXOs found")
-    }
-
-    const utxo = spendableUTXOs.sort((a, b) => b.sats - a.sats)[0] // Largest UTXO
-    const input = await processInput({
-      utxo,
-      pubKey: this.publicKey,
-      network: this.network,
-      datasource: this.datasource
-    })
-    const totalOutputs = 3
-    const outputs: Output[] = []
-    this.inputs = [input]
-
-    for (let i = 0; i < totalOutputs; i++) {
-      const usedAmount = outputs.reduce((acc, curr) => (acc += curr.value), 0)
-      const remainingAmount = utxo.sats - usedAmount
-      const amount = [0, 1].includes(i) ? MINIMUM_AMOUNT_IN_SATS : remainingAmount
-
-      if (amount < MINIMUM_AMOUNT_IN_SATS) {
-        throw new Error(
-          `Not enough sats to generate ${totalOutputs} UTXOs with at least ${MINIMUM_AMOUNT_IN_SATS} sats per UTXO. Try decreasing the count or deposit more BTC`
-        )
-      }
-
-      outputs.push({
-        address: destinationAddress || this.address,
-        value: amount
-      })
-    }
-
-    await this.prepare()
-  }
 }
