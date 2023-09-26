@@ -242,9 +242,6 @@ export function getScriptType(script: Buffer, network: Network): GetScriptTypeRe
 export function getDummyP2TRInput(): UTXO {
   return {
     n: 1,
-    txHash: "3045867081e53f33a4dbd930bf0c121fe30155c767e98895470a572eefc4b7dd",
-    blockHash: "0000000000002764723466e6584169a56703591befb5b435ed0bc1197b57a982",
-    blockN: 2476710,
     sats: 2885,
     scriptPubKey: {
       asm: "1 29dacd26920d003a894d5f7f263877046a618ce2e7408657b24c74c42b7b80f8",
@@ -254,7 +251,6 @@ export function getDummyP2TRInput(): UTXO {
       type: "witness_v1_taproot"
     },
     txid: "3045867081e53f33a4dbd930bf0c121fe30155c767e98895470a572eefc4b7dd",
-    value: 0.00002885,
     safeToSpend: true,
     confirmation: 10
   }
