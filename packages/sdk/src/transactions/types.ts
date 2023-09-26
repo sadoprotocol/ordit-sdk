@@ -64,8 +64,6 @@ export interface UTXO {
   scriptPubKey: ScriptPubKey
   txid: string
   value: number
-  ordinals?: Ordinal[] | null
-  inscriptions?: Inscription[] | null
   safeToSpend: boolean
   confirmation: number
 }
