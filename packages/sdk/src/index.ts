@@ -1,5 +1,4 @@
 import * as addresses from "./addresses"
-import * as api from "./api"
 import * as metamask from "./browser-wallets/metamask"
 import * as unisat from "./browser-wallets/unisat"
 import * as xverse from "./browser-wallets/xverse"
@@ -13,7 +12,6 @@ import * as wallet from "./wallet"
 
 export const ordit = {
   config,
-  api,
   addresses,
   wallet,
   keys,
@@ -27,7 +25,6 @@ export const ordit = {
 }
 
 export * from "./addresses"
-export * from "./api"
 export * as metamask from "./browser-wallets/metamask"
 export * as unisat from "./browser-wallets/unisat"
 export * as xverse from "./browser-wallets/xverse"
