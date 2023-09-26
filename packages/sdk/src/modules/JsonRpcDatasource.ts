@@ -37,12 +37,20 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return inscription
   }
 
-  async getInscriptions(outpoint: string, decodeMetadata = false) {
-    if (!outpoint) {
-      throw new Error("Invalid options provided.")
+  async getInscriptionUTXO(id: string) {
+    if (!id) {
+      throw new Error("Invalid request")
     }
 
-    const inscriptions = await rpc[this.network].call<Inscription[]>("GetInscriptions", { outpoint }, rpc.id)
+    return rpc[this.network].call<UTXO>("Ordinals.GetInscriptionUtxo", { id }, rpc.id)
+  }
+
+  async getInscriptions(owner: string, decodeMetadata = false) {
+    if (!owner) {
+      throw new Error("Invalid request")
+    }
+
+    const inscriptions = await rpc[this.network].call<Inscription[]>("GetInscriptions", { owner }, rpc.id)
     return decodeMetadata ? DatasourceUtility.transformInscriptions(inscriptions) : inscriptions
   }
 
