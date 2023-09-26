@@ -63,11 +63,11 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
   }
 
   private async calculateRoyalty() {
-    if (!this.utxo?.inscriptions?.length || !this.utxo?.inscriptions[0]?.meta?.col) {
+    if (!this.inscription || !this.inscription.meta?.col) {
       return
     }
 
-    const collection = await this.datasource.getInscription(`${this.utxo.inscriptions[0].meta.col}i0`)
+    const collection = await this.datasource.getInscription(`${this.inscription.meta.col}i0`)
     const royalty = collection.meta?.royalty
     if (!royalty || !royalty.address || !royalty.pct) {
       return
