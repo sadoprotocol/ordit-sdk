@@ -13,9 +13,9 @@ interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOpt
 }
 
 export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
-  receiveAddress?: string
-  sellerPSBT!: Psbt
-  sellerAddress?: string
+  private receiveAddress?: string
+  private sellerPSBT!: Psbt
+  private sellerAddress?: string
 
   constructor({
     address,

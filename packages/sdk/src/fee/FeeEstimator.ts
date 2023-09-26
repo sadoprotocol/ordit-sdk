@@ -6,14 +6,13 @@ import { MAXIMUM_FEE } from "../constants"
 import { FeeEstimatorOptions } from "./types"
 
 export default class FeeEstimator {
+  protected fee = 0
   protected feeRate: number
   protected network: Network
   protected psbt: Psbt
   protected witness?: Buffer[] = []
-  protected fee = 0
-
-  private virtualSize = 0
-  private weight = 0
+  protected virtualSize = 0
+  protected weight = 0
 
   constructor({ feeRate, network, psbt, witness }: FeeEstimatorOptions) {
     if (feeRate < 0 || !Number.isSafeInteger(feeRate)) {
@@ -24,6 +23,14 @@ export default class FeeEstimator {
     this.network = network
     this.witness = witness || []
     this.psbt = psbt || new Psbt({ network: getNetwork(this.network) })
+  }
+
+  get data() {
+    return {
+      fee: this.fee,
+      virtualSize: this.virtualSize,
+      weight: this.weight
+    }
   }
 
   private sanityCheckFee() {

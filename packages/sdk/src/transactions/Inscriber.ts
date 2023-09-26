@@ -74,6 +74,18 @@ export class Inscriber extends PSBTBuilder {
     this.encodeMetadata = encodeMetadata
   }
 
+  get data() {
+    return {
+      fee: this.fee,
+      virtualSize: this.virtualSize,
+      weight: this.weight,
+      changeAmount: this.changeAmount,
+      inputAmount: this.inputAmount,
+      outputAmount: this.outputAmount,
+      postage: this.postage
+    }
+  }
+
   private getMetadata() {
     return this.meta && this.encodeMetadata ? encodeObject(this.meta) : this.meta
   }

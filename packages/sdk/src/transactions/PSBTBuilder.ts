@@ -67,6 +67,17 @@ export class PSBTBuilder extends FeeEstimator {
   private nativeNetwork: networks.Network
   private noMoreUTXOS = false
 
+  get data() {
+    return {
+      fee: this.fee,
+      virtualSize: this.virtualSize,
+      weight: this.weight,
+      changeAmount: this.changeAmount,
+      inputAmount: this.inputAmount,
+      outputAmount: this.outputAmount
+    }
+  }
+
   constructor({
     address,
     changeAddress,

@@ -8,6 +8,9 @@ export interface InstantTradeBuilderArgOptions
 }
 
 export default class InstantTradeBuilder extends PSBTBuilder {
+  protected price = 0
+  protected postage = 0
+  protected royalty = 0
   protected inscriptionOutpoint?: string
   protected price = 0
   protected postage = 0
@@ -45,6 +48,20 @@ export default class InstantTradeBuilder extends PSBTBuilder {
 
   setRoyalty(value: number) {
     this.royalty = value
+  }
+
+  get data() {
+    return {
+      fee: this.fee,
+      virtualSize: this.virtualSize,
+      weight: this.weight,
+      changeAmount: this.changeAmount,
+      inputAmount: this.inputAmount,
+      outputAmount: this.outputAmount,
+      price: this.price,
+      royalty: this.royalty,
+      postage: this.postage
+    }
   }
 
   protected async verifyAndFindInscriptionUTXO() {
