@@ -11,10 +11,9 @@ export interface EncodeDecodeObjectOptions {
   depth?: number
 }
 
-export type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<keyof T, Keys>> &
-  {
-    [K in Keys]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<Keys, K>>>
-  }[Keys]
+export type RequireAtLeastOne<T> = {
+  [K in keyof T]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<keyof T, K>>>
+}[keyof T]
 
 interface BaseDataFormat {
   hex?: string
@@ -22,8 +21,8 @@ interface BaseDataFormat {
   buffer?: Buffer
 }
 
-export type OneOfAllDataFormats = RequireAtLeastOne<BaseDataFormat, "base64" | "buffer" | "hex">
-export type BufferOrHex = RequireAtLeastOne<BaseDataFormat, "buffer" | "hex">
+export type OneOfAllDataFormats = RequireAtLeastOne<BaseDataFormat>
+export type BufferOrHex = RequireAtLeastOne<Pick<BaseDataFormat, "buffer" | "hex">>
 
 export interface IsBitcoinPaymentResponse {
   type: AddressTypes

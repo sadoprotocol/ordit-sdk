@@ -6,13 +6,13 @@ import { decodeObject } from "../utils"
 import { rpc } from "./jsonrpc"
 import {
   FetchInscriptionOptions,
-  FetchInscriptionsOptions,
   FetchSpendablesOptions,
   FetchTxOptions,
   FetchTxResponse,
   FetchUnspentUTXOsOptions,
   FetchUnspentUTXOsResponse,
   GetBalanceOptions,
+  GetInscriptionsOptions,
   RelayTxOptions
 } from "./types"
 
@@ -118,7 +118,7 @@ export class OrditApi {
     }
   }
 
-  static async fetchInscriptions({ outpoint, network = "testnet", decodeMetadata = true }: FetchInscriptionsOptions) {
+  static async fetchInscriptions({ outpoint, network = "testnet", decodeMetadata = true }: GetInscriptionsOptions) {
     if (!outpoint) {
       throw new Error("Invalid options provided.")
     }

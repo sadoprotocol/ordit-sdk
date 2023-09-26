@@ -2,7 +2,13 @@ import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
 import { Inscription } from ".."
 import { rpc } from "../api/jsonrpc"
-import { FetchSpendablesOptions, FetchTxOptions, FetchUnspentUTXOsOptions, RelayTxOptions } from "../api/types"
+import {
+  FetchSpendablesOptions,
+  FetchTxOptions,
+  FetchUnspentUTXOsOptions,
+  GetInscriptionsOptions,
+  RelayTxOptions
+} from "../api/types"
 import { Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
 import { BaseDatasource, DatasourceUtility } from "."
@@ -45,12 +51,43 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return rpc[this.network].call<UTXO>("Ordinals.GetInscriptionUtxo", { id }, rpc.id)
   }
 
-  async getInscriptions(owner: string, decodeMetadata = false) {
+  async getInscriptions({
+    creator,
+    owner,
+    mimeType,
+    mimeSubType,
+    outpoint,
+    decodeMetadata,
+    sort = "asc",
+    limit = 25,
+    next = null
+  }: GetInscriptionsOptions) {
     if (!owner) {
       throw new Error("Invalid request")
     }
 
-    const inscriptions = await rpc[this.network].call<Inscription[]>("GetInscriptions", { owner }, rpc.id)
+    let inscriptions: Inscription[] = []
+    do {
+      const { inscriptions: _inscriptions, pagination } = await rpc[this.network].call<{
+        inscriptions: Inscription[]
+        pagination: {
+          limit: number
+          next?: string
+          prev?: string
+        }
+      }>(
+        "Ordinals.GetInscriptions",
+        {
+          filter: { creator, owner, mimeType, mimeSubType, outpoint },
+          sort: { number: sort },
+          pagination: { limit, next }
+        },
+        rpc.id
+      )
+      inscriptions = inscriptions.concat(_inscriptions)
+      next = !pagination.next ? null : pagination.next
+    } while (next !== null)
+
     return decodeMetadata ? DatasourceUtility.transformInscriptions(inscriptions) : inscriptions
   }
 
@@ -159,7 +196,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
 
       utxos = utxos.concat(unspents)
       next = pagination.next
-    } while (next != null)
+    } while (next !== null)
 
     return DatasourceUtility.segregateUTXOsBySpendStatus({ utxos, decodeMetadata })
   }
