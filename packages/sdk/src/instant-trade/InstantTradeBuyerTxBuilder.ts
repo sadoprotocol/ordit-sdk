@@ -127,7 +127,20 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   }
 
   async isEligible() {
-    const [utxos] = await Promise.all([this.findUTXOs(), this.verifyAndFindInscriptionUTXO()])
+    if (!this.inscriptionOutpoint) {
+      throw new Error("decode seller PSBT to check eligiblity")
+    }
+
+    const [utxos, [inscription]] = await Promise.all([
+      this.findUTXOs(),
+      this.datasource.getInscriptions({ outpoint: this.inscriptionOutpoint })
+    ])
+    if (!inscription) {
+      throw new Error("Inscription no longer available for trade")
+    }
+    const inscriptionUTXO = await this.datasource.getInscriptionUTXO(inscription.id)
+    this.postage = inscriptionUTXO.sats
+
     const sortedUTXOs = utxos.sort((a, b) => a.sats - b.sats)
     const [refundableUTXOOne, refundableUTXOTwo, ...restUTXOs] = sortedUTXOs
     const refundables = [refundableUTXOOne, refundableUTXOTwo].reduce((acc, curr) => (acc += curr.sats), 0)
