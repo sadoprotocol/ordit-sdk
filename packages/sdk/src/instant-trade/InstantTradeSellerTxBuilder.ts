@@ -67,7 +67,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
       return
     }
 
-    const collection = await this.datasource.getInscription(this.inscription.meta.col as string)
+    const collection = await this.datasource.getInscription({ id: this.inscription.meta.col as string })
     const royalty = collection.meta?.royalty
     if (!royalty || !royalty.address || !royalty.pct) {
       return

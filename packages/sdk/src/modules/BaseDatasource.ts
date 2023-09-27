@@ -2,7 +2,10 @@ import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
 import { Inscription } from ".."
 import {
+  GetBalanceOptions,
+  GetInscriptionOptions,
   GetInscriptionsOptions,
+  GetInscriptionUTXOOptions,
   GetSpendablesOptions,
   GetTxOptions,
   GetUnspentsOptions,
@@ -23,11 +26,11 @@ export default abstract class BaseDatasource {
     this.network = network
   }
 
-  abstract getBalance(address: string): Promise<number>
+  abstract getBalance({ address }: GetBalanceOptions): Promise<number>
 
-  abstract getInscription(id: string, decodeMetadata?: boolean): Promise<Inscription>
+  abstract getInscription({ id, decodeMetadata }: GetInscriptionOptions): Promise<Inscription>
 
-  abstract getInscriptionUTXO(id: string): Promise<UTXO>
+  abstract getInscriptionUTXO({ id }: GetInscriptionUTXOOptions): Promise<UTXO>
 
   abstract getInscriptions({
     creator,
@@ -41,11 +44,17 @@ export default abstract class BaseDatasource {
     decodeMetadata
   }: GetInscriptionsOptions): Promise<Inscription[]>
 
-  abstract getSpendables(args?: GetSpendablesOptions): Promise<UTXOLimited[]>
+  abstract getSpendables({ address, value, type, rarity, filter, limit }: GetSpendablesOptions): Promise<UTXOLimited[]>
 
-  abstract getTransaction(args: GetTxOptions): Promise<{ tx: Transaction; rawTx?: BTCTransaction }>
+  abstract getTransaction({
+    txId,
+    ordinals,
+    hex,
+    witness,
+    decodeMetadata
+  }: GetTxOptions): Promise<{ tx: Transaction; rawTx?: BTCTransaction }>
 
-  abstract getUnspents(args: GetUnspentsOptions): Promise<GetUnspentsResponse>
+  abstract getUnspents({ address, type, rarity, sort, limit, next }: GetUnspentsOptions): Promise<GetUnspentsResponse>
 
-  abstract relay(args: RelayOptions): Promise<string>
+  abstract relay({ hex, maxFeeRate, validate }: RelayOptions): Promise<string>
 }

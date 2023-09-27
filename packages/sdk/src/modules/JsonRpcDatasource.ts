@@ -3,7 +3,10 @@ import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 import { Inscription } from ".."
 import { rpc } from "../api/jsonrpc"
 import {
+  GetBalanceOptions,
+  GetInscriptionOptions,
   GetInscriptionsOptions,
+  GetInscriptionUTXOOptions,
   GetSpendablesOptions,
   GetTxOptions,
   GetUnspentsOptions,
@@ -24,7 +27,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     super({ network })
   }
 
-  async getBalance(address: string) {
+  async getBalance({ address }: GetBalanceOptions) {
     if (!address) {
       throw new Error("Invalid request")
     }
@@ -32,7 +35,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return rpc[this.network].call<number>("Address.GetBalance", { address }, rpc.id)
   }
 
-  async getInscription(id: string, decodeMetadata = false) {
+  async getInscription({ id, decodeMetadata }: GetInscriptionOptions) {
     if (!id) {
       throw new Error("Invalid request")
     }
@@ -47,7 +50,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return inscription
   }
 
-  async getInscriptionUTXO(id: string) {
+  async getInscriptionUTXO({ id }: GetInscriptionUTXOOptions) {
     if (!id) {
       throw new Error("Invalid request")
     }

@@ -63,7 +63,7 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
     throw new Error("Invalid collection outpoint supplied.")
   }
   const datasource = options.datasource || new JsonRpcDatasource({ network: options.network })
-  const collection = await datasource.getInscription(options.collectionOutpoint)
+  const collection = await datasource.getInscription({ id: options.collectionOutpoint })
   if (!collection) {
     throw new Error("Invalid collection")
   }
