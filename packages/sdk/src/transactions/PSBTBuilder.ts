@@ -327,11 +327,10 @@ export class PSBTBuilder extends FeeEstimator {
     this.utxos.push(...utxos)
   }
 
-  protected async retrieveSelectedUTXOs(address: string, amount: number, skipStrictSatsCheck = false) {
+  protected async retrieveSelectedUTXOs(address: string, amount: number) {
     await this.retrieveUTXOs(address, amount)
-    const selectedUTXOs = this.utxos.find(
-      (utxo) => skipStrictSatsCheck || (!skipStrictSatsCheck && utxo.sats >= amount)
-    )
+    const selectedUTXOs = this.utxos.find((utxo) => utxo.sats >= amount)
+
     this.utxos = selectedUTXOs ? [selectedUTXOs] : []
 
     return this.utxos
