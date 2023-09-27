@@ -62,10 +62,6 @@ export default class JsonRpcDatasource extends BaseDatasource {
     limit = 25,
     next = null
   }: GetInscriptionsOptions) {
-    if (!owner) {
-      throw new Error("Invalid request")
-    }
-
     let inscriptions: Inscription[] = []
     do {
       const { inscriptions: _inscriptions, pagination } = await rpc[this.network].call<{
