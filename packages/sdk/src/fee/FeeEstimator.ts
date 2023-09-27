@@ -138,7 +138,7 @@ export default class FeeEstimator {
         return { input: 64, output: 32, txHeader: 10, witness: 105 }
 
       case "legacy":
-        return { input: 149, output: 34, txHeader: 10, witness: 0 }
+        return { input: 148, output: 34, txHeader: 10, witness: 0 }
 
       default:
         throw new Error("Invalid type")
