@@ -241,12 +241,12 @@ export class Inscriber extends PSBTBuilder {
     await this.calculateNetworkFeeUsingPreviewMode()
   }
 
-  async isReady() {
+  async isReady(skipStrictSatsCheck = false) {
     this.isBuilt()
 
     if (!this.ready) {
       try {
-        await this.fetchAndSelectSuitableUnspent()
+        await this.fetchAndSelectSuitableUnspent(skipStrictSatsCheck)
       } catch (error) {
         return false
       }
@@ -255,12 +255,12 @@ export class Inscriber extends PSBTBuilder {
     return this.ready
   }
 
-  async fetchAndSelectSuitableUnspent() {
+  async fetchAndSelectSuitableUnspent(skipStrictSatsCheck = false) {
     this.restrictUsageInPreviewMode()
     this.isBuilt()
 
     const amount = this.recovery ? this.outputAmount - this.fee : this.outputAmount + this.fee
-    const [utxo] = await this.retrieveSelectedUTXOs(this.commitAddress!, amount)
+    const [utxo] = await this.retrieveSelectedUTXOs(this.commitAddress!, amount, skipStrictSatsCheck)
     this.suitableUnspent = utxo
     this.ready = true
 
