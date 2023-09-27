@@ -92,7 +92,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     ordinals = true,
     hex = false,
     witness = true,
-    decodeMetadata = true
+    decodeMetadata = false
   }: FetchTxOptions) {
     if (!txId) {
       throw new Error("Invalid request")
@@ -128,7 +128,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     address, // TODO rename interface
     type = "spendable",
     rarity = ["common"],
-    decodeMetadata = true,
+    decodeMetadata = false,
     sort = "desc",
     limit = 50,
     next = null

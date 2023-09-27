@@ -76,3 +76,8 @@ export interface Output {
   address: string
   value: number
 }
+
+export interface SkipStrictSatsCheckOptions {
+  skipStrictSatsCheck?: boolean
+  customAmount?: number
+}

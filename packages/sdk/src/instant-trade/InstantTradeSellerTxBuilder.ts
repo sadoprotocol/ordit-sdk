@@ -80,12 +80,19 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     }
   }
 
+  private validateOwnership() {
+    if (this.inscription?.owner !== this.address) {
+      throw new Error(`Inscription does not belong to the address: ${this.address}`)
+    }
+  }
+
   async build() {
     if (isNaN(this.price) || this.price < MINIMUM_AMOUNT_IN_SATS) {
       throw new Error("Invalid price")
     }
 
     this.utxo = await this.verifyAndFindInscriptionUTXO()
+    this.validateOwnership()
     await this.generatSellerInputs()
     await this.generateSellerOutputs()
 

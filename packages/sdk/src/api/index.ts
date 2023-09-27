@@ -34,7 +34,7 @@ export class OrditApi {
     network = "testnet",
     type = "spendable",
     rarity = ["common"],
-    decodeMetadata = true,
+    decodeMetadata = false,
     sort = "desc"
   }: FetchUnspentUTXOsOptions): Promise<FetchUnspentUTXOsResponse> {
     if (!address) {
@@ -88,7 +88,7 @@ export class OrditApi {
     ordinals = true,
     hex = false,
     witness = true,
-    decodeMetadata = true
+    decodeMetadata = false
   }: FetchTxOptions): Promise<FetchTxResponse> {
     if (!txId) {
       throw new Error("Invalid txId")
@@ -118,7 +118,7 @@ export class OrditApi {
     }
   }
 
-  static async fetchInscriptions({ outpoint, network = "testnet", decodeMetadata = true }: GetInscriptionsOptions) {
+  static async fetchInscriptions({ outpoint, network = "testnet", decodeMetadata = false }: GetInscriptionsOptions) {
     if (!outpoint) {
       throw new Error("Invalid options provided.")
     }
@@ -139,7 +139,7 @@ export class OrditApi {
     return inscriptions
   }
 
-  static async fetchInscription({ id, network = "testnet", decodeMetadata = true }: FetchInscriptionOptions) {
+  static async fetchInscription({ id, network = "testnet", decodeMetadata = false }: FetchInscriptionOptions) {
     if (!id) {
       throw new Error("Invalid options provided.")
     }

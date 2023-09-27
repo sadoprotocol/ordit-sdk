@@ -14,7 +14,7 @@ import {
 import { Network } from "../config/types"
 import { NestedObject } from "../utils/types"
 import { PSBTBuilder } from "./PSBTBuilder"
-import { UTXOLimited } from "./types"
+import { SkipStrictSatsCheckOptions, UTXOLimited } from "./types"
 
 bitcoin.initEccLib(ecc)
 
@@ -241,12 +241,12 @@ export class Inscriber extends PSBTBuilder {
     await this.calculateNetworkFeeUsingPreviewMode()
   }
 
-  async isReady() {
+  async isReady({ skipStrictSatsCheck, customAmount }: SkipStrictSatsCheckOptions = {}) {
     this.isBuilt()
 
     if (!this.ready) {
       try {
-        await this.fetchAndSelectSuitableUnspent()
+        await this.fetchAndSelectSuitableUnspent({ skipStrictSatsCheck, customAmount })
       } catch (error) {
         return false
       }
@@ -255,11 +255,15 @@ export class Inscriber extends PSBTBuilder {
     return this.ready
   }
 
-  async fetchAndSelectSuitableUnspent() {
+  async fetchAndSelectSuitableUnspent({ skipStrictSatsCheck, customAmount }: SkipStrictSatsCheckOptions = {}) {
     this.restrictUsageInPreviewMode()
     this.isBuilt()
 
-    const amount = this.recovery ? this.outputAmount - this.fee : this.outputAmount + this.fee
+    const amount = this.recovery
+      ? this.outputAmount - this.fee
+      : skipStrictSatsCheck && customAmount && !isNaN(customAmount)
+      ? customAmount
+      : this.outputAmount + this.fee
     const [utxo] = await this.retrieveSelectedUTXOs(this.commitAddress!, amount)
     this.suitableUnspent = utxo
     this.ready = true

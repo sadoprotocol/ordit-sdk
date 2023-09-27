@@ -71,7 +71,7 @@ export default class InstantTradeBuilder extends PSBTBuilder {
       throw new Error("Inscription not found")
     }
 
-    const utxo = await this.datasource.getInscriptionUTXO(this.inscription.outpoint)
+    const utxo = await this.datasource.getInscriptionUTXO(this.inscription.genesis)
     if (!utxo) {
       throw new Error(`Unable to find UTXO: ${this.inscription.outpoint}`)
     }
