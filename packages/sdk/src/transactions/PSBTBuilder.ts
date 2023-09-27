@@ -3,12 +3,13 @@ import { networks, Psbt } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
 import {
+  BaseDatasource,
   convertSatoshisToBTC,
   generateTxUniqueIdentifier,
   getNetwork,
   InputsToSign,
   INSTANT_BUY_SELLER_INPUT_INDEX,
-  OrditApi,
+  JsonRpcDatasource,
   toXOnly
 } from ".."
 import { Network } from "../config/types"
@@ -26,6 +27,7 @@ export interface PSBTBuilderOptions {
   publicKey: string
   autoAdjustment?: boolean
   instantTradeMode?: boolean
+  datasource?: BaseDatasource
 }
 
 export type InjectableInput = {
@@ -47,6 +49,7 @@ export class PSBTBuilder extends FeeEstimator {
   protected changeAddress?: string
   protected changeAmount = 0
   protected changeOutputIndex = -1
+  protected datasource: BaseDatasource
   protected injectableInputs: InjectableInput[] = []
   protected injectableOutputs: InjectableOutput[] = []
   protected inputAmount = 0
@@ -67,6 +70,7 @@ export class PSBTBuilder extends FeeEstimator {
   constructor({
     address,
     changeAddress,
+    datasource,
     feeRate,
     network,
     publicKey,
@@ -80,6 +84,7 @@ export class PSBTBuilder extends FeeEstimator {
     })
     this.address = address
     this.changeAddress = changeAddress
+    this.datasource = datasource || new JsonRpcDatasource({ network: this.network })
     this.outputs = outputs
     this.nativeNetwork = getNetwork(network)
     this.publicKey = publicKey
@@ -299,10 +304,9 @@ export class PSBTBuilder extends FeeEstimator {
 
     if (this.getRetrievedUTXOsValue() > amount) return
 
-    const utxos = await OrditApi.fetchSpendables({
+    const utxos = await this.datasource.getSpendables({
       address: address || this.address,
       value: convertSatoshisToBTC(amount),
-      network: this.network,
       filter: this.getReservedUTXOs()
     })
 
@@ -331,7 +335,8 @@ export class PSBTBuilder extends FeeEstimator {
       const promise = processInput({
         utxo,
         pubKey: this.publicKey,
-        network: this.network
+        network: this.network,
+        datasource: this.datasource
       }) // TODO: add sigHashType
 
       promises.push(promise)

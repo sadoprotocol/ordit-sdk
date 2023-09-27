@@ -1,9 +1,8 @@
-import { OrditApi } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { PSBTBuilder, PSBTBuilderOptions } from "../transactions/PSBTBuilder"
 
 export interface InstantTradeBuilderArgOptions
-  extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address" | "autoAdjustment" | "feeRate"> {
+  extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address" | "autoAdjustment" | "feeRate" | "datasource"> {
   inscriptionOutpoint?: string
 }
 
@@ -13,10 +12,19 @@ export default class InstantTradeBuilder extends PSBTBuilder {
   protected postage = 0
   protected royalty = 0
 
-  constructor({ address, network, publicKey, inscriptionOutpoint, autoAdjustment }: InstantTradeBuilderArgOptions) {
+  constructor({
+    address,
+    datasource,
+    feeRate,
+    network,
+    publicKey,
+    inscriptionOutpoint,
+    autoAdjustment
+  }: InstantTradeBuilderArgOptions) {
     super({
       address,
-      feeRate: 0,
+      datasource,
+      feeRate,
       network,
       publicKey,
       outputs: [],
@@ -42,9 +50,8 @@ export default class InstantTradeBuilder extends PSBTBuilder {
       throw new Error("set inscription outpoint to the class")
     }
 
-    const { totalUTXOs, unspendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
+    const { totalUTXOs, unspendableUTXOs } = await this.datasource.getUnspents({
       address: address || this.address,
-      network: this.network,
       type: "all"
     })
     if (!totalUTXOs) {

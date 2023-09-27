@@ -1,6 +1,6 @@
 import * as bitcoin from "bitcoinjs-lib"
 
-import { OrditApi, processInput } from ".."
+import { processInput } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { UTXO } from "../transactions/types"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
@@ -15,6 +15,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
 
   constructor({
     address,
+    datasource,
     network,
     publicKey,
     inscriptionOutpoint,
@@ -22,6 +23,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
   }: InstantTradeSellerTxBuilderArgOptions) {
     super({
       address,
+      datasource,
       network,
       publicKey,
       inscriptionOutpoint,
@@ -41,7 +43,8 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
       utxo: this.utxo,
       pubKey: this.publicKey,
       network: this.network,
-      sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY
+      sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY,
+      datasource: this.datasource
     })
 
     this.inputs = [input]
@@ -64,10 +67,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
       return
     }
 
-    const collection = await OrditApi.fetchInscription({
-      id: `${this.utxo.inscriptions[0].meta.col}i0`,
-      network: this.network
-    })
+    const collection = await this.datasource.getInscription(`${this.utxo.inscriptions[0].meta.col}i0`)
     const royalty = collection.meta?.royalty
     if (!royalty || !royalty.address || !royalty.pct) {
       return

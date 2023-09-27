@@ -1,8 +1,8 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
 import { BIP32Factory } from "bip32"
 
-import { OrditApi } from "../api"
 import { Network } from "../config/types"
+import { BaseDatasource, JsonRpcDatasource } from "../modules"
 import { createTransaction, getNetwork, toXOnly } from "../utils"
 import { OnOffUnion } from "../wallet"
 import { PSBTBuilder } from "./PSBTBuilder"
@@ -44,8 +44,10 @@ export async function processInput({
   pubKey,
   network,
   sighashType,
-  witness
+  witness,
+  datasource
 }: ProcessInputOptions): Promise<InputType> {
+  datasource = datasource || new JsonRpcDatasource({ network })
   switch (utxo.scriptPubKey.type) {
     case "witness_v1_taproot":
       return generateTaprootInput({ utxo, pubKey, network, sighashType, witness })
@@ -58,7 +60,7 @@ export async function processInput({
       return generateNestedSegwitInput({ utxo, pubKey, network, sighashType })
 
     case "pubkeyhash":
-      return generateLegacyInput({ utxo, sighashType, network, pubKey })
+      return generateLegacyInput({ utxo, sighashType, network, pubKey, datasource })
 
     default:
       throw new Error("invalid script pub type")
@@ -130,9 +132,10 @@ async function generateLegacyInput({
   utxo,
   sighashType,
   network,
-  pubKey
-}: ProcessInputOptions): Promise<LegacyInputType> {
-  const { rawTx } = await OrditApi.fetchTx({ txId: utxo.txid, network, hex: true })
+  pubKey,
+  datasource
+}: ProcessInputOptions & Required<Pick<ProcessInputOptions, "datasource">>): Promise<LegacyInputType> {
+  const { rawTx } = await datasource.getTransaction({ txId: utxo.txid, network, hex: true })
   if (!rawTx) {
     throw new Error("Unable to process legacy input")
   }
@@ -208,6 +211,7 @@ interface ProcessInputOptions {
   network: Network
   sighashType?: number
   witness?: Buffer[]
+  datasource?: BaseDatasource
 }
 
 interface TapScript {

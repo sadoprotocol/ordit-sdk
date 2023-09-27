@@ -1,4 +1,4 @@
-import { GetWalletOptions, Inscriber, OrditApi, verifyMessage } from ".."
+import { BaseDatasource, GetWalletOptions, Inscriber, JsonRpcDatasource, verifyMessage } from ".."
 import { Network } from "../config/types"
 
 export async function publishCollection({
@@ -62,13 +62,8 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
   if (!colTxId || colVOut === false) {
     throw new Error("Invalid collection outpoint supplied.")
   }
-
-  const { tx } = await OrditApi.fetchTx({ txId: colTxId, network: options.network })
-  if (!tx) {
-    throw new Error("Failed to get raw transaction for id: " + colTxId)
-  }
-
-  const collection = tx.vout[colVOut].inscriptions[0]
+  const datasource = options.datasource || new JsonRpcDatasource({ network: options.network })
+  const collection = await datasource.getInscription(options.collectionOutpoint)
   if (!collection) {
     throw new Error("Invalid collection")
   }
@@ -180,6 +175,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   traits?: any
   encodeMetadata?: boolean
   enableRBF?: boolean
+  datasource?: BaseDatasource
 }
 
 type Outputs = Array<{ address: string; value: number }>

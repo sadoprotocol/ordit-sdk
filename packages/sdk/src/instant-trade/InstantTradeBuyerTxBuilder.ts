@@ -1,14 +1,7 @@
 import { Psbt } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
-import {
-  decodePSBT,
-  generateTxUniqueIdentifier,
-  getScriptType,
-  INSTANT_BUY_SELLER_INPUT_INDEX,
-  OrditApi,
-  processInput
-} from ".."
+import { decodePSBT, generateTxUniqueIdentifier, getScriptType, INSTANT_BUY_SELLER_INPUT_INDEX, processInput } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { InjectableInput, InjectableOutput } from "../transactions/PSBTBuilder"
 import { Output } from "../transactions/types"
@@ -30,10 +23,12 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     publicKey,
     receiveAddress,
     sellerPSBT,
-    feeRate
+    feeRate,
+    datasource
   }: InstantTradeBuyerTxBuilderArgOptions) {
     super({
       address,
+      datasource,
       network,
       publicKey,
       feeRate
@@ -117,9 +112,8 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
 
   private async findUTXOs() {
     const utxos = (
-      await OrditApi.fetchUnspentUTXOs({
+      await this.datasource.getUnspents({
         address: this.address,
-        network: this.network,
         sort: "asc" // sort by ascending order to use low amount utxos as refundable utxos
       })
     ).spendableUTXOs.filter((utxo) => utxo.sats >= MINIMUM_AMOUNT_IN_SATS)
@@ -168,16 +162,20 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   }
 
   async splitUTXOsForTrade(destinationAddress: string) {
-    const { totalUTXOs, spendableUTXOs } = await OrditApi.fetchUnspentUTXOs({
-      address: this.address,
-      network: this.network
+    const { totalUTXOs, spendableUTXOs } = await this.datasource.getUnspents({
+      address: this.address
     })
     if (!totalUTXOs) {
       throw new Error("No UTXOs found")
     }
 
     const utxo = spendableUTXOs.sort((a, b) => b.sats - a.sats)[0] // Largest UTXO
-    const input = await processInput({ utxo, pubKey: this.publicKey, network: this.network })
+    const input = await processInput({
+      utxo,
+      pubKey: this.publicKey,
+      network: this.network,
+      datasource: this.datasource
+    })
     const totalOutputs = 3
     const outputs: Output[] = []
     this.inputs = [input]
