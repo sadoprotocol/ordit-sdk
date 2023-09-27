@@ -1,3 +1,4 @@
+import { Inscription } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { PSBTBuilder, PSBTBuilderOptions } from "../transactions/PSBTBuilder"
 
@@ -8,6 +9,7 @@ export interface InstantTradeBuilderArgOptions
 
 export default class InstantTradeBuilder extends PSBTBuilder {
   protected inscriptionOutpoint?: string
+  protected inscription?: Inscription
   protected price = 0
   protected postage = 0
   protected royalty = 0
@@ -45,24 +47,33 @@ export default class InstantTradeBuilder extends PSBTBuilder {
     this.royalty = value
   }
 
-  protected async verifyAndFindInscriptionUTXO(address?: string) {
+  get data() {
+    return {
+      fee: this.fee,
+      virtualSize: this.virtualSize,
+      weight: this.weight,
+      changeAmount: this.changeAmount,
+      inputAmount: this.inputAmount,
+      outputAmount: this.outputAmount,
+      price: this.price,
+      royalty: this.royalty,
+      postage: this.postage
+    }
+  }
+
+  protected async verifyAndFindInscriptionUTXO() {
     if (!this.inscriptionOutpoint) {
       throw new Error("set inscription outpoint to the class")
     }
 
-    const { totalUTXOs, unspendableUTXOs } = await this.datasource.getUnspents({
-      address: address || this.address,
-      type: "all"
-    })
-    if (!totalUTXOs) {
-      throw new Error("No UTXOs found")
+    this.inscription = await this.datasource.getInscription(this.inscriptionOutpoint)
+    if (!this.inscription) {
+      throw new Error("Inscription not found")
     }
 
-    const utxo = unspendableUTXOs.find((utxo) =>
-      utxo.inscriptions?.find((i) => i.outpoint === this.inscriptionOutpoint)
-    )
+    const utxo = await this.datasource.getInscriptionUTXO(this.inscription.outpoint)
     if (!utxo) {
-      throw new Error("Inscription not found")
+      throw new Error(`Unable to find UTXO: ${this.inscription.outpoint}`)
     }
 
     this.postage = utxo.sats

@@ -74,6 +74,18 @@ export class Inscriber extends PSBTBuilder {
     this.encodeMetadata = encodeMetadata
   }
 
+  get data() {
+    return {
+      fee: this.fee,
+      virtualSize: this.virtualSize,
+      weight: this.weight,
+      changeAmount: this.changeAmount,
+      inputAmount: this.inputAmount,
+      outputAmount: this.outputAmount,
+      postage: this.postage
+    }
+  }
+
   private getMetadata() {
     return this.meta && this.encodeMetadata ? encodeObject(this.meta) : this.meta
   }
@@ -107,6 +119,13 @@ export class Inscriber extends PSBTBuilder {
       this.outputs.push({
         address: this.address,
         value: this.postage
+      })
+    }
+
+    if (this.recovery) {
+      this.outputs.push({
+        address: this.address,
+        value: this.suitableUnspent.sats - this.fee
       })
     }
 
@@ -159,7 +178,14 @@ export class Inscriber extends PSBTBuilder {
   private async preview({ activate }: Record<"activate", boolean> = { activate: true }) {
     if (activate) {
       this.previewMode = true
-      this.suitableUnspent = getDummyP2TRInput()
+      this.suitableUnspent = this.recovery
+        ? (await this.datasource.getUnspents({ address: this.commitAddress! })).spendableUTXOs[0]
+        : getDummyP2TRInput()
+
+      if (this.recovery && !this.suitableUnspent) {
+        throw new Error("No UTXO found to recover")
+      }
+
       this.ready = true
       await this.build()
     } else {
@@ -210,6 +236,7 @@ export class Inscriber extends PSBTBuilder {
       scriptTree: this.taprootTree,
       redeem: this.getRecoveryRedeemScript()
     })
+    this.commitAddress = this.payment.address!
 
     await this.calculateNetworkFeeUsingPreviewMode()
   }
@@ -232,7 +259,7 @@ export class Inscriber extends PSBTBuilder {
     this.restrictUsageInPreviewMode()
     this.isBuilt()
 
-    const amount = this.fee + this.outputAmount
+    const amount = this.recovery ? this.outputAmount - this.fee : this.outputAmount + this.fee
     const [utxo] = await this.retrieveSelectedUTXOs(this.commitAddress!, amount)
     this.suitableUnspent = utxo
     this.ready = true

@@ -2,7 +2,13 @@ import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
 import { Inscription } from ".."
 import { rpc } from "../api/jsonrpc"
-import { FetchSpendablesOptions, FetchTxOptions, FetchUnspentUTXOsOptions, RelayTxOptions } from "../api/types"
+import {
+  FetchSpendablesOptions,
+  FetchTxOptions,
+  FetchUnspentUTXOsOptions,
+  GetInscriptionsOptions,
+  RelayTxOptions
+} from "../api/types"
 import { Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
 import { BaseDatasource, DatasourceUtility } from "."
@@ -29,6 +35,8 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new Error("Invalid request")
     }
 
+    id = id.includes(":") ? id.replace(":", "i") : !id.includes("i") ? `${id}i0` : id
+
     let inscription = await rpc[this.network].call<Inscription>("GetInscription", { id }, rpc.id)
     if (decodeMetadata) {
       inscription = DatasourceUtility.transformInscriptions([inscription])[0]
@@ -37,12 +45,19 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return inscription
   }
 
-  async getInscriptions(outpoint: string, decodeMetadata = false) {
-    if (!outpoint) {
-      throw new Error("Invalid options provided.")
+  async getInscriptionUTXO(id: string) {
+    if (!id) {
+      throw new Error("Invalid request")
     }
 
+    id = id.includes(":") ? id.replace(":", "i") : !id.includes("i") ? `${id}i0` : id
+
+    return rpc[this.network].call<UTXO>("Ordinals.GetInscriptionUtxo", { id }, rpc.id)
+  }
+
+  async getInscriptions({ outpoint, decodeMetadata }: GetInscriptionsOptions) {
     const inscriptions = await rpc[this.network].call<Inscription[]>("GetInscriptions", { outpoint }, rpc.id)
+
     return decodeMetadata ? DatasourceUtility.transformInscriptions(inscriptions) : inscriptions
   }
 
@@ -80,7 +95,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     decodeMetadata = true
   }: FetchTxOptions) {
     if (!txId) {
-      throw new Error("Invalid txId")
+      throw new Error("Invalid request")
     }
 
     const tx = await rpc[this.network].call<Transaction>(
@@ -119,7 +134,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     next = null
   }: FetchUnspentUTXOsOptions) {
     if (!address) {
-      throw new Error("Invalid address")
+      throw new Error("Invalid request")
     }
 
     let utxos: UTXO[] = []
@@ -151,14 +166,14 @@ export default class JsonRpcDatasource extends BaseDatasource {
 
       utxos = utxos.concat(unspents)
       next = pagination.next
-    } while (next != null)
+    } while (next !== null)
 
     return DatasourceUtility.segregateUTXOsBySpendStatus({ utxos, decodeMetadata })
   }
 
   async relay({ hex, maxFeeRate }: RelayTxOptions) {
     if (!hex) {
-      throw new Error("Invalid tx hex")
+      throw new Error("Invalid request")
     }
 
     if (maxFeeRate && (maxFeeRate < 0 || isNaN(maxFeeRate))) {

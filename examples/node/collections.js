@@ -1,3 +1,4 @@
+import { JsonRpcDatasource } from "@sadoprotocol/ordit-sdk";
 import { Ordit, mintFromCollection, publishCollection } from "@sadoprotocol/ordit-sdk";
 
 const mnemonic = "<MNEMONIC PHRASE>";
@@ -18,6 +19,8 @@ const publisherWallet = new Ordit({
 // set default address types for both wallets
 userWallet.setDefaultAddress("taproot");
 publisherWallet.setDefaultAddress("taproot");
+
+const datasource = new JsonRpcDatasource({ network })
 
 async function publish() {
   const getPublisherLegacyAddress = () => {
@@ -72,10 +75,10 @@ async function publish() {
     await transaction.build();
 
     // sign transaction
-    const signedTx = publisherWallet.signPsbt(transaction.toHex(), { isRevealTx: true });
+    const signedTxHex = publisherWallet.signPsbt(transaction.toHex(), { isRevealTx: true });
 
     // Broadcast transaction
-    const txId = await publisherWallet.relayTx(signedTx, network);
+    const txId = await datasource.relay({ hex: signedTxHex });
     console.log({ txId });
   }
 }
@@ -115,10 +118,10 @@ async function mint() {
     await transaction.build();
 
     // sign transaction
-    const signedTx = userWallet.signPsbt(transaction.toHex(), { isRevealTx: true });
+    const signedTxHex = userWallet.signPsbt(transaction.toHex(), { isRevealTx: true });
 
     // Broadcast transaction
-    const txId = await userWallet.relayTx(signedTx, network);
+    const txId = await datasource.relay({ hex: signedTxHex });
     console.log({ txId });
   }
 }

@@ -3,6 +3,7 @@ import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 import { Network } from "../config/types"
 import { Rarity } from "../inscription/types"
 import { Transaction, UTXO } from "../transactions/types"
+import { RequireAtLeastOne } from "../utils/types"
 
 export interface FetchUnspentUTXOsOptions {
   address: string
@@ -35,10 +36,18 @@ export interface FetchTxResponse {
   rawTx?: BTCTransaction
 }
 
-export interface FetchInscriptionsOptions {
-  outpoint: string
-  network?: Network
+export type GetInscriptionsOptions = RequireAtLeastOne<{
+  creator?: string
+  owner?: string
+  mimeType?: string
+  mimeSubType?: string
+  outpoint?: string
+}> & {
+  sort?: "asc" | "desc"
+  limit?: number
+  next?: string | null
   decodeMetadata?: boolean
+  network?: Network
 }
 
 export interface FetchInscriptionOptions {
