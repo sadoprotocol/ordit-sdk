@@ -8,14 +8,11 @@ export interface InstantTradeBuilderArgOptions
 }
 
 export default class InstantTradeBuilder extends PSBTBuilder {
-  protected price = 0
-  protected postage = 0
-  protected royalty = 0
   protected inscriptionOutpoint?: string
+  protected inscription?: Inscription
   protected price = 0
   protected postage = 0
   protected royalty = 0
-  protected inscription?: Inscription
 
   constructor({
     address,
