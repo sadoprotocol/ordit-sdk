@@ -71,10 +71,6 @@ export default class InstantTradeBuilder extends PSBTBuilder {
       throw new Error("Inscription not found")
     }
 
-    if (this.inscription.owner !== this.address) {
-      throw new Error("Inscription does not belong to the owner")
-    }
-
     const utxo = await this.datasource.getInscriptionUTXO(this.inscription.outpoint)
     if (!utxo) {
       throw new Error(`Unable to find UTXO: ${this.inscription.outpoint}`)
