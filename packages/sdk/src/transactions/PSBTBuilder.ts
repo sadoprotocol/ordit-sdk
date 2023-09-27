@@ -311,13 +311,14 @@ export class PSBTBuilder extends FeeEstimator {
   private async retrieveUTXOs(address?: string, amount?: number) {
     if (!this.autoAdjustment && !address) return
 
-    amount = amount && amount > 0 ? amount : this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
+    const amountToRequest =
+      amount && amount > 0 ? amount : this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
 
-    if (this.getRetrievedUTXOsValue() > amount) return
+    if (amount && this.getRetrievedUTXOsValue() > amount) return
 
     const utxos = await this.datasource.getSpendables({
       address: address || this.address,
-      value: convertSatoshisToBTC(amount),
+      value: convertSatoshisToBTC(amountToRequest),
       filter: this.getReservedUTXOs()
     })
 
