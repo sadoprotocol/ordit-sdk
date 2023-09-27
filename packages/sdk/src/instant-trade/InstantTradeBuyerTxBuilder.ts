@@ -1,10 +1,9 @@
 import { Psbt } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
-import { decodePSBT, generateTxUniqueIdentifier, getScriptType, INSTANT_BUY_SELLER_INPUT_INDEX, processInput } from ".."
+import { decodePSBT, generateTxUniqueIdentifier, getScriptType, INSTANT_BUY_SELLER_INPUT_INDEX } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { InjectableInput, InjectableOutput } from "../transactions/PSBTBuilder"
-import { Output } from "../transactions/types"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
 interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
