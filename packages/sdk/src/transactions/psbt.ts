@@ -135,7 +135,7 @@ async function generateLegacyInput({
   pubKey,
   datasource
 }: ProcessInputOptions & Required<Pick<ProcessInputOptions, "datasource">>): Promise<LegacyInputType> {
-  const { rawTx } = await datasource.getTransaction({ txId: utxo.txid, network, hex: true })
+  const { rawTx } = await datasource.getTransaction({ txId: utxo.txid, hex: true })
   if (!rawTx) {
     throw new Error("Unable to process legacy input")
   }

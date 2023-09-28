@@ -138,7 +138,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     if (!inscription) {
       throw new Error("Inscription no longer available for trade")
     }
-    const inscriptionUTXO = await this.datasource.getInscriptionUTXO(inscription.id)
+    const inscriptionUTXO = await this.datasource.getInscriptionUTXO({ id: inscription.id })
     this.postage = inscriptionUTXO.sats
 
     const sortedUTXOs = utxos.sort((a, b) => a.sats - b.sats)

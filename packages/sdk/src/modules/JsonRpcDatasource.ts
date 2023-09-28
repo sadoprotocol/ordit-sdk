@@ -3,11 +3,15 @@ import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 import { Inscription } from ".."
 import { rpc } from "../api/jsonrpc"
 import {
-  FetchSpendablesOptions,
-  FetchTxOptions,
-  FetchUnspentUTXOsOptions,
+  GetBalanceOptions,
+  GetInscriptionOptions,
   GetInscriptionsOptions,
-  RelayTxOptions
+  GetInscriptionUTXOOptions,
+  GetSpendablesOptions,
+  GetTxOptions,
+  GetUnspentsOptions,
+  GetUnspentsResponse,
+  RelayOptions
 } from "../api/types"
 import { Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
@@ -23,7 +27,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     super({ network })
   }
 
-  async getBalance(address: string) {
+  async getBalance({ address }: GetBalanceOptions) {
     if (!address) {
       throw new Error("Invalid request")
     }
@@ -31,7 +35,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return rpc[this.network].call<number>("Address.GetBalance", { address }, rpc.id)
   }
 
-  async getInscription(id: string, decodeMetadata = false) {
+  async getInscription({ id, decodeMetadata }: GetInscriptionOptions) {
     if (!id) {
       throw new Error("Invalid request")
     }
@@ -46,7 +50,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return inscription
   }
 
-  async getInscriptionUTXO(id: string) {
+  async getInscriptionUTXO({ id }: GetInscriptionUTXOOptions) {
     if (!id) {
       throw new Error("Invalid request")
     }
@@ -88,13 +92,13 @@ export default class JsonRpcDatasource extends BaseDatasource {
   }
 
   async getSpendables({
-    address, // TODO rename interface
+    address,
     value,
     rarity = ["common"],
     filter = [],
     limit = 200,
     type = "spendable"
-  }: FetchSpendablesOptions) {
+  }: GetSpendablesOptions) {
     if (!address || isNaN(value) || !value) {
       throw new Error("Invalid request")
     }
@@ -113,13 +117,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     )
   }
 
-  async getTransaction({
-    txId, // TODO rename interface
-    ordinals = true,
-    hex = false,
-    witness = true,
-    decodeMetadata = false
-  }: FetchTxOptions) {
+  async getTransaction({ txId, ordinals = true, hex = false, witness = true, decodeMetadata = true }: GetTxOptions) {
     if (!txId) {
       throw new Error("Invalid request")
     }
@@ -151,13 +149,13 @@ export default class JsonRpcDatasource extends BaseDatasource {
   }
 
   async getUnspents({
-    address, // TODO rename interface
+    address,
     type = "spendable",
     rarity = ["common"],
     sort = "desc",
     limit = 50,
     next = null
-  }: FetchUnspentUTXOsOptions) {
+  }: GetUnspentsOptions): Promise<GetUnspentsResponse> {
     if (!address) {
       throw new Error("Invalid request")
     }
@@ -191,7 +189,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return DatasourceUtility.segregateUTXOsBySpendStatus({ utxos })
   }
 
-  async relay({ hex, maxFeeRate, validate = true }: RelayTxOptions) {
+  async relay({ hex, maxFeeRate, validate = true }: RelayOptions) {
     if (!hex) {
       throw new Error("Invalid request")
     }

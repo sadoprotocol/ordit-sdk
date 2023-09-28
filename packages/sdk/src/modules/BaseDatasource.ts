@@ -2,15 +2,18 @@ import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
 import { Inscription } from ".."
 import {
-  FetchSpendablesOptions,
-  FetchTxOptions,
-  FetchUnspentUTXOsOptions,
+  GetBalanceOptions,
+  GetInscriptionOptions,
   GetInscriptionsOptions,
-  RelayTxOptions
+  GetInscriptionUTXOOptions,
+  GetSpendablesOptions,
+  GetTxOptions,
+  GetUnspentsOptions,
+  GetUnspentsResponse,
+  RelayOptions
 } from "../api/types"
 import { Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
-import { DatasourceUtility } from "."
 
 interface BaseDatasourceOptions {
   network: Network
@@ -23,11 +26,11 @@ export default abstract class BaseDatasource {
     this.network = network
   }
 
-  abstract getBalance(address: string): Promise<number>
+  abstract getBalance({ address }: GetBalanceOptions): Promise<number>
 
-  abstract getInscription(id: string, decodeMetadata?: boolean): Promise<Inscription>
+  abstract getInscription({ id, decodeMetadata }: GetInscriptionOptions): Promise<Inscription>
 
-  abstract getInscriptionUTXO(id: string): Promise<UTXO>
+  abstract getInscriptionUTXO({ id }: GetInscriptionUTXOOptions): Promise<UTXO>
 
   abstract getInscriptions({
     creator,
@@ -41,13 +44,17 @@ export default abstract class BaseDatasource {
     decodeMetadata
   }: GetInscriptionsOptions): Promise<Inscription[]>
 
-  abstract getSpendables(args: FetchSpendablesOptions): Promise<UTXOLimited[]>
+  abstract getSpendables({ address, value, type, rarity, filter, limit }: GetSpendablesOptions): Promise<UTXOLimited[]>
 
-  abstract getTransaction(args: FetchTxOptions): Promise<{ tx: Transaction; rawTx?: BTCTransaction }>
+  abstract getTransaction({
+    txId,
+    ordinals,
+    hex,
+    witness,
+    decodeMetadata
+  }: GetTxOptions): Promise<{ tx: Transaction; rawTx?: BTCTransaction }>
 
-  abstract getUnspents(
-    args: FetchUnspentUTXOsOptions
-  ): Promise<ReturnType<typeof DatasourceUtility.segregateUTXOsBySpendStatus>>
+  abstract getUnspents({ address, type, rarity, sort, limit, next }: GetUnspentsOptions): Promise<GetUnspentsResponse>
 
-  abstract relay(args: RelayTxOptions): Promise<string>
+  abstract relay({ hex, maxFeeRate, validate }: RelayOptions): Promise<string>
 }
