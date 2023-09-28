@@ -11,7 +11,8 @@
     "create-psbt": "node create-psbt",
     "instant-buy": "node instant-buy",
     "publish-collection": "node collections",
-    "build-psbt": "node build-psbt"
+    "build-psbt": "node build-psbt",
+    "split-utxo": "node split-utxo"
   },
   "author": "",
   "license": "ISC",
