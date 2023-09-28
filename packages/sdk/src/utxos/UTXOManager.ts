@@ -44,7 +44,7 @@ export default class UTXOManager extends PSBTBuilder {
 
       this.outputs.push({
         address: destinationAddress || this.address,
-        value: amount
+        value: MINIMUM_AMOUNT_IN_SATS
       })
     }
 
