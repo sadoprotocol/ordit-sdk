@@ -66,7 +66,8 @@ export default class InstantTradeBuilder extends PSBTBuilder {
       throw new Error("set inscription outpoint to the class")
     }
 
-    this.inscription = await this.datasource.getInscription(this.inscriptionOutpoint)
+    const inscriptions = await this.datasource.getInscriptions({ outpoint: this.inscriptionOutpoint })
+    this.inscription = inscriptions.find((inscription) => inscription.outpoint === this.inscriptionOutpoint)
     if (!this.inscription) {
       throw new Error("Inscription not found")
     }
