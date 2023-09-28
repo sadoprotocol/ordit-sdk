@@ -48,7 +48,7 @@ export async function publishCollection({
 }
 
 export async function mintFromCollection(options: MintFromCollectionOptions) {
-  if (!options.collectionOutpoint || !options.inscriptionIid || !options.destination) {
+  if (!options.collectionOutpoint || !options.inscriptionIid || !options.destinationAddress) {
     throw new Error("Invalid options supplied.")
   }
 
@@ -126,7 +126,7 @@ export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   postage: number
   mediaType: string
   mediaContent: string
-  destination: string
+  destinationAddress: string
   changeAddress: string
   title: string
   description: string
@@ -162,7 +162,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   postage: number
   mediaType: string
   mediaContent: string
-  destination: string
+  destinationAddress: string
   changeAddress: string
   collectionOutpoint: string
   inscriptionIid: string

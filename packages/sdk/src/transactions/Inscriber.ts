@@ -26,6 +26,7 @@ export class Inscriber extends PSBTBuilder {
 
   private ready = false
   private commitAddress: string | null = null
+  private destinationAddress: string
   private payment: bitcoin.payments.Payment | null = null
   private suitableUnspent: UTXOLimited | null = null
   private recovery = false
@@ -43,6 +44,7 @@ export class Inscriber extends PSBTBuilder {
     network,
     address,
     changeAddress,
+    destinationAddress,
     publicKey,
     feeRate,
     postage,
@@ -66,6 +68,7 @@ export class Inscriber extends PSBTBuilder {
       throw new Error("Invalid options provided")
     }
 
+    this.destinationAddress = destinationAddress
     this.mediaType = mediaType
     this.mediaContent = mediaContent
     this.meta = meta
@@ -117,14 +120,14 @@ export class Inscriber extends PSBTBuilder {
 
     if (!this.recovery) {
       this.outputs.push({
-        address: this.address,
+        address: this.destinationAddress || this.address,
         value: this.postage
       })
     }
 
     if (this.recovery) {
       this.outputs.push({
-        address: this.address,
+        address: this.changeAddress || this.address,
         value: this.suitableUnspent.sats - this.fee
       })
     }
@@ -285,12 +288,12 @@ export class OrdTransaction extends Inscriber {
 export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   network: Network
   address: string
+  destinationAddress: string
   publicKey: string
   feeRate: number
   postage: number
   mediaType: string
   mediaContent: string
-  destination: string
   changeAddress: string
   meta?: NestedObject
   outputs?: Outputs
