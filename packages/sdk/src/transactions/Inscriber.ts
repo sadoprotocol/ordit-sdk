@@ -119,10 +119,12 @@ export class Inscriber extends PSBTBuilder {
     ]
 
     if (!this.recovery) {
-      this.outputs.push({
-        address: this.destinationAddress || this.address,
-        value: this.postage
-      })
+      this.outputs = [
+        {
+          address: this.destinationAddress || this.address,
+          value: this.postage
+        }
+      ].concat(this.outputs)
     }
 
     if (this.recovery) {
@@ -195,7 +197,7 @@ export class Inscriber extends PSBTBuilder {
       this.initPSBT()
       this.suitableUnspent = null
       this.ready = false
-      this.outputs.pop()
+      this.outputs.shift()
       this.previewMode = false
     }
   }
