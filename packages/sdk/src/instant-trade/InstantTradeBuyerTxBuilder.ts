@@ -126,7 +126,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     return utxos.slice(0, 2)
   }
 
-  async isEligible() {
+  private async isEligible() {
     if (!this.inscriptionOutpoint) {
       throw new Error("decode seller PSBT to check eligiblity")
     }
