@@ -123,10 +123,10 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     }
 
     // bind minimum utxos. PSBTBuilder will add more if needed
-    return utxos.slice(0, 3)
+    return utxos.slice(0, 2)
   }
 
-  async isEligible() {
+  private async isEligible() {
     if (!this.inscriptionOutpoint) {
       throw new Error("decode seller PSBT to check eligiblity")
     }
@@ -142,24 +142,19 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     this.postage = inscriptionUTXO.sats
 
     const sortedUTXOs = utxos.sort((a, b) => a.sats - b.sats)
-    const [refundableUTXOOne, refundableUTXOTwo, ...restUTXOs] = sortedUTXOs
+    const [refundableUTXOOne, refundableUTXOTwo] = sortedUTXOs
     const refundables = [refundableUTXOOne, refundableUTXOTwo].reduce((acc, curr) => (acc += curr.sats), 0)
-    const spendables = restUTXOs.reduce((acc, curr) => (acc += curr.sats), 0)
-    const eligible = refundables >= MINIMUM_AMOUNT_IN_SATS * 2 && spendables >= MINIMUM_AMOUNT_IN_SATS
+    const eligible = refundables >= MINIMUM_AMOUNT_IN_SATS * 2
 
     if (eligible) {
       this.utxos = utxos
     }
 
-    return {
-      eligible,
-      refundables,
-      spendables
-    }
+    return true
   }
 
   async build() {
-    const { eligible } = await this.isEligible()
+    const eligible = await this.isEligible()
     if (!eligible) {
       throw new Error("Not eligible")
     }
