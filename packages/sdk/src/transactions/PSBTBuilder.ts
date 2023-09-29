@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-extra-semi */
-import { networks, Psbt } from "bitcoinjs-lib"
+import { networks, Psbt, Transaction } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
 import {
@@ -133,10 +133,15 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   get inputsToSign() {
+    const instantTradeSellerFlow = this.instantTradeMode && !this.autoAdjustment
     return this.psbt.txInputs.reduce(
       (acc, _, index) => {
         if (!this.instantTradeMode || (this.instantTradeMode && index !== INSTANT_BUY_SELLER_INPUT_INDEX)) {
           acc.signingIndexes = acc.signingIndexes.concat(index)
+        }
+
+        if (instantTradeSellerFlow) {
+          acc.sigHash = Transaction.SIGHASH_SINGLE | Transaction.SIGHASH_ANYONECANPAY
         }
 
         return acc
