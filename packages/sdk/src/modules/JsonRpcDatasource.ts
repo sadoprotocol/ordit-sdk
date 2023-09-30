@@ -56,7 +56,14 @@ export default class JsonRpcDatasource extends BaseDatasource {
   }
 
   async getInscriptions({ outpoint, decodeMetadata }: GetInscriptionsOptions) {
-    const inscriptions = await rpc[this.network].call<Inscription[]>("GetInscriptions", { outpoint }, rpc.id)
+    const { inscriptions } = await rpc[this.network].call<{
+      inscriptions: Inscription[]
+      pagination: {
+        limit: number
+        prev: string | null
+        next: string | null
+      }
+    }>("GetInscriptions", { outpoint }, rpc.id)
 
     return decodeMetadata ? DatasourceUtility.transformInscriptions(inscriptions) : inscriptions
   }
