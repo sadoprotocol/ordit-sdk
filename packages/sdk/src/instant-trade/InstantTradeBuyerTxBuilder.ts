@@ -4,12 +4,8 @@ import reverseBuffer from "buffer-reverse"
 import { decodePSBT, generateTxUniqueIdentifier, getScriptType, INSTANT_BUY_SELLER_INPUT_INDEX } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { InjectableInput, InjectableOutput } from "../transactions/PSBTBuilder"
-import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
-
-interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
-  sellerPSBT: string
-  receiveAddress?: string
-}
+import InstantTradeBuilder from "./InstantTradeBuilder"
+import { InstantTradeBuyerTxBuilderArgOptions } from "./types"
 
 export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   private receiveAddress?: string

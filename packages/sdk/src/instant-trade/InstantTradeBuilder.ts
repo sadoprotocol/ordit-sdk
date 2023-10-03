@@ -1,11 +1,7 @@
 import { Inscription } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
-import { PSBTBuilder, PSBTBuilderOptions } from "../transactions/PSBTBuilder"
-
-export interface InstantTradeBuilderArgOptions
-  extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address" | "autoAdjustment" | "feeRate" | "datasource"> {
-  inscriptionOutpoint?: string
-}
+import { PSBTBuilder } from "../transactions/PSBTBuilder"
+import { InstantTradeBuilderArgOptions } from "./types"
 
 export default class InstantTradeBuilder extends PSBTBuilder {
   protected inscriptionOutpoint?: string

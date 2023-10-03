@@ -3,11 +3,8 @@ import * as bitcoin from "bitcoinjs-lib"
 import { processInput } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { UTXO } from "../transactions/types"
-import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
-
-interface InstantTradeSellerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
-  receiveAddress?: string
-}
+import InstantTradeBuilder from "./InstantTradeBuilder"
+import { InstantTradeSellerTxBuilderArgOptions } from "./types"
 
 export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
   private receiveAddress?: string
