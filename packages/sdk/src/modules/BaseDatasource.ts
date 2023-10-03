@@ -41,6 +41,7 @@ export default abstract class BaseDatasource {
     sort,
     limit,
     next,
+    include,
     decodeMetadata
   }: GetInscriptionsOptions): Promise<Inscription[]>
 

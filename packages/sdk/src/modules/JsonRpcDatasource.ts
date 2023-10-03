@@ -69,7 +69,8 @@ export default class JsonRpcDatasource extends BaseDatasource {
     decodeMetadata,
     sort = "asc",
     limit = 25,
-    next = null
+    next = null,
+    include
   }: GetInscriptionsOptions) {
     let inscriptions: Inscription[] = []
     do {
@@ -80,6 +81,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
         "Ordinals.GetInscriptions",
         {
           filter: { creator, owner, mimeType, mimeSubType, outpoint },
+          include,
           sort: { number: sort },
           pagination: { limit, next }
         },

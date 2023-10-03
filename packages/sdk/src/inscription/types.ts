@@ -39,6 +39,7 @@ export interface Inscription {
   mediaSize: number
   mediaContent: string
   meta?: Record<string, any>
+  value?: number
 }
 
 export interface InputsToSign {

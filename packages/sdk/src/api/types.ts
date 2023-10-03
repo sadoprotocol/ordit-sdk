@@ -45,6 +45,7 @@ export type GetInscriptionsOptions = RequireAtLeastOne<{
 }> & {
   sort?: "asc" | "desc"
   limit?: number
+  include?: ["value"]
   next?: string | null
   decodeMetadata?: boolean
 }
