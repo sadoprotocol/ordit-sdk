@@ -15,14 +15,15 @@ import {
 } from "../api/types"
 import { Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
-import { BaseDatasource, DatasourceUtility } from "."
+import { DatasourceUtility } from "."
+import { BaseDatasource } from "./BaseDatasource"
 import { JsonRpcPagination } from "./types"
 
 interface JsonRpcDatasourceOptions {
   network: Network
 }
 
-export default class JsonRpcDatasource extends BaseDatasource {
+export class JsonRpcDatasource extends BaseDatasource {
   constructor({ network }: JsonRpcDatasourceOptions) {
     super({ network })
   }

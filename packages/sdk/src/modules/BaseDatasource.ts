@@ -19,7 +19,7 @@ interface BaseDatasourceOptions {
   network: Network
 }
 
-export default abstract class BaseDatasource {
+export abstract class BaseDatasource {
   protected readonly network: Network
 
   constructor({ network }: BaseDatasourceOptions) {
