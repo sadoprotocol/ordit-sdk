@@ -1,9 +1,9 @@
 import { decodeObject, Inscription } from ".."
+import { GetUnspentsResponse } from "../api/types"
 import { UTXO } from "../transactions/types"
 
 interface SegregateUTXOsBySpendStatusArgOptions {
   utxos: UTXO[]
-  decodeMetadata?: boolean
 }
 
 export default class DatasourceUtility {
@@ -16,17 +16,10 @@ export default class DatasourceUtility {
     })
   }
 
-  static segregateUTXOsBySpendStatus({ utxos, decodeMetadata }: SegregateUTXOsBySpendStatusArgOptions) {
+  static segregateUTXOsBySpendStatus({ utxos }: SegregateUTXOsBySpendStatusArgOptions): GetUnspentsResponse {
     const { spendableUTXOs, unspendableUTXOs } = utxos.reduce(
       (acc, utxo) => {
-        if (utxo.inscriptions?.length && !utxo.safeToSpend) {
-          utxo.inscriptions = decodeMetadata ? this.transformInscriptions(utxo.inscriptions) : utxo.inscriptions
-
-          acc.unspendableUTXOs.push(utxo)
-        } else {
-          acc.spendableUTXOs.push(utxo)
-        }
-
+        !utxo.safeToSpend ? acc.unspendableUTXOs.push(utxo) : acc.spendableUTXOs.push(utxo)
         return acc
       },
       {

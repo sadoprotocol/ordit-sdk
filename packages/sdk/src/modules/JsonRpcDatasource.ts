@@ -3,15 +3,20 @@ import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 import { Inscription } from ".."
 import { rpc } from "../api/jsonrpc"
 import {
-  FetchSpendablesOptions,
-  FetchTxOptions,
-  FetchUnspentUTXOsOptions,
+  GetBalanceOptions,
+  GetInscriptionOptions,
   GetInscriptionsOptions,
-  RelayTxOptions
+  GetInscriptionUTXOOptions,
+  GetSpendablesOptions,
+  GetTxOptions,
+  GetUnspentsOptions,
+  GetUnspentsResponse,
+  RelayOptions
 } from "../api/types"
 import { Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
 import { BaseDatasource, DatasourceUtility } from "."
+import { JsonRpcPagination } from "./types"
 
 interface JsonRpcDatasourceOptions {
   network: Network
@@ -22,22 +27,22 @@ export default class JsonRpcDatasource extends BaseDatasource {
     super({ network })
   }
 
-  async getBalance(address: string) {
+  async getBalance({ address }: GetBalanceOptions) {
     if (!address) {
       throw new Error("Invalid request")
     }
 
-    return rpc[this.network].call<number>("GetBalance", { address }, rpc.id)
+    return rpc[this.network].call<number>("Address.GetBalance", { address }, rpc.id)
   }
 
-  async getInscription(id: string, decodeMetadata = false) {
+  async getInscription({ id, decodeMetadata }: GetInscriptionOptions) {
     if (!id) {
       throw new Error("Invalid request")
     }
 
     id = id.includes(":") ? id.replace(":", "i") : !id.includes("i") ? `${id}i0` : id
 
-    let inscription = await rpc[this.network].call<Inscription>("GetInscription", { id }, rpc.id)
+    let inscription = await rpc[this.network].call<Inscription>("Ordinals.GetInscription", { id }, rpc.id)
     if (decodeMetadata) {
       inscription = DatasourceUtility.transformInscriptions([inscription])[0]
     }
@@ -45,7 +50,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return inscription
   }
 
-  async getInscriptionUTXO(id: string) {
+  async getInscriptionUTXO({ id }: GetInscriptionUTXOOptions) {
     if (!id) {
       throw new Error("Invalid request")
     }
@@ -55,33 +60,51 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return rpc[this.network].call<UTXO>("Ordinals.GetInscriptionUtxo", { id }, rpc.id)
   }
 
-  async getInscriptions({ outpoint, decodeMetadata }: GetInscriptionsOptions) {
-    const { inscriptions } = await rpc[this.network].call<{
-      inscriptions: Inscription[]
-      pagination: {
-        limit: number
-        prev: string | null
-        next: string | null
-      }
-    }>("GetInscriptions", { outpoint }, rpc.id)
-
+  async getInscriptions({
+    creator,
+    owner,
+    mimeType,
+    mimeSubType,
+    outpoint,
+    decodeMetadata,
+    sort = "asc",
+    limit = 25,
+    next = null
+  }: GetInscriptionsOptions) {
+    let inscriptions: Inscription[] = []
+    do {
+      const { inscriptions: _inscriptions, pagination } = await rpc[this.network].call<{
+        inscriptions: Inscription[]
+        pagination: JsonRpcPagination
+      }>(
+        "Ordinals.GetInscriptions",
+        {
+          filter: { creator, owner, mimeType, mimeSubType, outpoint },
+          sort: { number: sort },
+          pagination: { limit, next }
+        },
+        rpc.id
+      )
+      inscriptions = inscriptions.concat(_inscriptions)
+      next = pagination.next
+    } while (next !== null)
     return decodeMetadata ? DatasourceUtility.transformInscriptions(inscriptions) : inscriptions
   }
 
   async getSpendables({
-    address, // TODO rename interface
+    address,
     value,
     rarity = ["common"],
     filter = [],
     limit = 200,
     type = "spendable"
-  }: FetchSpendablesOptions) {
+  }: GetSpendablesOptions) {
     if (!address || isNaN(value) || !value) {
       throw new Error("Invalid request")
     }
 
     return rpc[this.network].call<UTXOLimited[]>(
-      "GetSpendables",
+      "Address.GetSpendables",
       {
         address,
         value,
@@ -94,19 +117,13 @@ export default class JsonRpcDatasource extends BaseDatasource {
     )
   }
 
-  async getTransaction({
-    txId, // TODO rename interface
-    ordinals = true,
-    hex = false,
-    witness = true,
-    decodeMetadata = false
-  }: FetchTxOptions) {
+  async getTransaction({ txId, ordinals = true, hex = false, witness = true, decodeMetadata = true }: GetTxOptions) {
     if (!txId) {
       throw new Error("Invalid request")
     }
 
     const tx = await rpc[this.network].call<Transaction>(
-      "GetTransaction",
+      "Transactions.GetTransaction",
       {
         txid: txId,
         options: {
@@ -132,14 +149,13 @@ export default class JsonRpcDatasource extends BaseDatasource {
   }
 
   async getUnspents({
-    address, // TODO rename interface
+    address,
     type = "spendable",
     rarity = ["common"],
-    decodeMetadata = false,
     sort = "desc",
     limit = 50,
     next = null
-  }: FetchUnspentUTXOsOptions) {
+  }: GetUnspentsOptions): Promise<GetUnspentsResponse> {
     if (!address) {
       throw new Error("Invalid request")
     }
@@ -148,15 +164,10 @@ export default class JsonRpcDatasource extends BaseDatasource {
     do {
       const { unspents, pagination } = await rpc[this.network].call<{
         unspents: UTXO[]
-        pagination: {
-          limit: number
-          prev: string | null
-          next: string | null
-        }
+        pagination: JsonRpcPagination
       }>(
-        "GetUnspents",
+        "Address.GetUnspents",
         {
-          format: "next",
           address,
           options: {
             allowedrarity: rarity,
@@ -175,10 +186,10 @@ export default class JsonRpcDatasource extends BaseDatasource {
       next = pagination.next
     } while (next !== null)
 
-    return DatasourceUtility.segregateUTXOsBySpendStatus({ utxos, decodeMetadata })
+    return DatasourceUtility.segregateUTXOsBySpendStatus({ utxos })
   }
 
-  async relay({ hex, maxFeeRate }: RelayTxOptions) {
+  async relay({ hex, maxFeeRate, validate = true }: RelayOptions) {
     if (!hex) {
       throw new Error("Invalid request")
     }
@@ -187,6 +198,6 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new Error("Invalid max fee rate")
     }
 
-    return rpc[this.network].call<string>("SendRawTransaction", { hex, maxFeeRate }, rpc.id)
+    return rpc[this.network].call<string>("Transactions.Relay", { hex, maxFeeRate, validate }, rpc.id)
   }
 }

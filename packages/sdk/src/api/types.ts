@@ -1,30 +1,26 @@
 import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
-import { Network } from "../config/types"
 import { Rarity } from "../inscription/types"
 import { Transaction, UTXO } from "../transactions/types"
 import { RequireAtLeastOne } from "../utils/types"
 
-export interface FetchUnspentUTXOsOptions {
+export interface GetUnspentsOptions {
   address: string
-  network?: Network
   type?: "all" | "spendable"
   rarity?: Rarity[]
-  decodeMetadata?: boolean
   sort?: "asc" | "desc"
   limit?: number
   next?: string | null
 }
 
-export interface FetchUnspentUTXOsResponse {
+export interface GetUnspentsResponse {
   totalUTXOs: number
   spendableUTXOs: UTXO[]
   unspendableUTXOs: UTXO[]
 }
 
-export interface FetchTxOptions {
+export interface GetTxOptions {
   txId: string
-  network?: Network
   ordinals?: boolean
   hex?: boolean
   witness?: boolean
@@ -34,6 +30,10 @@ export interface FetchTxOptions {
 export interface FetchTxResponse {
   tx: Transaction
   rawTx?: BTCTransaction
+}
+
+export interface GetInscriptionUTXOOptions {
+  id: string
 }
 
 export type GetInscriptionsOptions = RequireAtLeastOne<{
@@ -47,32 +47,28 @@ export type GetInscriptionsOptions = RequireAtLeastOne<{
   limit?: number
   next?: string | null
   decodeMetadata?: boolean
-  network?: Network
 }
 
-export interface FetchInscriptionOptions {
+export interface GetInscriptionOptions {
   id: string
-  network?: Network
   decodeMetadata?: boolean
 }
 
-export interface RelayTxOptions {
+export interface RelayOptions {
   hex: string
   maxFeeRate?: number
-  network?: Network
+  validate?: boolean
 }
 
-export interface FetchSpendablesOptions {
+export interface GetSpendablesOptions {
   address: string
   value: number
   type?: "all" | "spendable"
   rarity?: Rarity[]
   filter?: string[]
   limit?: number
-  network?: Network
 }
 
 export interface GetBalanceOptions {
   address: string
-  network?: Network
 }

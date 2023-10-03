@@ -57,20 +57,14 @@ export interface ScriptPubKey {
 
 export interface UTXO {
   n: number
-  txHash: string
-  blockHash: string
-  blockN: number
+  txid: string
   sats: number
   scriptPubKey: ScriptPubKey
-  txid: string
-  value: number
-  ordinals?: Ordinal[] | null
-  inscriptions?: Inscription[] | null
   safeToSpend: boolean
   confirmation: number
 }
 
-export type UTXOLimited = Pick<UTXO, "txid" | "n" | "value" | "sats" | "scriptPubKey">
+export type UTXOLimited = Pick<UTXO, "txid" | "n" | "sats" | "scriptPubKey">
 
 export interface Output {
   address: string
