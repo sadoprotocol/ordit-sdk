@@ -10,6 +10,9 @@ import * as transactions from "./transactions"
 import * as utils from "./utils"
 import * as wallet from "./wallet"
 
+/**
+ * @deprecated `ordit` has been deprecated. Import respective modules directly.
+ */
 export const ordit = {
   config,
   addresses,
