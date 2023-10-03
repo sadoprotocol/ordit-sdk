@@ -6,7 +6,7 @@ interface SegregateUTXOsBySpendStatusArgOptions {
   utxos: UTXO[]
 }
 
-export default class DatasourceUtility {
+export class DatasourceUtility {
   static transformInscriptions(inscriptions?: Inscription[]) {
     if (!inscriptions) return []
 

@@ -2,7 +2,7 @@ import { processInput, PSBTBuilder } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { UTXOManagerOptions } from "./types"
 
-export default class UTXOManager extends PSBTBuilder {
+export class UTXOManager extends PSBTBuilder {
   constructor({ address, publicKey, network, feeRate, datasource }: UTXOManagerOptions) {
     super({
       address,
