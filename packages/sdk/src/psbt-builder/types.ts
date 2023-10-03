@@ -1,3 +1,4 @@
+import { InputType } from ".."
 import { Network } from "../config/types"
 import { BaseDatasource } from "../modules/BaseDatasource"
 import { Output } from "../transactions/types"

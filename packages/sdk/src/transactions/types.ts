@@ -1,4 +1,6 @@
+import { Network, OnOffUnion } from ".."
 import { Inscription, Ordinal } from "../inscription/types"
+import { BaseDatasource } from "../modules/BaseDatasource"
 
 export type Vout = {
   value: number
@@ -74,4 +76,72 @@ export interface Output {
 export interface SkipStrictSatsCheckOptions {
   skipStrictSatsCheck?: boolean
   customAmount?: number
+}
+
+export type InputType = LegacyInputType | SegwitInputType | NestedSegwitInputType | TaprootInputType
+
+// TODO: replace below interfaces and custom types w/ PsbtInputExtended from bitcoinjs-lib
+export interface BaseInputType {
+  hash: string
+  index: number
+  sighashType?: number
+}
+
+export type LegacyInputType = BaseInputType & {
+  type: "legacy"
+  nonWitnessUtxo?: Buffer
+  witnessUtxo?: {
+    script: Buffer
+    value: number
+  }
+}
+
+export type SegwitInputType = BaseInputType & {
+  type: "segwit"
+  witnessUtxo?: {
+    script: Buffer
+    value: number
+  }
+  witness?: Buffer[]
+}
+
+export type TaprootInputType = BaseInputType &
+  Omit<SegwitInputType, "type"> & {
+    type: "taproot"
+    tapInternalKey: Buffer
+    tapLeafScript?: TapLeafScript[]
+  }
+
+export type NestedSegwitInputType = BaseInputType &
+  Omit<SegwitInputType, "type"> & {
+    type: "nested-segwit"
+    redeemScript: Buffer
+  }
+
+export type CreatePsbtOptions = {
+  satsPerByte: number
+  address: string
+  outputs: Output[]
+  enableRBF?: boolean
+  pubKey: string
+  network: Network
+  safeMode?: OnOffUnion
+}
+
+export interface ProcessInputOptions {
+  utxo: UTXO | UTXOLimited
+  pubKey: string
+  network: Network
+  sighashType?: number
+  witness?: Buffer[]
+  datasource?: BaseDatasource
+}
+
+export interface TapScript {
+  leafVersion: number
+  script: Buffer
+}
+export declare type ControlBlock = Buffer
+export interface TapLeafScript extends TapScript {
+  controlBlock: ControlBlock
 }
