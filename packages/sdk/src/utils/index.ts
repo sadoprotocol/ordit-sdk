@@ -255,3 +255,5 @@ export function getDummyP2TRInput(): UTXO {
     confirmation: 10
   }
 }
+
+export * from "./types"
