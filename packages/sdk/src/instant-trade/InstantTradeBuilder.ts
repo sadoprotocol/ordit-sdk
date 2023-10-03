@@ -1,6 +1,6 @@
 import { Inscription } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
-import { PSBTBuilder } from "../transactions/PSBTBuilder"
+import { PSBTBuilder } from "../psbt-builder"
 import { InstantTradeBuilderArgOptions } from "./types"
 
 export default class InstantTradeBuilder extends PSBTBuilder {

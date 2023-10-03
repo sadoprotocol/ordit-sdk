@@ -12,8 +12,8 @@ import {
   OnOffUnion
 } from ".."
 import { Network } from "../config/types"
+import { PSBTBuilder } from "../psbt-builder"
 import { NestedObject } from "../utils/types"
-import { PSBTBuilder } from "./PSBTBuilder"
 import { SkipStrictSatsCheckOptions, UTXOLimited } from "./types"
 
 bitcoin.initEccLib(ecc)

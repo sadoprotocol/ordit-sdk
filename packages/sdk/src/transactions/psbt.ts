@@ -2,7 +2,7 @@ import * as ecc from "@bitcoinerlab/secp256k1"
 import { BIP32Factory } from "bip32"
 
 import { Network } from "../config/types"
-import { BaseDatasource, JsonRpcDatasource } from "../modules"
+import { PSBTBuilder } from "../psbt-builder"
 import { createTransaction, getNetwork, toXOnly } from "../utils"
 import { OnOffUnion } from "../wallet"
 import { PSBTBuilder } from "./PSBTBuilder"

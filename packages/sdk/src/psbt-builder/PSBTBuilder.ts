@@ -3,7 +3,6 @@ import { networks, Psbt, Transaction } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
 import {
-  BaseDatasource,
   convertSatoshisToBTC,
   generateTxUniqueIdentifier,
   getNetwork,
@@ -12,37 +11,12 @@ import {
   JsonRpcDatasource,
   toXOnly
 } from ".."
-import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import FeeEstimator from "../fee/FeeEstimator"
-import { InputType, processInput } from "."
-import { Output, UTXOLimited } from "./types"
-
-export interface PSBTBuilderOptions {
-  address: string
-  changeAddress?: string
-  feeRate: number
-  network: Network
-  outputs: Output[]
-  publicKey: string
-  autoAdjustment?: boolean
-  instantTradeMode?: boolean
-  datasource?: BaseDatasource
-}
-
-export type InjectableInput = {
-  injectionIndex: number
-  txInput: any
-  sats: number
-  standardInput: InputType
-}
-
-export interface InjectableOutput {
-  injectionIndex: number
-  txOutput: any
-  sats: number
-  standardOutput: any
-}
+import { BaseDatasource } from "../modules/BaseDatasource"
+import { InputType, processInput } from "../transactions"
+import { Output, UTXOLimited } from "../transactions/types"
+import { InjectableInput, InjectableOutput, PSBTBuilderOptions } from "./types"
 
 export class PSBTBuilder extends FeeEstimator {
   protected address: string

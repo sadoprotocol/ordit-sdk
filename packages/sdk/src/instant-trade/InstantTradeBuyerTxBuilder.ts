@@ -3,7 +3,7 @@ import reverseBuffer from "buffer-reverse"
 
 import { decodePSBT, generateTxUniqueIdentifier, getScriptType, INSTANT_BUY_SELLER_INPUT_INDEX } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
-import { InjectableInput, InjectableOutput } from "../transactions/PSBTBuilder"
+import { InjectableInput, InjectableOutput } from "../psbt-builder/types"
 import InstantTradeBuilder from "./InstantTradeBuilder"
 import { InstantTradeBuyerTxBuilderArgOptions } from "./types"
 
