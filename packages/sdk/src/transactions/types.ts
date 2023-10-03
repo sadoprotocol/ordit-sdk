@@ -1,6 +1,7 @@
-import { Network, OnOffUnion } from ".."
-import { Inscription, Ordinal } from "../inscription/types"
-import { BaseDatasource } from "../modules/BaseDatasource"
+import { Network } from "~/config/types"
+import { Inscription, Ordinal } from "~/inscription/types"
+import { BaseDatasource } from "~/modules"
+import { OnOffUnion } from "~/wallet"
 
 export type Vout = {
   value: number

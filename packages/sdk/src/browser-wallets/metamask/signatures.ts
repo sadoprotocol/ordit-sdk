@@ -2,8 +2,9 @@ import { Psbt } from "bitcoinjs-lib"
 import { sign } from "bitcoinjs-message"
 import { ethers } from "ethers"
 
-import { createTransaction } from "../.."
-import { Network } from "../../config/types"
+import { Network } from "~/config/types"
+import { createTransaction } from "~/utils"
+
 import { getDerivedNodeFromMetaMaskSignature } from "./addresses"
 import { isMetaMaskInstalled } from "./utils"
 

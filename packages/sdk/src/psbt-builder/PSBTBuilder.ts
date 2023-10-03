@@ -2,20 +2,14 @@
 import { networks, Psbt, Transaction } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
-import {
-  convertSatoshisToBTC,
-  generateTxUniqueIdentifier,
-  getNetwork,
-  InputsToSign,
-  INSTANT_BUY_SELLER_INPUT_INDEX,
-  JsonRpcDatasource,
-  toXOnly
-} from ".."
-import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
-import FeeEstimator from "../fee/FeeEstimator"
-import { BaseDatasource } from "../modules/BaseDatasource"
-import { InputType, processInput } from "../transactions"
-import { Output, UTXOLimited } from "../transactions/types"
+import { INSTANT_BUY_SELLER_INPUT_INDEX, MINIMUM_AMOUNT_IN_SATS } from "~/constants"
+import { FeeEstimator } from "~/fee"
+import { InputsToSign } from "~/inscription"
+import { BaseDatasource, JsonRpcDatasource } from "~/modules"
+import { InputType, processInput } from "~/transactions"
+import { Output, UTXOLimited } from "~/transactions/types"
+import { convertSatoshisToBTC, generateTxUniqueIdentifier, getNetwork, toXOnly } from "~/utils"
+
 import { InjectableInput, InjectableOutput, PSBTBuilderOptions } from "./types"
 
 export class PSBTBuilder extends FeeEstimator {

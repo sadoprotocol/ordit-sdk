@@ -1,9 +1,10 @@
-import { Inscription } from ".."
-import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
-import { PSBTBuilder } from "../psbt-builder"
+import { MINIMUM_AMOUNT_IN_SATS } from "~/constants"
+import { Inscription } from "~/inscription"
+import { PSBTBuilder } from "~/psbt-builder"
+
 import { InstantTradeBuilderArgOptions } from "./types"
 
-export default class InstantTradeBuilder extends PSBTBuilder {
+export class InstantTradeBuilder extends PSBTBuilder {
   protected inscriptionOutpoint?: string
   protected inscription?: Inscription
   protected price = 0

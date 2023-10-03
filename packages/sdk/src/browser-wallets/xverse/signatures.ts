@@ -1,8 +1,9 @@
 import { Psbt } from "bitcoinjs-lib"
 import { signMessage as _signMessage, signTransaction } from "sats-connect"
 
-import { Network } from "../../config/types"
-import { InputsToSign } from "../../inscription/types"
+import { Network } from "~/config/types"
+import { InputsToSign } from "~/inscription/types"
+
 import { BrowserWalletSignPSBTResponse } from "../types"
 import { isXverseInstalled, XverseNetwork } from "./utils"
 

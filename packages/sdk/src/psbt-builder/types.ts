@@ -1,7 +1,6 @@
-import { InputType } from ".."
-import { Network } from "../config/types"
-import { BaseDatasource } from "../modules/BaseDatasource"
-import { Output } from "../transactions/types"
+import { Network } from "~/config/types"
+import { BaseDatasource } from "~/modules/BaseDatasource"
+import { InputType, Output } from "~/transactions"
 
 export interface PSBTBuilderOptions {
   address: string

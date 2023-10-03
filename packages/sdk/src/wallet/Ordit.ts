@@ -12,13 +12,11 @@ import {
   addressNameToType,
   getAccountDataFromHdNode,
   getAddressesFromPublicKey,
-  getAllAccountsFromHdNode,
-  getNetwork,
-  mintFromCollection,
-  publishCollection,
-  tweakSigner
-} from ".."
-import { Network } from "../config/types"
+  getAllAccountsFromHdNode
+} from "~/addresses"
+import { Network } from "~/config/types"
+import { mintFromCollection, publishCollection } from "~/inscription"
+import { getNetwork, tweakSigner } from "~/utils"
 
 bitcoin.initEccLib(ecc)
 const ECPair = ECPairFactory(ecc)

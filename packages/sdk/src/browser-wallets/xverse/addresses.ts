@@ -1,7 +1,8 @@
 import { AddressPurposes, getAddress } from "sats-connect"
 
-import { getAddressFormat } from "../../addresses"
-import { Network } from "../../config/types"
+import { getAddressFormat } from "~/addresses"
+import { Network } from "~/config/types"
+
 import { fromXOnlyToFullPubkey, isXverseInstalled, XverseNetwork } from "./utils"
 export async function getAddresses(options: XverseGetAddressOptions) {
   options.network = options.network ?? "testnet"

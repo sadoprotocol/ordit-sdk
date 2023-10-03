@@ -2,19 +2,14 @@ import * as ecc from "@bitcoinerlab/secp256k1"
 import * as bitcoin from "bitcoinjs-lib"
 import { Tapleaf } from "bitcoinjs-lib/src/types"
 
-import {
-  buildWitnessScript,
-  createTransaction,
-  encodeObject,
-  getDummyP2TRInput,
-  getNetwork,
-  GetWalletOptions,
-  OnOffUnion
-} from ".."
-import { Network } from "../config/types"
-import { PSBTBuilder } from "../psbt-builder"
-import { NestedObject } from "../utils/types"
-import { SkipStrictSatsCheckOptions, UTXOLimited } from "./types"
+import { buildWitnessScript } from "~/inscription"
+import { PSBTBuilder } from "~/psbt-builder"
+import { SkipStrictSatsCheckOptions, UTXOLimited } from "~/transactions/types"
+import { createTransaction, encodeObject, getDummyP2TRInput, getNetwork } from "~/utils"
+import { NestedObject } from "~/utils/types"
+import { OnOffUnion } from "~/wallet"
+
+import { InscriberArgOptions } from "./types"
 
 bitcoin.initEccLib(ecc)
 
@@ -276,20 +271,3 @@ export class Inscriber extends PSBTBuilder {
     return this.suitableUnspent
   }
 }
-
-export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
-  network: Network
-  address: string
-  destinationAddress: string
-  publicKey: string
-  feeRate: number
-  postage: number
-  mediaType: string
-  mediaContent: string
-  changeAddress: string
-  meta?: NestedObject
-  outputs?: Outputs
-  encodeMetadata?: boolean
-}
-
-type Outputs = Array<{ address: string; value: number }>

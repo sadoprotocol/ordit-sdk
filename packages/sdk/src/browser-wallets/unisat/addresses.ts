@@ -1,5 +1,6 @@
-import { getAddressFormat } from "../.."
-import { Network } from "../../config/types"
+import { getAddressFormat } from "~/addresses"
+import { Network } from "~/config/types"
+
 import { isUnisatInstalled, UnisatNetwork } from "./utils"
 
 export async function getAddresses(network: Network) {

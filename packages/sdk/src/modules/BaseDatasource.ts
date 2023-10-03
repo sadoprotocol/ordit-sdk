@@ -1,6 +1,5 @@
 import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
-import { Inscription } from ".."
 import {
   GetBalanceOptions,
   GetInscriptionOptions,
@@ -11,9 +10,10 @@ import {
   GetUnspentsOptions,
   GetUnspentsResponse,
   RelayOptions
-} from "../api/types"
-import { Network } from "../config/types"
-import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
+} from "~/api/types"
+import { Network } from "~/config/types"
+import { Inscription } from "~/inscription"
+import { Transaction, UTXO, UTXOLimited } from "~/transactions/types"
 
 interface BaseDatasourceOptions {
   network: Network

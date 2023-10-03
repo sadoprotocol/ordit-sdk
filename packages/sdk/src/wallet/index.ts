@@ -1,5 +1,5 @@
-import { AddressTypes } from "../addresses/formats"
-import { Network } from "../config/types"
+import { AddressTypes } from "~/addresses/formats"
+import { Network } from "~/config/types"
 
 export type OnOffUnion = "on" | "off"
 

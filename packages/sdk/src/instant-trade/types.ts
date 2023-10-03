@@ -1,4 +1,4 @@
-import { PSBTBuilderOptions } from "../psbt-builder/types"
+import { PSBTBuilderOptions } from "~/psbt-builder/types"
 
 export interface InstantTradeBuilderArgOptions
   extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address" | "autoAdjustment" | "feeRate" | "datasource"> {
