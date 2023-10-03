@@ -1,12 +1,13 @@
-import { decodeObject, Inscription } from ".."
-import { GetUnspentsResponse } from "../api/types"
-import { UTXO } from "../transactions/types"
+import { GetUnspentsResponse } from "~/api/types"
+import { Inscription } from "~/inscription"
+import { UTXO } from "~/transactions/types"
+import { decodeObject } from "~/utils"
 
 interface SegregateUTXOsBySpendStatusArgOptions {
   utxos: UTXO[]
 }
 
-export default class DatasourceUtility {
+export class DatasourceUtility {
   static transformInscriptions(inscriptions?: Inscription[]) {
     if (!inscriptions) return []
 

@@ -1,8 +1,8 @@
 import { sign, verify } from "bitcoinjs-message"
 
-import { Network } from "../config/types"
-import { getDerivedNode } from "../keys"
-import { createTransaction, getNetwork } from "../utils"
+import { Network } from "~/config/types"
+import { getDerivedNode } from "~/keys"
+import { createTransaction, getNetwork } from "~/utils"
 
 export async function signMessage(options: SignMessageOptions) {
   const network = getNetwork(options.network)

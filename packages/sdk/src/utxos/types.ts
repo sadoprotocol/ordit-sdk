@@ -1,4 +1,4 @@
-import { PSBTBuilderOptions } from "../transactions/PSBTBuilder"
+import { PSBTBuilderOptions } from "~/psbt-builder/types"
 
 export type UTXOManagerOptions = Pick<
   PSBTBuilderOptions,

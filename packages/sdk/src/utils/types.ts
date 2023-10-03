@@ -1,6 +1,6 @@
 import { payments } from "bitcoinjs-lib"
 
-import { AddressFormats, AddressTypes } from ".."
+import { AddressFormats, AddressTypes } from "~/addresses"
 
 export interface NestedObject {
   [key: string]: NestedObject | any

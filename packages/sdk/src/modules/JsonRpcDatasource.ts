@@ -1,7 +1,6 @@
 import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
-import { Inscription } from ".."
-import { rpc } from "../api/jsonrpc"
+import { rpc } from "~/api/jsonrpc"
 import {
   GetBalanceOptions,
   GetInscriptionOptions,
@@ -12,17 +11,20 @@ import {
   GetUnspentsOptions,
   GetUnspentsResponse,
   RelayOptions
-} from "../api/types"
-import { Network } from "../config/types"
-import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
-import { BaseDatasource, DatasourceUtility } from "."
+} from "~/api/types"
+import { Network } from "~/config/types"
+import { Inscription } from "~/inscription"
+import { Transaction, UTXO, UTXOLimited } from "~/transactions/types"
+
+import { BaseDatasource } from "./BaseDatasource"
+import { DatasourceUtility } from "./DatasourceUtility"
 import { JsonRpcPagination } from "./types"
 
 interface JsonRpcDatasourceOptions {
   network: Network
 }
 
-export default class JsonRpcDatasource extends BaseDatasource {
+export class JsonRpcDatasource extends BaseDatasource {
   constructor({ network }: JsonRpcDatasourceOptions) {
     super({ network })
   }
@@ -69,7 +71,8 @@ export default class JsonRpcDatasource extends BaseDatasource {
     decodeMetadata,
     sort = "asc",
     limit = 25,
-    next = null
+    next = null,
+    include
   }: GetInscriptionsOptions) {
     let inscriptions: Inscription[] = []
     do {
@@ -80,6 +83,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
         "Ordinals.GetInscriptions",
         {
           filter: { creator, owner, mimeType, mimeSubType, outpoint },
+          include,
           sort: { number: sort },
           pagination: { limit, next }
         },

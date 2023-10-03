@@ -2,8 +2,8 @@ import * as ecc from "@bitcoinerlab/secp256k1"
 import BIP32Factory from "bip32"
 import { entropyToMnemonic, mnemonicToSeed, validateMnemonic, wordlists } from "bip39"
 
-import { Network } from "../config/types"
-import { getNetwork } from "../utils"
+import { Network } from "~/config/types"
+import { getNetwork } from "~/utils"
 
 export async function getWalletKeys(seedValue: string, network: Network = "testnet", path: string) {
   const { parent, mnemonic } = await getDerivedNode(seedValue, network, path)

@@ -1,4 +1,4 @@
-import { AddressFormats } from ".."
+import { AddressFormats } from "~/addresses"
 
 export const DERIVATION_PATHS_WITHOUT_INDEX: Record<AddressFormats, string> = {
   legacy: `m/44'/0'/0'/0/`,

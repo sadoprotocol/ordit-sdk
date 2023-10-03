@@ -1,8 +1,9 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
 import BIP32Factory, { BIP32Interface } from "bip32"
 
-import { Network } from "../config/types"
-import { createTransaction, getDerivationPath, getNetwork, toXOnly } from "../utils"
+import { Network } from "~/config/types"
+import { createTransaction, getDerivationPath, getNetwork, toXOnly } from "~/utils"
+
 import { AddressFormats, addressFormats, addressNameToType, AddressTypes, addressTypeToName } from "./formats"
 
 export function getAddressFormat(address: string, network: Network) {

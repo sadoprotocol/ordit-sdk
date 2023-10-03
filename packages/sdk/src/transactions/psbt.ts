@@ -1,12 +1,19 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
 import { BIP32Factory } from "bip32"
 
-import { Network } from "../config/types"
-import { BaseDatasource, JsonRpcDatasource } from "../modules"
-import { createTransaction, getNetwork, toXOnly } from "../utils"
-import { OnOffUnion } from "../wallet"
-import { PSBTBuilder } from "./PSBTBuilder"
-import { Output, UTXO, UTXOLimited } from "./types"
+import { JsonRpcDatasource } from "~/modules"
+import { PSBTBuilder } from "~/psbt-builder"
+import { createTransaction, getNetwork, toXOnly } from "~/utils"
+
+import {
+  CreatePsbtOptions,
+  InputType,
+  LegacyInputType,
+  NestedSegwitInputType,
+  ProcessInputOptions,
+  SegwitInputType,
+  TaprootInputType
+} from "./types"
 
 const bip32 = BIP32Factory(ecc)
 
@@ -153,72 +160,4 @@ async function generateLegacyInput({
     },
     ...(sighashType ? { sighashType } : undefined)
   }
-}
-
-// TODO: replace below interfaces and custom types w/ PsbtInputExtended from bitcoinjs-lib
-interface BaseInputType {
-  hash: string
-  index: number
-  sighashType?: number
-}
-
-type LegacyInputType = BaseInputType & {
-  type: "legacy"
-  nonWitnessUtxo?: Buffer
-  witnessUtxo?: {
-    script: Buffer
-    value: number
-  }
-}
-
-type SegwitInputType = BaseInputType & {
-  type: "segwit"
-  witnessUtxo?: {
-    script: Buffer
-    value: number
-  }
-  witness?: Buffer[]
-}
-
-type TaprootInputType = BaseInputType &
-  Omit<SegwitInputType, "type"> & {
-    type: "taproot"
-    tapInternalKey: Buffer
-    tapLeafScript?: TapLeafScript[]
-  }
-
-type NestedSegwitInputType = BaseInputType &
-  Omit<SegwitInputType, "type"> & {
-    type: "nested-segwit"
-    redeemScript: Buffer
-  }
-
-export type InputType = LegacyInputType | SegwitInputType | NestedSegwitInputType | TaprootInputType
-
-export type CreatePsbtOptions = {
-  satsPerByte: number
-  address: string
-  outputs: Output[]
-  enableRBF?: boolean
-  pubKey: string
-  network: Network
-  safeMode?: OnOffUnion
-}
-
-interface ProcessInputOptions {
-  utxo: UTXO | UTXOLimited
-  pubKey: string
-  network: Network
-  sighashType?: number
-  witness?: Buffer[]
-  datasource?: BaseDatasource
-}
-
-interface TapScript {
-  leafVersion: number
-  script: Buffer
-}
-export declare type ControlBlock = Buffer
-export interface TapLeafScript extends TapScript {
-  controlBlock: ControlBlock
 }

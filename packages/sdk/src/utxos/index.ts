@@ -1,1 +1,2 @@
-export { default as UTXOManager } from "./UTXOManager"
+export * from "./types"
+export * from "./UTXOManager"

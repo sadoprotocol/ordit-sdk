@@ -10,6 +10,9 @@ import * as transactions from "./transactions"
 import * as utils from "./utils"
 import * as wallet from "./wallet"
 
+/**
+ * @deprecated `ordit` has been deprecated. Import respective modules directly.
+ */
 export const ordit = {
   config,
   addresses,
@@ -29,14 +32,15 @@ export * as metamask from "./browser-wallets/metamask"
 export * as unisat from "./browser-wallets/unisat"
 export * as xverse from "./browser-wallets/xverse"
 export * from "./config"
+export * from "./fee"
 export * from "./inscription"
-export { InstantTradeBuilder, InstantTradeBuyerTxBuilder, InstantTradeSellerTxBuilder } from "./instant-trade"
+export * from "./instant-trade"
 export * from "./keys"
-export { BaseDatasource, JsonRpcDatasource } from "./modules"
+export * from "./modules"
+export * from "./psbt-builder"
 export * from "./signatures"
 export * from "./transactions"
-export { PSBTBuilder } from "./transactions/PSBTBuilder"
 export * from "./utils"
-export { UTXOManager } from "./utxos"
+export * from "./utxos"
 export * from "./wallet"
 export { Ordit } from "./wallet/Ordit"

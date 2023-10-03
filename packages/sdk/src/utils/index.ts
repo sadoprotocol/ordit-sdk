@@ -3,9 +3,10 @@ import { BIP32Interface } from "bip32"
 import * as bitcoin from "bitcoinjs-lib"
 import ECPairFactory from "ecpair"
 
-import { AddressFormats, AddressTypes, addressTypeToName } from "../addresses/formats"
-import { Network } from "../config/types"
-import { UTXO } from "../transactions/types"
+import { AddressFormats, AddressTypes, addressTypeToName } from "~/addresses"
+import { Network } from "~/config/types"
+import { UTXO } from "~/transactions/types"
+
 import {
   BufferOrHex,
   EncodeDecodeObjectOptions,
@@ -255,3 +256,5 @@ export function getDummyP2TRInput(): UTXO {
     confirmation: 10
   }
 }
+
+export * from "./types"

@@ -1,5 +1,8 @@
-import { BaseDatasource, GetWalletOptions, Inscriber, JsonRpcDatasource, verifyMessage } from ".."
-import { Network } from "../config/types"
+import { Network } from "~/config/types"
+import { Inscriber } from "~/inscriber"
+import { BaseDatasource, JsonRpcDatasource } from "~/modules"
+import { verifyMessage } from "~/signatures/message"
+import { OnOffUnion } from "~/wallet"
 
 export async function publishCollection({
   title,
@@ -120,7 +123,7 @@ function validateInscriptions(inscriptions: CollectionInscription[] = []) {
   return true
 }
 
-export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
+export type PublishCollectionOptions = {
   address: string
   feeRate: number
   postage: number
@@ -148,6 +151,7 @@ export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   outputs?: Outputs
   encodeMetadata?: boolean
   enableRBF?: boolean
+  safeMode?: OnOffUnion
 }
 
 export type CollectionInscription = {
@@ -156,7 +160,7 @@ export type CollectionInscription = {
   sri?: string
 }
 
-export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
+export type MintFromCollectionOptions = {
   address: string
   feeRate: number
   postage: number
@@ -176,6 +180,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   encodeMetadata?: boolean
   enableRBF?: boolean
   datasource?: BaseDatasource
+  safeMode?: OnOffUnion
 }
 
 type Outputs = Array<{ address: string; value: number }>

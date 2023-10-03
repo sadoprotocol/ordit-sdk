@@ -1,11 +1,13 @@
 import { Psbt } from "bitcoinjs-lib"
 
-import { AddressFormats, getNetwork, getScriptType } from ".."
-import { Network } from "../config/types"
-import { MAXIMUM_FEE } from "../constants"
+import { AddressFormats } from "~/addresses"
+import { Network } from "~/config/types"
+import { MAXIMUM_FEE } from "~/constants"
+import { getNetwork, getScriptType } from "~/utils"
+
 import { FeeEstimatorOptions } from "./types"
 
-export default class FeeEstimator {
+export class FeeEstimator {
   protected fee = 0
   protected feeRate: number
   protected network: Network

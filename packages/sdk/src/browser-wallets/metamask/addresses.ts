@@ -1,7 +1,9 @@
 import { ethers } from "ethers"
 
-import { getAddressesFromPublicKey, getDerivedNode } from "../.."
-import { Network } from "../../config/types"
+import { getAddressesFromPublicKey } from "~/addresses"
+import { Network } from "~/config/types"
+import { getDerivedNode } from "~/keys"
+
 import { isMetaMaskInstalled } from "./utils"
 export async function getAddresses({ path, network = "testnet" }: GetMetaMaskAddressesOptions) {
   if (!isMetaMaskInstalled()) {
