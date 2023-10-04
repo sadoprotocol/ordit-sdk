@@ -1,14 +1,15 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
 import * as bitcoin from "bitcoinjs-lib"
 
+import { MAXIMUM_SCRIPT_ELEMENT_SIZE } from "../constants"
+
 export function buildWitnessScript({ recover = false, ...options }: WitnessScriptOptions) {
   bitcoin.initEccLib(ecc)
   if (!options.mediaType || !options.mediaContent || !options.xkey) {
     throw new Error("Failed to build witness script")
   }
 
-  const contentChunks = chunkContent(options.mediaContent)
-
+  const contentChunks = chunkContent(options.mediaContent, !options.mediaType.includes("text") ? "base64" : "utf8")
   const metaStackElements: (number | Buffer)[] = []
 
   if (typeof options.meta === "object") {
@@ -44,17 +45,7 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
     bitcoin.opcodes.OP_0
   ]
 
-  const contentStackElements: (number | Buffer)[] = []
-
-  if (contentChunks) {
-    contentChunks.forEach((chunk) => {
-      let encoding: BufferEncoding = "utf8"
-      if (options.mediaType.indexOf("text") < 0) {
-        encoding = "base64"
-      }
-      contentStackElements.push(opPush(chunk, encoding))
-    })
-  }
+  const contentStackElements = contentChunks.map(opPush)
 
   if (recover) {
     return bitcoin.script.compile([Buffer.from(options.xkey, "hex"), bitcoin.opcodes.OP_CHECKSIG])
@@ -68,16 +59,24 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
   ])
 }
 
-function opPush(str: string, encoding: BufferEncoding = "utf8") {
-  const buff = Buffer.from(str, encoding)
-  const obj = [buff]
-  const push = Buffer.concat(obj)
-  return push
+function opPush(data: string | Buffer) {
+  const buff = Buffer.isBuffer(data) ? data : Buffer.from(data, "utf8")
+  return Buffer.concat([buff])
 }
 
-const chunkContent = function (str: string) {
-  const chunkList = str.match(/.{1,520}/g)
-  return chunkList
+export const chunkContent = function (str: string, encoding: BufferEncoding = "utf8") {
+  const contentBuffer = Buffer.from(str, encoding)
+  const chunks: Buffer[] = []
+  let chunkedBytes = 0
+
+  do {
+    const chunk = contentBuffer.subarray(chunkedBytes, chunkedBytes + MAXIMUM_SCRIPT_ELEMENT_SIZE)
+    chunkedBytes += chunk.byteLength
+
+    chunks.push(chunk)
+  } while (chunkedBytes < contentBuffer.byteLength)
+
+  return chunks
 }
 
 export type WitnessScriptOptions = {
