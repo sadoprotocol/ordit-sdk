@@ -286,7 +286,11 @@ export class PSBTBuilder extends FeeEstimator {
     if (!this.autoAdjustment && !address) return
 
     const amountToRequest =
-      amount && amount > 0 ? amount : this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
+      amount && amount > 0
+        ? amount
+        : this.changeAmount < 0
+        ? this.changeAmount * -1
+        : this.outputAmount - this.getRetrievedUTXOsValue()
 
     if (amount && this.getRetrievedUTXOsValue() > amount) return
 
