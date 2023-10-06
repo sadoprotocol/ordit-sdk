@@ -292,7 +292,7 @@ export class PSBTBuilder extends FeeEstimator {
         ? this.changeAmount * -1
         : this.outputAmount - this.getRetrievedUTXOsValue()
 
-    if (amount && this.getRetrievedUTXOsValue() > amount) return
+    if ((amount && this.getRetrievedUTXOsValue() >= amount) || amountToRequest <= 0) return
 
     const utxos = await this.datasource.getSpendables({
       address: address || this.address,
