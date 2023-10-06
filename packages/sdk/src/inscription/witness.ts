@@ -1,35 +1,16 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
 import * as bitcoin from "bitcoinjs-lib"
 
+import { MAXIMUM_SCRIPT_ELEMENT_SIZE } from "../constants"
+
 export function buildWitnessScript({ recover = false, ...options }: WitnessScriptOptions) {
   bitcoin.initEccLib(ecc)
   if (!options.mediaType || !options.mediaContent || !options.xkey) {
     throw new Error("Failed to build witness script")
   }
 
-  const contentChunks = chunkContent(options.mediaContent)
-
-  const metaStackElements: (number | Buffer)[] = []
-
-  if (typeof options.meta === "object") {
-    metaStackElements.push(
-      ...[
-        bitcoin.opcodes.OP_FALSE,
-        bitcoin.opcodes.OP_IF,
-        opPush("ord"),
-        1,
-        1,
-        opPush("application/json;charset=utf-8"),
-        bitcoin.opcodes.OP_0
-      ]
-    )
-    const metaChunks = chunkContent(JSON.stringify(options.meta))
-
-    metaChunks &&
-      metaChunks.forEach((chunk) => {
-        metaStackElements.push(opPush(chunk))
-      })
-    metaChunks && metaStackElements.push(bitcoin.opcodes.OP_ENDIF)
+  if (recover) {
+    return bitcoin.script.compile([Buffer.from(options.xkey, "hex"), bitcoin.opcodes.OP_CHECKSIG])
   }
 
   const baseStackElements = [
@@ -44,40 +25,50 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
     bitcoin.opcodes.OP_0
   ]
 
-  const contentStackElements: (number | Buffer)[] = []
+  const contentStackElements = opPush(options.mediaContent, !options.mediaType.includes("text") ? "base64" : "utf8")
 
-  if (contentChunks) {
-    contentChunks.forEach((chunk) => {
-      let encoding: BufferEncoding = "utf8"
-      if (options.mediaType.indexOf("text") < 0) {
-        encoding = "base64"
-      }
-      contentStackElements.push(opPush(chunk, encoding))
-    })
-  }
+  const metaStackElements: (number | Buffer)[] = []
+  if (typeof options.meta === "object") {
+    metaStackElements.push(
+      ...[
+        bitcoin.opcodes.OP_FALSE,
+        bitcoin.opcodes.OP_IF,
+        opPush("ord"),
+        1,
+        1,
+        opPush("application/json;charset=utf-8"),
+        bitcoin.opcodes.OP_0
+      ]
+    )
 
-  if (recover) {
-    return bitcoin.script.compile([Buffer.from(options.xkey, "hex"), bitcoin.opcodes.OP_CHECKSIG])
+    metaStackElements.push(opPush(JSON.stringify(options.meta)))
+    options.meta && metaStackElements.push(bitcoin.opcodes.OP_ENDIF)
   }
 
   return bitcoin.script.compile([
     ...baseStackElements,
-    ...contentStackElements,
+    contentStackElements,
     bitcoin.opcodes.OP_ENDIF,
     ...metaStackElements
   ])
 }
 
-function opPush(str: string, encoding: BufferEncoding = "utf8") {
-  const buff = Buffer.from(str, encoding)
-  const obj = [buff]
-  const push = Buffer.concat(obj)
-  return push
+function opPush(data: string, encoding: BufferEncoding = "utf8") {
+  return Buffer.concat(chunkContent(data, encoding))
 }
 
-const chunkContent = function (str: string) {
-  const chunkList = str.match(/.{1,520}/g)
-  return chunkList
+export const chunkContent = function (str: string, encoding: BufferEncoding = "utf8") {
+  const contentBuffer = Buffer.from(str, encoding)
+  const chunks: Buffer[] = []
+  let chunkedBytes = 0
+
+  while (chunkedBytes < contentBuffer.byteLength) {
+    const chunk = contentBuffer.subarray(chunkedBytes, chunkedBytes + MAXIMUM_SCRIPT_ELEMENT_SIZE)
+    chunkedBytes += chunk.byteLength
+    chunks.push(chunk)
+  }
+
+  return chunks
 }
 
 export type WitnessScriptOptions = {
