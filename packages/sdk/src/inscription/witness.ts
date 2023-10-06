@@ -9,28 +9,8 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
     throw new Error("Failed to build witness script")
   }
 
-  const contentChunks = chunkContent(options.mediaContent, !options.mediaType.includes("text") ? "base64" : "utf8")
-  const metaStackElements: (number | Buffer)[] = []
-
-  if (typeof options.meta === "object") {
-    metaStackElements.push(
-      ...[
-        bitcoin.opcodes.OP_FALSE,
-        bitcoin.opcodes.OP_IF,
-        opPush("ord"),
-        1,
-        1,
-        opPush("application/json;charset=utf-8"),
-        bitcoin.opcodes.OP_0
-      ]
-    )
-    const metaChunks = chunkContent(JSON.stringify(options.meta))
-
-    metaChunks &&
-      metaChunks.forEach((chunk) => {
-        metaStackElements.push(opPush(chunk))
-      })
-    metaChunks && metaStackElements.push(bitcoin.opcodes.OP_ENDIF)
+  if (recover) {
+    return bitcoin.script.compile([Buffer.from(options.xkey, "hex"), bitcoin.opcodes.OP_CHECKSIG])
   }
 
   const baseStackElements = [
@@ -45,23 +25,36 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
     bitcoin.opcodes.OP_0
   ]
 
-  const contentStackElements = contentChunks.map(opPush)
+  const contentStackElements = opPush(options.mediaContent, !options.mediaType.includes("text") ? "base64" : "utf8")
 
-  if (recover) {
-    return bitcoin.script.compile([Buffer.from(options.xkey, "hex"), bitcoin.opcodes.OP_CHECKSIG])
+  const metaStackElements: (number | Buffer)[] = []
+  if (typeof options.meta === "object") {
+    metaStackElements.push(
+      ...[
+        bitcoin.opcodes.OP_FALSE,
+        bitcoin.opcodes.OP_IF,
+        opPush("ord"),
+        1,
+        1,
+        opPush("application/json;charset=utf-8"),
+        bitcoin.opcodes.OP_0
+      ]
+    )
+
+    metaStackElements.push(opPush(JSON.stringify(options.meta)))
+    options.meta && metaStackElements.push(bitcoin.opcodes.OP_ENDIF)
   }
 
   return bitcoin.script.compile([
     ...baseStackElements,
-    ...contentStackElements,
+    contentStackElements,
     bitcoin.opcodes.OP_ENDIF,
     ...metaStackElements
   ])
 }
 
-function opPush(data: string | Buffer) {
-  const buff = Buffer.isBuffer(data) ? data : Buffer.from(data, "utf8")
-  return Buffer.concat([buff])
+function opPush(data: string, encoding: BufferEncoding = "utf8") {
+  return Buffer.concat(chunkContent(data, encoding))
 }
 
 export const chunkContent = function (str: string, encoding: BufferEncoding = "utf8") {
@@ -69,12 +62,11 @@ export const chunkContent = function (str: string, encoding: BufferEncoding = "u
   const chunks: Buffer[] = []
   let chunkedBytes = 0
 
-  do {
+  while (chunkedBytes < contentBuffer.byteLength) {
     const chunk = contentBuffer.subarray(chunkedBytes, chunkedBytes + MAXIMUM_SCRIPT_ELEMENT_SIZE)
     chunkedBytes += chunk.byteLength
-
     chunks.push(chunk)
-  } while (chunkedBytes < contentBuffer.byteLength)
+  }
 
   return chunks
 }
