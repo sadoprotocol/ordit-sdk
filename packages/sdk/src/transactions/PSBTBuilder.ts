@@ -48,7 +48,6 @@ export class PSBTBuilder extends FeeEstimator {
   protected address: string
   protected changeAddress?: string
   protected changeAmount = 0
-  protected changeOutputIndex = -1
   protected datasource: BaseDatasource
   protected injectableInputs: InjectableInput[] = []
   protected injectableOutputs: InjectableOutput[] = []
@@ -239,45 +238,13 @@ export class PSBTBuilder extends FeeEstimator {
       this.injectOutput(injectable)
       injectedIndexes.push(injectable.injectionIndex)
     })
-  }
 
-  private adjustChangeOutput() {
-    const changeOutput = this.outputs[this.changeOutputIndex]
-    this.outputs[this.changeOutputIndex] = {
-      ...changeOutput,
-      value: this.changeAmount
+    if (this.changeAmount > MINIMUM_AMOUNT_IN_SATS) {
+      this.psbt.addOutput({
+        address: this.changeAddress || this.address,
+        value: this.changeAmount
+      })
     }
-  }
-
-  private removeOutputsByIndex(indexes: number[] = []) {
-    this.outputs = this.outputs.filter((_, index) => !indexes.includes(index))
-  }
-
-  private removeChangeOutput() {
-    this.changeOutputIndex > -1 && this.removeOutputsByIndex([this.changeOutputIndex])
-    this.changeOutputIndex = -1
-  }
-
-  protected async addChangeOutput() {
-    await this.isNegativeChange()
-
-    if (this.changeAmount < MINIMUM_AMOUNT_IN_SATS) {
-      this.removeChangeOutput()
-      return
-    }
-
-    if (this.changeOutputIndex > -1) {
-      return this.adjustChangeOutput()
-    }
-
-    this.outputs.push({
-      address: this.changeAddress || this.address,
-      value: this.changeAmount
-    })
-
-    this.changeOutputIndex = this.outputs.length - 1
-
-    this.calculateChangeAmount()
   }
 
   private calculateOutputAmount() {
@@ -293,7 +260,8 @@ export class PSBTBuilder extends FeeEstimator {
     if (!this.autoAdjustment) return
 
     this.changeAmount = Math.floor(this.inputAmount - this.outputAmount - this.fee)
-    await this.addChangeOutput()
+
+    await this.isNegativeChange()
   }
 
   private async isNegativeChange() {
@@ -317,9 +285,13 @@ export class PSBTBuilder extends FeeEstimator {
     if (!this.autoAdjustment && !address) return
 
     const amountToRequest =
-      amount && amount > 0 ? amount : this.changeAmount < 0 ? this.changeAmount * -1 : this.outputAmount
+      amount && amount > 0
+        ? amount
+        : this.changeAmount < 0
+        ? this.changeAmount * -1
+        : this.outputAmount - this.getRetrievedUTXOsValue()
 
-    if (amount && this.getRetrievedUTXOsValue() > amount) return
+    if ((amount && this.getRetrievedUTXOsValue() >= amount) || amountToRequest <= 0) return
 
     const utxos = await this.datasource.getSpendables({
       address: address || this.address,
