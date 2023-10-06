@@ -262,7 +262,6 @@ export class PSBTBuilder extends FeeEstimator {
     this.changeAmount = Math.floor(this.inputAmount - this.outputAmount - this.fee)
 
     await this.isNegativeChange()
-    await this.calculateChangeAmount()
   }
 
   private async isNegativeChange() {
