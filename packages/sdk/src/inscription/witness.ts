@@ -13,21 +13,10 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
     return bitcoin.script.compile([Buffer.from(options.xkey, "hex"), bitcoin.opcodes.OP_CHECKSIG])
   }
 
-  const baseStackElements = [
-    Buffer.from(options.xkey, "hex"),
-    bitcoin.opcodes.OP_CHECKSIG,
-    bitcoin.opcodes.OP_FALSE,
-    bitcoin.opcodes.OP_IF,
-    opPush("ord"),
-    1,
-    1,
-    opPush(options.mediaType),
-    bitcoin.opcodes.OP_0
-  ]
-
-  const contentStackElements = opPush(options.mediaContent, !options.mediaType.includes("text") ? "base64" : "utf8")
-
+  const contentChunks = chunkContent(options.mediaContent, !options.mediaType.includes("text") ? "base64" : "utf8")
+  const contentStackElements = contentChunks.map(opPush)
   const metaStackElements: (number | Buffer)[] = []
+
   if (typeof options.meta === "object") {
     metaStackElements.push(
       ...[
@@ -40,21 +29,41 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
         bitcoin.opcodes.OP_0
       ]
     )
+    const metaChunks = chunkContent(JSON.stringify(options.meta))
 
-    metaStackElements.push(opPush(JSON.stringify(options.meta)))
-    options.meta && metaStackElements.push(bitcoin.opcodes.OP_ENDIF)
+    metaChunks &&
+      metaChunks.forEach((chunk) => {
+        metaStackElements.push(opPush(chunk))
+      })
+    metaChunks && metaStackElements.push(bitcoin.opcodes.OP_ENDIF)
   }
+
+  const baseStackElements = [
+    Buffer.from(options.xkey, "hex"),
+    bitcoin.opcodes.OP_CHECKSIG,
+    bitcoin.opcodes.OP_FALSE,
+    bitcoin.opcodes.OP_IF,
+    opPush("ord"),
+    1,
+    1,
+    opPush(options.mediaType),
+    bitcoin.opcodes.OP_0
+  ]
 
   return bitcoin.script.compile([
     ...baseStackElements,
-    contentStackElements,
+    ...contentStackElements,
     bitcoin.opcodes.OP_ENDIF,
     ...metaStackElements
   ])
 }
 
-function opPush(data: string, encoding: BufferEncoding = "utf8") {
-  return Buffer.concat(chunkContent(data, encoding))
+function opPush(data: string | Buffer) {
+  const buff = Buffer.isBuffer(data) ? data : Buffer.from(data, "utf8")
+  if (buff.byteLength > MAXIMUM_SCRIPT_ELEMENT_SIZE)
+    throw new Error("Data is too large to push. Use chunkContent to split data into smaller chunks")
+
+  return Buffer.concat([buff])
 }
 
 export const chunkContent = function (str: string, encoding: BufferEncoding = "utf8") {
