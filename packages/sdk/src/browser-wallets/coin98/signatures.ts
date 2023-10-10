@@ -13,7 +13,7 @@ export async function signPsbt(
   }
 
   const psbtHex = psbt.toHex()
-  const signedPsbtHex = await window.coin98.signPsbt(psbtHex, { autoFinalized: finalize })
+  const signedPsbtHex = await window.coin98.bitcoin.signPsbt(psbtHex, { autoFinalized: finalize })
   if (!signedPsbtHex) {
     throw new Error("Failed to sign psbt hex using Coin98")
   }
@@ -35,7 +35,7 @@ export async function signMessage(message: string) {
     throw new Error("Coin98 not installed.")
   }
 
-  const signature = await window.coin98.signMessage(message)
+  const signature = await window.coin98.bitcoin.signMessage(message)
 
   if (!signature) {
     throw new Error("Failed to sign message using Coin98")

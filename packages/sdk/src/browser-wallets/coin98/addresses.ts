@@ -12,18 +12,18 @@ export async function getAddresses(network: Network) {
   }
 
   let targetNetwork: UnisatNetwork = "livenet"
-  const connectedNetwork = await window.coin98.getNetwork()
+  const connectedNetwork = await window.coin98.bitcoin.getNetwork()
 
   if (network === "testnet") {
     targetNetwork = network
   }
 
   if (connectedNetwork !== targetNetwork) {
-    await window.coin98.switchNetwork(targetNetwork)
+    await window.coin98.bitcoin.switchNetwork(targetNetwork)
   }
 
-  const accounts = await window.coin98.requestAccounts()
-  const publicKey = await window.coin98.getPublicKey()
+  const accounts = await window.coin98.bitcoin.requestAccounts()
+  const publicKey = await window.coin98.bitcoin.getPublicKey()
 
   if (!accounts[0]) {
     return []
