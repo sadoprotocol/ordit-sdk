@@ -1,5 +1,6 @@
 import { BaseDatasource, GetWalletOptions, Inscriber, JsonRpcDatasource, verifyMessage } from ".."
 import { Network } from "../config/types"
+import { MAXIMUM_ROYALTY_PERCENTAGE } from "../constants"
 
 export async function publishCollection({
   title,
@@ -17,8 +18,8 @@ export async function publishCollection({
   }
 
   if (royalty) {
-    // 0 = 0%, 10 = 1000%
-    if (isNaN(royalty.pct) || royalty.pct < 0 || royalty.pct > 10) {
+    // 0 = 0%, 0.1 = 10%
+    if (isNaN(royalty.pct) || royalty.pct < 0 || royalty.pct > MAXIMUM_ROYALTY_PERCENTAGE) {
       throw new Error("Invalid royalty %")
     }
 

@@ -7,3 +7,6 @@ export const MAXIMUM_FEE = 5000000
 
 // Maximum number of bytes pushable to the witness stack
 export const MAXIMUM_SCRIPT_ELEMENT_SIZE = 520
+
+// Maximum royalty percentage
+export const MAXIMUM_ROYALTY_PERCENTAGE = 0.1
