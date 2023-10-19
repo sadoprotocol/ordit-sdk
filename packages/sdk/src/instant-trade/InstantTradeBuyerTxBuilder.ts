@@ -57,8 +57,9 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   }
 
   private decodePrice() {
-    this.validatePrice((this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value - this.postage)
-    this.setPrice((this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value - this.postage)
+    const price = (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[0].value - this.postage
+    this.validatePrice(price)
+    this.setPrice(price)
   }
 
   private decodeRoyalty() {
