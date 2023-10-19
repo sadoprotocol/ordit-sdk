@@ -78,7 +78,8 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     this.setRoyalty({
       price: this.price,
       amount,
-      receiver: royalty.address as string
+      receiver: royalty.address as string,
+      percentage: royalty.pct
     })
   }
 
