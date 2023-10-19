@@ -78,6 +78,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     const amount = Math.ceil(royalty.pct * this.price)
 
     this.setRoyalty({
+      price: this.price,
       amount,
       receiver: royalty.address as string
     })

@@ -53,16 +53,24 @@ export default class InstantTradeBuilder extends PSBTBuilder {
     this.price = parseInt(value.toString()) // intentional re-parsing to number as value can be floating point
   }
 
-  setRoyalty(data: Omit<RoyaltyAttributes, "percentage">) {
+  setRoyalty(
+    data: Omit<RoyaltyAttributes, "percentage"> & Partial<Pick<RoyaltyAttributes, "percentage">> & { price: number }
+  ) {
     if (data.amount < MINIMUM_AMOUNT_IN_SATS) return
-    if (!this.price) {
-      throw new Error("Set price before setting royalty")
-    }
 
     this.royalty = {
       amount: data.amount,
       receiver: data.receiver,
-      percentage: +(data.amount / this.price).toFixed(2) // To be used only for display purposes
+      // percentage to be used only for display purposes
+      percentage:
+        data.percentage && data.percentage > 0
+          ? data.percentage
+          : +new Intl.NumberFormat("en", {
+              maximumFractionDigits: 8,
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              roundingMode: "trunc"
+            }).format(data.amount / data.price)
     }
   }
 

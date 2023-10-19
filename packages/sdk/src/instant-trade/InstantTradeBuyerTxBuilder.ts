@@ -67,7 +67,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     const amount = royaltyOutput && royaltyOutput.value > MINIMUM_AMOUNT_IN_SATS ? royaltyOutput.value : 0
     const receiver = scriptPayload ? scriptPayload.address : null
 
-    royaltyOutput && receiver && this.setRoyalty({ amount, receiver })
+    royaltyOutput && receiver && this.setRoyalty({ amount, receiver, price: this.price + amount })
   }
 
   private bindRefundableOutput() {
