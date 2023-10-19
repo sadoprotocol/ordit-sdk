@@ -55,7 +55,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
       { address: this.receiveAddress || this.address, value: this.price + this.postage - this.royalty.amount }
     ]
 
-    if (this.royalty.amount > MINIMUM_AMOUNT_IN_SATS && this.royalty.receiver) {
+    if (this.royalty.amount >= MINIMUM_AMOUNT_IN_SATS && this.royalty.receiver) {
       this.outputs.push({
         address: this.royalty.receiver, // creator address
         value: this.royalty.amount // royalty in sats to be paid to original creator

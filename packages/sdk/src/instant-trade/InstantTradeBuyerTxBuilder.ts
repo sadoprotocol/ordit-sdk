@@ -65,7 +65,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   private decodeRoyalty() {
     const royaltyOutput = (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[1]
     const scriptPayload = getScriptType(royaltyOutput.script, this.network).payload
-    const amount = royaltyOutput && royaltyOutput.value > MINIMUM_AMOUNT_IN_SATS ? royaltyOutput.value : 0
+    const amount = royaltyOutput && royaltyOutput.value >= MINIMUM_AMOUNT_IN_SATS ? royaltyOutput.value : 0
     const receiver = scriptPayload ? scriptPayload.address : null
 
     royaltyOutput && receiver && this.setRoyalty({ amount, receiver, price: this.price + amount })
