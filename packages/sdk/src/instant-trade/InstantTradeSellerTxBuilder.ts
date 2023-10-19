@@ -50,9 +50,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     this.inputs = [input]
   }
 
-  private async generateSellerOutputs() {
-    await this.calculateRoyalty()
-
+  private generateSellerOutputs() {
     this.outputs = [
       { address: this.receiveAddress || this.address, value: this.price + this.postage - this.royalty.amount }
     ]
@@ -97,8 +95,11 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
 
     this.utxo = await this.verifyAndFindInscriptionUTXO()
     this.validateOwnership()
+
+    await this.calculateRoyalty()
+
     await this.generatSellerInputs()
-    await this.generateSellerOutputs()
+    this.generateSellerOutputs()
 
     await this.prepare()
   }
