@@ -50,7 +50,7 @@ export default class InstantTradeBuilder extends PSBTBuilder {
 
   setPrice(value: number) {
     this.validatePrice(value)
-    this.price = parseInt(value.toString())
+    this.price = parseInt(value.toString()) // intentional re-parsing to number as value can be floating point
   }
 
   setRoyalty(data: Omit<RoyaltyAttributes, "percentage">) {
