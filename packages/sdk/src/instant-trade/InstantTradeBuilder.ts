@@ -7,12 +7,22 @@ export interface InstantTradeBuilderArgOptions
   inscriptionOutpoint?: string
 }
 
+interface RoyaltyAttributes {
+  amount: number
+  percentage: number
+  receiver: string | null
+}
+
 export default class InstantTradeBuilder extends PSBTBuilder {
   protected inscriptionOutpoint?: string
   protected inscription?: Inscription
   protected price = 0
   protected postage = 0
-  protected royalty = 0
+  protected royalty: RoyaltyAttributes = {
+    amount: 0,
+    percentage: 0,
+    receiver: null
+  }
 
   constructor({
     address,
@@ -43,8 +53,17 @@ export default class InstantTradeBuilder extends PSBTBuilder {
     this.price = parseInt(value.toString())
   }
 
-  setRoyalty(value: number) {
-    this.royalty = value
+  setRoyalty(data: Omit<RoyaltyAttributes, "percentage">) {
+    if (data.amount < MINIMUM_AMOUNT_IN_SATS) return
+    if (!this.price) {
+      throw new Error("Set price before setting royalty")
+    }
+
+    this.royalty = {
+      amount: data.amount,
+      receiver: data.receiver,
+      percentage: +(data.amount / this.price).toFixed(2) // To be used only for display purposes
+    }
   }
 
   get data() {
