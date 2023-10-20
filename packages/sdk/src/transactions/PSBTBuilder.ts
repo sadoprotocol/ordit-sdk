@@ -239,7 +239,7 @@ export class PSBTBuilder extends FeeEstimator {
       injectedIndexes.push(injectable.injectionIndex)
     })
 
-    if (this.changeAmount > MINIMUM_AMOUNT_IN_SATS) {
+    if (this.changeAmount >= MINIMUM_AMOUNT_IN_SATS) {
       this.psbt.addOutput({
         address: this.changeAddress || this.address,
         value: this.changeAmount
