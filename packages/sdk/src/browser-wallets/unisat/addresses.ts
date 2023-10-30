@@ -2,7 +2,7 @@ import { getAddressFormat } from "../.."
 import { Network } from "../../config/types"
 import { isUnisatInstalled, UnisatNetwork } from "./utils"
 
-export async function getAddresses(network: Network) {
+export async function getAddresses(network: Network, readOnly?: boolean) {
   if (!isUnisatInstalled()) {
     throw new Error("Unisat not installed.")
   }
@@ -22,7 +22,7 @@ export async function getAddresses(network: Network) {
     await window.unisat.switchNetwork(targetNetwork)
   }
 
-  const accounts = await window.unisat.requestAccounts()
+  const accounts = readOnly ? await window.unisat.getAccounts() : await window.unisat.requestAccounts()
   const publicKey = await window.unisat.getPublicKey()
 
   if (!accounts[0]) {
