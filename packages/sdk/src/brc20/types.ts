@@ -2,7 +2,7 @@ import { BaseDatasource } from ".."
 import { Network } from "../config/types"
 
 export type BRC20Options<T> = {
-  datasource: BaseDatasource
+  datasource?: BaseDatasource
   feeRate: number
   network: Network
 } & T

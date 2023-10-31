@@ -3,6 +3,7 @@ import * as bitcoin from "bitcoinjs-lib"
 import { Tapleaf } from "bitcoinjs-lib/src/types"
 
 import {
+  BaseDatasource,
   buildWitnessScript,
   createTransaction,
   encodeObject,
@@ -54,7 +55,8 @@ export class Inscriber extends PSBTBuilder {
     outputs = [],
     encodeMetadata = false,
     safeMode,
-    meta
+    meta,
+    datasource
   }: InscriberArgOptions) {
     super({
       address,
@@ -63,6 +65,7 @@ export class Inscriber extends PSBTBuilder {
       network,
       publicKey,
       outputs,
+      datasource,
       autoAdjustment: false
     })
     if (!publicKey || !changeAddress || !mediaContent) {
@@ -296,6 +299,7 @@ export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   meta?: NestedObject
   outputs?: Outputs
   encodeMetadata?: boolean
+  datasource?: BaseDatasource
 }
 
 interface SetContentOptions {

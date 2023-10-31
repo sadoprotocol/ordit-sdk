@@ -11,7 +11,7 @@ export class BRC20TransferBase extends Inscriber {
   protected tick: string
   protected amount = 0
 
-  constructor({ address, pubKey, feeRate, network, tick, amount }: BRC20TransferBaseOptions) {
+  constructor({ address, pubKey, feeRate, network, tick, amount, datasource }: BRC20TransferBaseOptions) {
     super({
       network,
       address,
@@ -19,6 +19,7 @@ export class BRC20TransferBase extends Inscriber {
       destinationAddress: address,
       publicKey: pubKey,
       feeRate,
+      datasource,
       postage: 1000,
       mediaType: "<temp-type>", // Set on payload creation
       mediaContent: "<temp-content>" // Set on payload creation
