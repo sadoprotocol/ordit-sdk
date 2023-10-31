@@ -1,4 +1,4 @@
-import { Inscriber } from ".."
+import { Inscriber } from "../transactions/Inscriber"
 import { BRC20MintOptions, BRC20MintPayloadAttributes } from "./types"
 
 export class BRC20Mint extends Inscriber {
@@ -14,8 +14,8 @@ export class BRC20Mint extends Inscriber {
       publicKey: pubKey,
       feeRate,
       postage: 1000,
-      mediaType: "", // Set on payload creation
-      mediaContent: "" // Set on payload creation
+      mediaType: "<temp-type>", // Set on payload creation
+      mediaContent: "<temp-content>" // Set on payload creation
     })
 
     this.tick = tick
