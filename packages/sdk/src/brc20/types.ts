@@ -25,7 +25,16 @@ export type BRC20MintOptions = BRC20Options<{
   amount: number
 }>
 
-export type BRC20TransferOptions = BRC20Options<{
+export type BRC20TransferBaseOptions = BRC20Options<{
+  address: string
+  pubKey: string
+  tick: string
+  amount: number
+}>
+
+export type BRC20TransferGeneratorOptions = BRC20TransferBaseOptions
+
+export type BRC20TransferExecutorOptions = BRC20Options<{
   address: string
   pubKey: string
   destinationAddress: string
@@ -70,9 +79,9 @@ export interface BRC20TokenAttributes {
   timestamp: number
 }
 
-export type ValidateBRC20TransferOptions = Pick<BRC20TransferOptions, "amount" | "datasource" | "tick" | "network">
-export type GetBRC20BalancesOptions = Pick<BRC20TransferOptions, "address" | "datasource" | "tick" | "network">
+export type ValidateBRC20TransferOptions = Pick<BRC20TransferBaseOptions, "amount" | "datasource" | "tick" | "network">
+export type GetBRC20BalancesOptions = Pick<BRC20TransferBaseOptions, "address" | "datasource" | "tick" | "network">
 export type HasEnoughBalanceOptions = Pick<
-  BRC20TransferOptions,
+  BRC20TransferBaseOptions,
   "address" | "amount" | "datasource" | "tick" | "network"
 >

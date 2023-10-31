@@ -1,6 +1,6 @@
 import { generateTxUniqueIdentifier, Inscription, processInput, PSBTBuilder } from ".."
 import { BRC20TransferBase } from "./BRC20TransferBase"
-import { BRC20TransferOptions, BRC20TransferPayloadAttributes } from "./types"
+import { BRC20TransferExecutorOptions, BRC20TransferPayloadAttributes } from "./types"
 
 export class BRC20TransferExecutor extends PSBTBuilder {
   private tick: string
@@ -16,7 +16,7 @@ export class BRC20TransferExecutor extends PSBTBuilder {
     network,
     tick,
     amount
-  }: BRC20TransferOptions) {
+  }: BRC20TransferExecutorOptions) {
     super({ address, changeAddress: address, publicKey: pubKey, datasource, feeRate, network, outputs: [] })
 
     this.destinationAddress = destinationAddress

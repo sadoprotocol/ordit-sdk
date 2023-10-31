@@ -1,7 +1,7 @@
 import { JsonRpcDatasource } from ".."
 import { Inscriber } from "../transactions/Inscriber"
 import {
-  BRC20TransferOptions,
+  BRC20TransferBaseOptions,
   GetBRC20BalancesOptions,
   HasEnoughBalanceOptions,
   ValidateBRC20TransferOptions
@@ -11,23 +11,18 @@ export class BRC20TransferBase extends Inscriber {
   protected tick: string
   protected amount = 0
 
-  protected _destinationAddress: string
-
-  constructor({ address, pubKey, destinationAddress, feeRate, network, tick, amount }: BRC20TransferOptions) {
+  constructor({ address, pubKey, feeRate, network, tick, amount }: BRC20TransferBaseOptions) {
     super({
-      autoAdjustment: false,
       network,
       address,
       changeAddress: address,
-      destinationAddress: address, // IMPORTANT to keep destination as owner address
+      destinationAddress: address,
       publicKey: pubKey,
       feeRate,
       postage: 1000,
       mediaType: "<temp-type>", // Set on payload creation
       mediaContent: "<temp-content>" // Set on payload creation
     })
-
-    this._destinationAddress = destinationAddress
 
     this.tick = tick
     this.amount = amount

@@ -1,18 +1,9 @@
 import { BRC20TransferBase } from "./BRC20TransferBase"
-import { BRC20TransferOptions, BRC20TransferPayloadAttributes } from "./types"
+import { BRC20TransferBaseOptions, BRC20TransferPayloadAttributes } from "./types"
 
 export class BRC20TransferGenerator extends BRC20TransferBase {
-  constructor({
-    address,
-    pubKey,
-    datasource,
-    destinationAddress,
-    feeRate,
-    network,
-    tick,
-    amount
-  }: BRC20TransferOptions) {
-    super({ address, pubKey, datasource, destinationAddress, feeRate, network, tick, amount })
+  constructor({ address, pubKey, datasource, feeRate, network, tick, amount }: BRC20TransferBaseOptions) {
+    super({ address, pubKey, datasource, feeRate, network, tick, amount })
   }
 
   private async validateTransferOptions() {
