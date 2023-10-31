@@ -25,6 +25,7 @@ export const ordit = {
 }
 
 export * from "./addresses"
+export * from "./brc20"
 export * as metamask from "./browser-wallets/metamask"
 export * as unisat from "./browser-wallets/unisat"
 export * as xverse from "./browser-wallets/xverse"
