@@ -23,10 +23,10 @@ export class Inscriber extends PSBTBuilder {
   protected mediaContent: string
   protected meta?: NestedObject
   protected postage: number
+  protected destinationAddress: string
 
   private ready = false
   private commitAddress: string | null = null
-  private destinationAddress: string
   private payment: bitcoin.payments.Payment | null = null
   private suitableUnspent: UTXOLimited | null = null
   private recovery = false
@@ -40,6 +40,7 @@ export class Inscriber extends PSBTBuilder {
   }
   private taprootTree!: [Tapleaf, Tapleaf]
 
+  // TODO: bind datasource to constructor options
   constructor({
     network,
     address,
@@ -87,6 +88,11 @@ export class Inscriber extends PSBTBuilder {
       outputAmount: this.outputAmount,
       postage: this.postage
     }
+  }
+
+  set content({ content, type }: SetContentOptions) {
+    this.mediaContent = content
+    this.mediaType = type
   }
 
   private getMetadata() {
@@ -290,6 +296,11 @@ export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   meta?: NestedObject
   outputs?: Outputs
   encodeMetadata?: boolean
+}
+
+interface SetContentOptions {
+  content: string
+  type: string
 }
 
 type Outputs = Array<{ address: string; value: number }>
