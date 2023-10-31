@@ -69,3 +69,10 @@ export interface BRC20TokenAttributes {
   creator: string
   timestamp: number
 }
+
+export type ValidateBRC20TransferOptions = Pick<BRC20TransferOptions, "amount" | "datasource" | "tick" | "network">
+export type GetBRC20BalancesOptions = Pick<BRC20TransferOptions, "address" | "datasource" | "tick" | "network">
+export type HasEnoughBalanceOptions = Pick<
+  BRC20TransferOptions,
+  "address" | "amount" | "datasource" | "tick" | "network"
+>
