@@ -4,8 +4,8 @@ import { BRC20DeployOptions, BRC20DeployPayloadAttributes } from "./types"
 export class BRC20Deploy extends Inscriber {
   private tick: string
   private supply: number
-  private limit: number
-  private decimals: number
+  private limit?: number
+  private decimals?: number
 
   constructor({
     address,
@@ -37,15 +37,15 @@ export class BRC20Deploy extends Inscriber {
   }
 
   private async validateDeployOptions() {
-    if (this.decimals < 0 || this.decimals > 18) {
+    if (this.decimals && (this.decimals < 0 || this.decimals > 18)) {
       throw new Error("Invalid decimals")
     }
 
-    if (this.limit < 0) {
+    if (this.limit && this.limit <= 0) {
       throw new Error("Invalid limit")
     }
 
-    if (this.supply < 0) {
+    if (this.supply <= 0) {
       throw new Error("Invalid supply")
     }
 
@@ -53,9 +53,15 @@ export class BRC20Deploy extends Inscriber {
       throw new Error("Invalid tick")
     }
 
-    const token = await this.datasource.getToken({ tick: this.tick })
-    if (token) {
-      throw new Error("Token already exists")
+    try {
+      const token = await this.datasource.getToken({ tick: this.tick })
+      if (token) {
+        throw new Error("Token already exists")
+      }
+    } catch (error) {
+      if (error.message !== "Token not found") {
+        throw error
+      }
     }
 
     this.generatePayload()
@@ -67,8 +73,8 @@ export class BRC20Deploy extends Inscriber {
       op: "deploy",
       tick: this.tick,
       max: this.supply.toString(),
-      lim: this.limit.toString(),
-      dec: this.decimals.toString()
+      lim: this.limit?.toString(),
+      dec: this.decimals?.toString()
     }
 
     this.content = {
