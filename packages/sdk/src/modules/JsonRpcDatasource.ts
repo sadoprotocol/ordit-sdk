@@ -213,7 +213,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new Error("Invalid request")
     }
 
-    return rpc[this.network].call<BRC20TokenAttributes>("BRC20.GetToken", { tick }, rpc.id)
+    return rpc[this.network].call<BRC20TokenAttributes>("Brc20.GetToken", { tick }, rpc.id)
   }
 
   async getTransfers({ filter, pagination }: GetTransfersOptions): Promise<GetTransfersResponse> {
@@ -239,11 +239,11 @@ export default class JsonRpcDatasource extends BaseDatasource {
     }
   }
 
-  async getAddressTokens({ address }: GetAddressTokensOptions): Promise<GetAddressTokensResponse> {
+  async getAddressTokens({ address }: GetAddressTokensOptions): Promise<GetAddressTokensResponse[]> {
     if (!address) {
       throw new Error("Invalid request")
     }
 
-    return rpc[this.network].call<GetAddressTokensResponse>("Brc20.GetAddressTokens", { address }, rpc.id)
+    return rpc[this.network].call<GetAddressTokensResponse[]>("Brc20.Address.GetTokens", { address }, rpc.id)
   }
 }

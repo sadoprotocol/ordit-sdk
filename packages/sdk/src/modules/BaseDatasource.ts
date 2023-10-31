@@ -69,5 +69,5 @@ export default abstract class BaseDatasource {
 
   abstract getTransfers({ filter, pagination }: GetTransfersOptions): Promise<GetTransfersResponse>
 
-  abstract getAddressTokens({ address }: GetAddressTokensOptions): Promise<GetAddressTokensResponse>
+  abstract getAddressTokens({ address }: GetAddressTokensOptions): Promise<GetAddressTokensResponse[]>
 }
