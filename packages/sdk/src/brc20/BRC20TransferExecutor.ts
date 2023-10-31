@@ -1,4 +1,5 @@
-import { generateTxUniqueIdentifier, Inscription, processInput, PSBTBuilder } from ".."
+import { generateTxUniqueIdentifier, Inscription, processInput } from ".."
+import { PSBTBuilder } from "../transactions/PSBTBuilder"
 import { BRC20TransferBase } from "./BRC20TransferBase"
 import { BRC20TransferExecutorOptions, BRC20TransferPayloadAttributes } from "./types"
 
@@ -83,7 +84,7 @@ export class BRC20TransferExecutor extends PSBTBuilder {
 
         if (!isBRC20TransferInscription) continue
 
-        if (content.amt === this.amount.toString()) {
+        if (content.amt >= this.amount.toString()) {
           filterInscriptions.push({
             ...inscription,
             content

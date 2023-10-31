@@ -47,14 +47,11 @@ export class BRC20TransferBase extends Inscriber {
       address: address
     })
     const balance = balances.find((b) => b.tick === tick)
-    if (!balance) {
-      throw new Error("Owner does not have any balance for this token")
-    }
 
     return {
-      total: balance.total,
-      available: balance.available,
-      transferable: balance.transferable
+      total: balance?.total || 0,
+      available: balance?.available || 0,
+      transferable: balance?.transferable || 0
     }
   }
 
