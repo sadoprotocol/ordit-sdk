@@ -1,6 +1,7 @@
 import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
 import { Rarity } from "../inscription/types"
+import { JsonRpcPagination } from "../modules/types"
 import { Transaction, UTXO } from "../transactions/types"
 import { RequireAtLeastOne } from "../utils/types"
 
@@ -71,4 +72,51 @@ export interface GetSpendablesOptions {
 
 export interface GetBalanceOptions {
   address: string
+}
+
+export interface GetTokenOptions {
+  tick: string
+}
+
+export interface GetTransfersOptions {
+  filter: RequireAtLeastOne<{
+    inscription?: string
+    tick?: string
+    from?: string
+    to?: string
+  }>
+  pagination?: JsonRpcPagination
+}
+
+export interface GetTransfersResponse {
+  transfers: Array<{
+    inscription: string
+    tick: string
+    slug: string
+    amount: number
+    from: {
+      address: string
+      block: number
+      timestamp: number
+    }
+    to: {
+      address: string
+      block: number
+      timestamp: number
+    }
+  }>
+  pagination?: JsonRpcPagination
+}
+
+export interface GetAddressTokensOptions {
+  address: string
+}
+
+export interface GetAddressTokensResponse {
+  address: string
+  tick: string
+  slug: string
+  total: number
+  available: number
+  transferable: number
 }
