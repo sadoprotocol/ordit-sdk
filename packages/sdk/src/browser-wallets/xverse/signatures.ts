@@ -67,7 +67,7 @@ export async function signPsbt({
   return { hex: hex!, base64 }
 }
 
-export async function signMessage(options: XverseSignMessageOptions) {
+export async function signMessage(options: XverseSignMessageOptions): Promise<null | { signature: string }> {
   let result = null
   if (!options.message || !options.network || !options.address) {
     throw new Error("Invalid options provided.")
