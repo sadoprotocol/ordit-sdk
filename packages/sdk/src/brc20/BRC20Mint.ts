@@ -53,7 +53,7 @@ export class BRC20Mint extends Inscriber {
       amt: this.amount.toString()
     }
 
-    this.content = {
+    this.media = {
       content: JSON.stringify(payload),
       type: "text/plain;charset=utf-8"
     }

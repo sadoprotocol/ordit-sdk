@@ -25,7 +25,7 @@ export class BRC20TransferGenerator extends BRC20TransferBase {
       amt: this.amount.toString()
     }
 
-    this.content = {
+    this.media = {
       content: JSON.stringify(payload),
       type: "text/plain;charset=utf-8"
     }

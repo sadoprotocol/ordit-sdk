@@ -78,7 +78,7 @@ export class BRC20Deploy extends Inscriber {
       dec: this.decimals?.toString()
     }
 
-    this.content = {
+    this.media = {
       content: JSON.stringify(payload),
       type: "text/plain;charset=utf-8"
     }

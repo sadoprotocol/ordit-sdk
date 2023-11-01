@@ -93,7 +93,7 @@ export class Inscriber extends PSBTBuilder {
     }
   }
 
-  set content({ content, type }: SetContentOptions) {
+  set media({ content, type }: SetContentOptions) {
     this.mediaContent = content
     this.mediaType = type
   }
