@@ -1,4 +1,5 @@
 import { JsonRpcDatasource } from ".."
+import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { Inscriber } from "../transactions/Inscriber"
 import {
   BRC20TransferBaseOptions,
@@ -20,7 +21,7 @@ export class BRC20TransferBase extends Inscriber {
       publicKey: pubKey,
       feeRate,
       datasource,
-      postage: 1000,
+      postage: MINIMUM_AMOUNT_IN_SATS,
       mediaType: "<temp-type>", // Set on payload creation
       mediaContent: "<temp-content>" // Set on payload creation
     })

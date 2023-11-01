@@ -1,3 +1,4 @@
+import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { Inscriber } from "../transactions/Inscriber"
 import { BRC20MintOptions, BRC20MintPayloadAttributes } from "./types"
 
@@ -13,7 +14,7 @@ export class BRC20Mint extends Inscriber {
       destinationAddress: destinationAddress || address,
       publicKey: pubKey,
       feeRate,
-      postage: 1000,
+      postage: MINIMUM_AMOUNT_IN_SATS,
       mediaType: "<temp-type>", // Set on payload creation
       mediaContent: "<temp-content>" // Set on payload creation
     })
