@@ -1,3 +1,4 @@
+import { Address, Signer, Verifier } from "bip322-js"
 import { sign, verify } from "bitcoinjs-message"
 
 import { Network } from "../config/types"
@@ -20,7 +21,9 @@ export async function signMessage(options: SignMessageOptions) {
     //   const keyPair = EcPair.fromWIF(wif);
     const { address } = createTransaction(parent.publicKey, "p2pkh", network)
 
-    const signature = sign(options.message, parent.privateKey!)
+    const signature = Address.isP2PKH(address!)
+      ? sign(options.message, parent.privateKey!)
+      : Signer.sign(parent.privateKey!.toString(), address!, options.message)
 
     return {
       hex: signature.toString("hex"),
@@ -33,34 +36,9 @@ export async function signMessage(options: SignMessageOptions) {
 }
 
 export function verifyMessage(options: VerifyMessageOptions) {
-  try {
-    let isValid = verify(options.message, options.address, options.signature)
-
-    if (!isValid) {
-      isValid = fallbackVerification(options)
-    }
-
-    return isValid
-  } catch (error) {
-    return fallbackVerification(options)
-  }
-}
-
-function fallbackVerification({ message, address, signature }: VerifyMessageOptions) {
-  let isValid = false
-  const flags = [...Array(12).keys()].map((i) => i + 31)
-  for (const flag of flags) {
-    const flagByte = Buffer.alloc(1)
-    flagByte.writeInt8(flag)
-    let sigBuffer = Buffer.from(signature, "base64").slice(1)
-    sigBuffer = Buffer.concat([flagByte, sigBuffer])
-    const candidateSig = sigBuffer.toString("base64")
-    try {
-      isValid = verify(message, address, candidateSig)
-      if (isValid) break
-    } catch (e) {}
-  }
-  return isValid
+  return Address.isP2PKH(options.address)
+    ? verify(options.message, options.address, options.signature)
+    : Verifier.verifySignature(options.address, options.message, options.signature)
 }
 
 export type SignMessageOptions = {
