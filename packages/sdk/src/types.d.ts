@@ -11,7 +11,7 @@ type Unisat = {
   getAccounts: () => Promise<string[]>
   getPublicKey: () => Promise<string>
   signPsbt: (hex: string, { autoFinalized }: Record<string, boolean>) => Promise<string>
-  signMessage: (message: string) => Promise<string>
+  signMessage: (message: string, type: MessageSignatureTypes) => Promise<string>
 }
 
 type MetaMask = {

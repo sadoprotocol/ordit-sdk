@@ -1,6 +1,6 @@
 import { Psbt } from "bitcoinjs-lib"
 
-import { BrowserWalletSignPSBTResponse } from "../types"
+import { BrowserWalletSignPSBTResponse, MessageSignatureTypes } from "../types"
 import { UnisatSignPSBTOptions } from "./types"
 import { isUnisatInstalled } from "./utils"
 
@@ -30,12 +30,12 @@ export async function signPsbt(
   }
 }
 
-export async function signMessage(message: string) {
+export async function signMessage(message: string, type: MessageSignatureTypes) {
   if (!isUnisatInstalled()) {
     throw new Error("Unisat not installed.")
   }
 
-  const signature = await window.unisat.signMessage(message)
+  const signature = await window.unisat.signMessage(message, type)
 
   if (!signature) {
     throw new Error("Failed to sign message using Unisat.")
