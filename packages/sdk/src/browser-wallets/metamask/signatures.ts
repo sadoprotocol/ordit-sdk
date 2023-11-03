@@ -1,3 +1,4 @@
+import { Address, Signer } from "bip322-js"
 import { Psbt } from "bitcoinjs-lib"
 import { sign } from "bitcoinjs-message"
 import { ethers } from "ethers"
@@ -86,7 +87,9 @@ export async function signMessage(options: SignMetaMaskMessageOptions) {
   const node = await getDerivedNodeFromMetaMaskSignature(signature, "", options.network)
   const { address: addressBtc } = createTransaction(node.parent.publicKey, "p2pkh", options.network)
 
-  const signedMessage = sign(options.message, node.parent.privateKey!)
+  const signedMessage = Address.isP2PKH(address)
+    ? sign(options.message, node.parent.privateKey!)
+    : Signer.sign(node.parent.privateKey!.toString(), address, options.message)
 
   return {
     hex: signedMessage.toString("hex"),
