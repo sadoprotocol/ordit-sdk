@@ -232,7 +232,7 @@ export class Ordit {
   }
 
   signMessage(message: string) {
-    const legacyWallet = this.allAddresses.find((wallet) => wallet.format === "legacy") as Account
+    const legacyWallet = this.allAddresses.find((wallet) => wallet.format === this.selectedAddressType) as Account
     const signature = BIP22Address.isP2PKH(legacyWallet.address!)
       ? sign(message, legacyWallet.child.privateKey!, false)
       : Signer.sign(legacyWallet.child.privateKey!.toString(), legacyWallet.address!, message)
