@@ -36,9 +36,32 @@ export async function signMessage(options: SignMessageOptions) {
 }
 
 export function verifyMessage(options: VerifyMessageOptions) {
-  return Address.isP2PKH(options.address)
-    ? verify(options.message, options.address, options.signature)
-    : Verifier.verifySignature(options.address, options.message, options.signature)
+  try {
+    if (Address.isP2PKH(options.address)) {
+      return !verify(options.message, options.address, options.signature) ? fallbackVerification(options) : true
+    }
+
+    return Verifier.verifySignature(options.address, options.message, options.signature)
+  } catch (_) {
+    return false
+  }
+}
+
+function fallbackVerification({ message, address, signature }: VerifyMessageOptions) {
+  let isValid = false
+  const flags = [...Array(12).keys()].map((i) => i + 31)
+  for (const flag of flags) {
+    const flagByte = Buffer.alloc(1)
+    flagByte.writeInt8(flag)
+    let sigBuffer = Buffer.from(signature, "base64").slice(1)
+    sigBuffer = Buffer.concat([flagByte, sigBuffer])
+    const candidateSig = sigBuffer.toString("base64")
+    try {
+      isValid = verify(message, address, candidateSig)
+      if (isValid) break
+    } catch (e) {}
+  }
+  return isValid
 }
 
 export type SignMessageOptions = {
