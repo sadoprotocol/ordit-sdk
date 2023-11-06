@@ -30,13 +30,12 @@ export async function signPsbt(
   }
 }
 
-export async function signMessage(message: string, type: MessageSignatureTypes) {
+export async function signMessage(message: string, type: MessageSignatureTypes = "ecdsa") {
   if (!isUnisatInstalled()) {
     throw new Error("Unisat not installed.")
   }
 
   const signature = await window.unisat.signMessage(message, type)
-
   if (!signature) {
     throw new Error("Failed to sign message using Unisat.")
   }
