@@ -231,8 +231,9 @@ export class Ordit {
     return psbt.toHex()
   }
 
-  signMessage(message: string) {
-    const node = this.allAddresses.find((wallet) => wallet.format === this.selectedAddressType) as Account
+  signMessage(message: string, type?: AddressFormats) {
+    const addressType = type || this.selectedAddressType
+    const node = this.allAddresses.find((wallet) => wallet.format === addressType) as Account
     const signature = BIP22Address.isP2PKH(node.address!)
       ? sign(message, node.child.privateKey!)
       : Signer.sign(node.child.toWIF(), node.address!, message, getNetwork(this.#network))
