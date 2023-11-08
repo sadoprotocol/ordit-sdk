@@ -19,7 +19,6 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
   const metaStackElements: (number | Buffer)[] = []
 
   if (typeof options.meta === "object") {
-    metaStackElements.push(...[bitcoin.opcodes.OP_FALSE, bitcoin.opcodes.OP_IF])
     const encoded = Buffer.from(new Uint8Array(CBOR.encode(options.meta))).toString("hex")
     const metaChunks = chunkContent(encoded, "hex")
 
@@ -31,7 +30,6 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
       })
 
     metaChunks && metaStackElements.push(bitcoin.opcodes.OP_0)
-    metaChunks && metaStackElements.push(bitcoin.opcodes.OP_ENDIF)
   }
 
   const baseStackElements = [
