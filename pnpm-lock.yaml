@@ -23,9 +23,6 @@ importers:
       '@sadoprotocol/ordit-sdk':
         specifier: workspace
         version: link:../../packages/sdk
-      cbor-js:
-        specifier: ^0.1.0
-        version: 0.1.0
 
   packages/sdk:
     dependencies:
