@@ -15,7 +15,7 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
   }
 
   const contentChunks = chunkContent(options.mediaContent, !options.mediaType.includes("text") ? "base64" : "utf8")
-  const contentStackElements = contentChunks.map(opPush)
+  const contentStackElements: (number | Buffer)[] = contentChunks.map(opPush)
   const metaStackElements: (number | Buffer)[] = []
 
   if (typeof options.meta === "object") {
@@ -40,15 +40,15 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
     opPush("ord"),
     1,
     1,
-    opPush(options.mediaType),
-    bitcoin.opcodes.OP_0
+    opPush(options.mediaType)
   ]
 
   return bitcoin.script.compile([
     ...baseStackElements,
-    ...contentStackElements,
-    bitcoin.opcodes.OP_ENDIF,
-    ...metaStackElements
+    ...metaStackElements,
+    ...(contentStackElements.length
+      ? contentStackElements.concat(bitcoin.opcodes.OP_ENDIF)
+      : [bitcoin.opcodes.OP_ENDIF])
   ])
 }
 
