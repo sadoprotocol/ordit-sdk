@@ -1,3 +1,4 @@
+import { Address, Signer, Verifier } from "bip322-js"
 import { sign, verify } from "bitcoinjs-message"
 
 import { Network } from "../config/types"
@@ -20,7 +21,9 @@ export async function signMessage(options: SignMessageOptions) {
     //   const keyPair = EcPair.fromWIF(wif);
     const { address } = createTransaction(parent.publicKey, "p2pkh", network)
 
-    const signature = sign(options.message, parent.privateKey!)
+    const signature = Address.isP2PKH(address!)
+      ? sign(options.message, parent.privateKey!)
+      : Signer.sign(parent.privateKey!.toString(), address!, options.message)
 
     return {
       hex: signature.toString("hex"),
@@ -34,15 +37,13 @@ export async function signMessage(options: SignMessageOptions) {
 
 export function verifyMessage(options: VerifyMessageOptions) {
   try {
-    let isValid = verify(options.message, options.address, options.signature)
-
-    if (!isValid) {
-      isValid = fallbackVerification(options)
+    if (Address.isP2PKH(options.address)) {
+      return !verify(options.message, options.address, options.signature) ? fallbackVerification(options) : true
     }
 
-    return isValid
-  } catch (error) {
-    return fallbackVerification(options)
+    return Verifier.verifySignature(options.address, options.message, options.signature)
+  } catch (_) {
+    return false
   }
 }
 

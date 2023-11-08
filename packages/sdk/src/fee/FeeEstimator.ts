@@ -129,7 +129,7 @@ export default class FeeEstimator {
   private getBaseSizeByType(type: AddressFormats) {
     switch (type) {
       case "taproot":
-        return { input: 41.5, output: 43, txHeader: 10.5, witness: 66 } // witness size is different for non-default sigHash
+        return { input: 42, output: 43, txHeader: 10.5, witness: 66 } // witness size is different for non-default sigHash
 
       case "segwit":
         return { input: 41, output: 31, txHeader: 10.5, witness: 105 }

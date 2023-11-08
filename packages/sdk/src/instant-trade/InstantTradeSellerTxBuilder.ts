@@ -50,14 +50,15 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     this.inputs = [input]
   }
 
-  private async generateSellerOutputs() {
-    const royalty = await this.calculateRoyalty()
-    this.outputs = [{ address: this.receiveAddress || this.address, value: this.price + this.postage }]
+  private generateSellerOutputs() {
+    this.outputs = [
+      { address: this.receiveAddress || this.address, value: this.price + this.postage - this.royalty.amount }
+    ]
 
-    if (royalty && royalty.amount >= MINIMUM_AMOUNT_IN_SATS) {
+    if (this.royalty.amount >= MINIMUM_AMOUNT_IN_SATS && this.royalty.receiver) {
       this.outputs.push({
-        address: royalty.address, // creator address
-        value: royalty.amount // royalty in sats to be paid to original creator
+        address: this.royalty.receiver, // creator address
+        value: this.royalty.amount // royalty in sats to be paid to original creator
       })
     }
   }
@@ -74,10 +75,12 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     }
     const amount = Math.ceil(royalty.pct * this.price)
 
-    return {
-      address: royalty.address as string,
-      amount: amount >= MINIMUM_AMOUNT_IN_SATS ? amount : 0
-    }
+    this.setRoyalty({
+      price: this.price,
+      amount,
+      receiver: royalty.address as string,
+      percentage: royalty.pct
+    })
   }
 
   private validateOwnership() {
@@ -93,8 +96,11 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
 
     this.utxo = await this.verifyAndFindInscriptionUTXO()
     this.validateOwnership()
+
+    await this.calculateRoyalty()
+
     await this.generatSellerInputs()
-    await this.generateSellerOutputs()
+    this.generateSellerOutputs()
 
     await this.prepare()
   }

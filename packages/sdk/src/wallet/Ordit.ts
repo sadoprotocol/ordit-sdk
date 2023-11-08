@@ -1,6 +1,7 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
 import BIP32Factory, { BIP32Interface } from "bip32"
 import { mnemonicToSeedSync } from "bip39"
+import { Address as BIP22Address, Signer } from "bip322-js"
 import * as bitcoin from "bitcoinjs-lib"
 import { isTaprootInput } from "bitcoinjs-lib/src/psbt/bip371"
 import { sign } from "bitcoinjs-message"
@@ -230,9 +231,12 @@ export class Ordit {
     return psbt.toHex()
   }
 
-  signMessage(message: string) {
-    const legacyWallet = this.allAddresses.find((wallet) => wallet.format === "legacy") as Account
-    const signature = sign(message, legacyWallet.child.privateKey!, false)
+  signMessage(message: string, type?: AddressFormats) {
+    const addressType = type || this.selectedAddressType
+    const node = this.allAddresses.find((wallet) => wallet.format === addressType) as Account
+    const signature = BIP22Address.isP2PKH(node.address!)
+      ? sign(message, node.child.privateKey!)
+      : Signer.sign(node.child.toWIF(), node.address!, message, getNetwork(this.#network))
 
     return signature.toString("base64")
   }

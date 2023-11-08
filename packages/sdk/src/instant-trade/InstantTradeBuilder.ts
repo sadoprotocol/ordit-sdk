@@ -7,12 +7,22 @@ export interface InstantTradeBuilderArgOptions
   inscriptionOutpoint?: string
 }
 
+interface RoyaltyAttributes {
+  amount: number
+  percentage: number
+  receiver: string | null
+}
+
 export default class InstantTradeBuilder extends PSBTBuilder {
   protected inscriptionOutpoint?: string
   protected inscription?: Inscription
   protected price = 0
   protected postage = 0
-  protected royalty = 0
+  protected royalty: RoyaltyAttributes = {
+    amount: 0,
+    percentage: 0,
+    receiver: null
+  }
 
   constructor({
     address,
@@ -40,11 +50,28 @@ export default class InstantTradeBuilder extends PSBTBuilder {
 
   setPrice(value: number) {
     this.validatePrice(value)
-    this.price = parseInt(value.toString())
+    this.price = parseInt(value.toString()) // intentional re-parsing to number as value can be floating point
   }
 
-  setRoyalty(value: number) {
-    this.royalty = value
+  setRoyalty(
+    data: Omit<RoyaltyAttributes, "percentage"> & Partial<Pick<RoyaltyAttributes, "percentage">> & { price: number }
+  ) {
+    if (data.amount < MINIMUM_AMOUNT_IN_SATS) return
+
+    this.royalty = {
+      amount: data.amount,
+      receiver: data.receiver,
+      // percentage to be used only for display purposes
+      percentage:
+        data.percentage && data.percentage > 0
+          ? data.percentage
+          : +new Intl.NumberFormat("en", {
+              maximumFractionDigits: 8,
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              roundingMode: "trunc"
+            }).format(data.amount / data.price)
+    }
   }
 
   get data() {
