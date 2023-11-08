@@ -22,3 +22,8 @@ type MetaMask = {
 declare module "buffer-reverse" {
   export = (_: Buffer): Buffer => {}
 }
+
+declare module "cbor-js" {
+  function encode(object: NestedObject): ArrayBuffer
+  function decode(data: ArrayBuffer): NestedObject
+}
