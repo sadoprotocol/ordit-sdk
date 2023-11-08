@@ -1,5 +1,6 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
 import * as bitcoin from "bitcoinjs-lib"
+import CBOR from "cbor-js"
 
 import { MAXIMUM_SCRIPT_ELEMENT_SIZE } from "../constants"
 
@@ -18,23 +19,18 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
   const metaStackElements: (number | Buffer)[] = []
 
   if (typeof options.meta === "object") {
-    metaStackElements.push(
-      ...[
-        bitcoin.opcodes.OP_FALSE,
-        bitcoin.opcodes.OP_IF,
-        opPush("ord"),
-        1,
-        1,
-        opPush("application/json;charset=utf-8"),
-        bitcoin.opcodes.OP_0
-      ]
-    )
-    const metaChunks = chunkContent(JSON.stringify(options.meta))
+    metaStackElements.push(...[bitcoin.opcodes.OP_FALSE, bitcoin.opcodes.OP_IF])
+    const encoded = Buffer.from(new Uint8Array(CBOR.encode(options.meta))).toString("hex")
+    const metaChunks = chunkContent(encoded, "hex")
 
     metaChunks &&
       metaChunks.forEach((chunk) => {
+        metaStackElements.push(1)
+        metaStackElements.push(5)
         metaStackElements.push(opPush(chunk))
       })
+
+    metaChunks && metaStackElements.push(bitcoin.opcodes.OP_0)
     metaChunks && metaStackElements.push(bitcoin.opcodes.OP_ENDIF)
   }
 
