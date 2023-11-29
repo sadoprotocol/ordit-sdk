@@ -2,7 +2,7 @@ export const apiConfig = {
   version: "0.0.0.10",
   apis: {
     mainnet: {
-      batter: "https://mainnet.ordit.io/",
+      batter: "https://staging.ordit.io/",
       orderbook: "1H4vvBnr62YWQmvNSt8Z4pDw3Vcv1n5xz7",
       ipfs: "http://ipfs-gateway.ordit.io/"
     },
