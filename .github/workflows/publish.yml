@@ -42,23 +42,3 @@ jobs:
           npm run publish
         env:
           NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
-      - name: Notify
-        id: slack
-        uses: slackapi/slack-github-action@007b2c3c751a190b6f0f040e47ed024deaa72844 # v1.23.0
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_ORDZAAR_ENGINEERING }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-        with:
-          payload: |
-            {
-              "text": "Ordit SDK Released: ${{ github.event.release.name }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "Ordit SDK Released\nRelease Version: ${{ github.event.release.name }}\nRelease Notes: https://github.com/sadoprotocol/ordit-sdk/releases/tag/${{ github.event.release.tag_name }}"
-                  }
-                }
-              ]
-            }
