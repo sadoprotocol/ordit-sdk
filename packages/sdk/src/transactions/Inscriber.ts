@@ -12,6 +12,7 @@ import {
   OnOffUnion
 } from ".."
 import { Network } from "../config/types"
+import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { NestedObject } from "../utils/types"
 import { PSBTBuilder } from "./PSBTBuilder"
 import { SkipStrictSatsCheckOptions, UTXOLimited } from "./types"
@@ -269,8 +270,19 @@ export class Inscriber extends PSBTBuilder {
       : skipStrictSatsCheck && customAmount && !isNaN(customAmount)
       ? customAmount
       : this.outputAmount + this.fee
-    const [utxo] = await this.retrieveSelectedUTXOs(this.commitAddress!, amount)
-    this.suitableUnspent = utxo
+
+    // Output to be paid to user
+    if (amount < MINIMUM_AMOUNT_IN_SATS) {
+      throw new Error("Requested output amount is lower than minimum dust amount")
+    }
+
+    const utxos = await this.retrieveSelectedUTXOs(this.commitAddress!, amount)
+
+    if (utxos.length === 0) {
+      throw new Error("No selected utxos retrieved")
+    }
+
+    this.suitableUnspent = utxos[0]
     this.ready = true
 
     return this.suitableUnspent
