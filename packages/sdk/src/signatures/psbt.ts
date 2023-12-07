@@ -3,6 +3,7 @@ import * as bitcoin from "bitcoinjs-lib"
 
 import { Network } from "../config/types"
 import { getDerivedNode } from "../keys"
+import { OrditSDKError } from "../utils/errors"
 
 export async function signPsbt(options: SignPsbtOptions) {
   bitcoin.initEccLib(ecc)
@@ -36,7 +37,7 @@ export async function signPsbt(options: SignPsbtOptions) {
     }
 
     if (error) {
-      throw new Error(error.message)
+      throw new OrditSDKError(error.message)
     }
 
     const psbtHex = psbt.toHex()
@@ -61,7 +62,7 @@ export async function signPsbt(options: SignPsbtOptions) {
         }
       }
     } else {
-      throw new Error("Signed PSBT is same as input PSBT.")
+      throw new OrditSDKError("Signed PSBT is same as input PSBT.")
     }
   }
 }

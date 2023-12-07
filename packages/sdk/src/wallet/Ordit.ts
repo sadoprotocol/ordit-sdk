@@ -20,6 +20,7 @@ import {
   tweakSigner
 } from ".."
 import { Network } from "../config/types"
+import { OrditSDKError } from "../utils/errors"
 
 bitcoin.initEccLib(ecc)
 const ECPair = ECPairFactory(ecc)
@@ -85,7 +86,7 @@ export class Ordit {
 
       this.#initialize(accounts)
     } else {
-      throw new Error("Invalid options provided.")
+      throw new OrditSDKError("Invalid options provided.")
     }
   }
 
@@ -99,12 +100,12 @@ export class Ordit {
 
   getAddressByType(type: AddressFormats) {
     if (!this.#initialized || !this.allAddresses.length) {
-      throw new Error("Wallet not fully initialized.")
+      throw new OrditSDKError("Wallet not fully initialized.")
     }
     const result = this.allAddresses.filter((address) => address.format === type)
 
     if (!result) {
-      throw new Error(`Address of type ${type} not found in the instance.`)
+      throw new OrditSDKError(`Address of type ${type} not found in the instance.`)
     }
 
     return result
@@ -112,7 +113,7 @@ export class Ordit {
 
   getAllAddresses() {
     if (!this.#keyPair) {
-      throw new Error("Keypair not found")
+      throw new OrditSDKError("Keypair not found")
     }
 
     return this.allAddresses
@@ -124,7 +125,8 @@ export class Ordit {
     const result = this.getAddressByType(type) as Account[]
     const addressToSelect = result[index]
 
-    if (!addressToSelect) throw new Error("Address not found. Please add an address with the type and try again.")
+    if (!addressToSelect)
+      throw new OrditSDKError("Address not found. Please add an address with the type and try again.")
 
     this.selectedAddress = addressToSelect.address
     this.publicKey = addressToSelect.pub
@@ -136,7 +138,7 @@ export class Ordit {
   }
 
   generateAddress(type: AddressFormats, account: number, addressIndex: number) {
-    if (!this.#hdNode) throw new Error("No HD node found. Please reinitialize with BIP39 words or seed.")
+    if (!this.#hdNode) throw new OrditSDKError("No HD node found. Please reinitialize with BIP39 words or seed.")
 
     return getAccountDataFromHdNode({
       hdNode: this.#hdNode,
@@ -152,7 +154,7 @@ export class Ordit {
     let psbt: bitcoin.Psbt | null = null
 
     if (!this.#keyPair || !this.#initialized) {
-      throw new Error("Wallet not fully initialized.")
+      throw new OrditSDKError("Wallet not fully initialized.")
     }
 
     try {
@@ -162,7 +164,7 @@ export class Ordit {
     }
 
     if (!psbt || !psbt.inputCount) {
-      throw new Error("Invalid PSBT provided.")
+      throw new OrditSDKError("Invalid PSBT provided.")
     }
 
     const inputsToSign: Input[] = []
@@ -194,7 +196,7 @@ export class Ordit {
     })
 
     if (!inputsToSign.length) {
-      throw new Error("Cannot sign PSBT with no signable inputs.")
+      throw new OrditSDKError("Cannot sign PSBT with no signable inputs.")
     }
 
     let psbtHasBeenSigned = false

@@ -3,6 +3,7 @@ import { Psbt } from "bitcoinjs-lib"
 import { AddressFormats, getNetwork, getScriptType } from ".."
 import { Network } from "../config/types"
 import { MAXIMUM_FEE } from "../constants"
+import { OrditSDKError } from "../utils/errors"
 import { FeeEstimatorOptions } from "./types"
 
 export default class FeeEstimator {
@@ -16,7 +17,7 @@ export default class FeeEstimator {
 
   constructor({ feeRate, network, psbt, witness }: FeeEstimatorOptions) {
     if (feeRate < 0 || !Number.isSafeInteger(feeRate)) {
-      throw new Error("Invalid feeRate")
+      throw new OrditSDKError("Invalid feeRate")
     }
 
     this.feeRate = +feeRate // convert decimal to whole number that might have passed Number.isSafeInteger check due to precision loss
@@ -35,7 +36,7 @@ export default class FeeEstimator {
 
   private sanityCheckFee() {
     if (this.fee > MAXIMUM_FEE) {
-      throw new Error("Error while calculating fees")
+      throw new OrditSDKError("Error while calculating fees")
     }
   }
 
@@ -53,18 +54,18 @@ export default class FeeEstimator {
     const outputTypes: AddressFormats[] = []
 
     if (inputs.length === 0) {
-      throw new Error("PSBT must have at least one input")
+      throw new OrditSDKError("PSBT must have at least one input")
     }
 
     if (outputs.length === 0) {
-      throw new Error("PSBT must have at least one output")
+      throw new OrditSDKError("PSBT must have at least one output")
     }
 
     inputs.forEach((input) => {
       const script = input.witnessUtxo && input.witnessUtxo.script ? input.witnessUtxo.script : null
 
       if (!script) {
-        throw new Error("Invalid script")
+        throw new OrditSDKError("Invalid script")
       }
 
       inputTypes.push(getScriptType(script, this.network).format)
@@ -141,7 +142,7 @@ export default class FeeEstimator {
         return { input: 148, output: 34, txHeader: 10, witness: 0 }
 
       default:
-        throw new Error("Invalid type")
+        throw new OrditSDKError("Invalid type")
     }
   }
 }

@@ -15,6 +15,7 @@ import {
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import FeeEstimator from "../fee/FeeEstimator"
+import { OrditSDKError } from "../utils/errors"
 import { InputType, processInput } from "."
 import { Output, UTXOLimited } from "./types"
 
@@ -212,7 +213,7 @@ export class PSBTBuilder extends FeeEstimator {
 
   private validateOutputAmount() {
     if (this.outputAmount < MINIMUM_AMOUNT_IN_SATS) {
-      throw new Error(`Output amount too low. Minimum output amount needs to be ${MINIMUM_AMOUNT_IN_SATS} sats`)
+      throw new OrditSDKError(`Output amount too low. Minimum output amount needs to be ${MINIMUM_AMOUNT_IN_SATS} sats`)
     }
   }
 
@@ -269,7 +270,7 @@ export class PSBTBuilder extends FeeEstimator {
 
     await this.prepare()
     if (this.noMoreUTXOS) {
-      throw new Error(`Insufficient balance. Decrease the output amount by ${this.changeAmount * -1} sats`)
+      throw new OrditSDKError(`Insufficient balance. Decrease the output amount by ${this.changeAmount * -1} sats`)
     }
   }
 
