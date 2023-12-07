@@ -1,6 +1,7 @@
 import { BaseDatasource, GetWalletOptions, Inscriber, JsonRpcDatasource, verifyMessage } from ".."
 import { Network } from "../config/types"
 import { MAXIMUM_ROYALTY_PERCENTAGE } from "../constants"
+import { OrditSDKError } from "../utils/errors"
 
 export async function publishCollection({
   title,
@@ -14,13 +15,13 @@ export async function publishCollection({
   ...options
 }: PublishCollectionOptions) {
   if (!validateInscriptions(inscriptions)) {
-    throw new Error("Invalid inscriptions supplied.")
+    throw new OrditSDKError("Invalid inscriptions supplied.")
   }
 
   if (royalty) {
     // 0 = 0%, 0.1 = 10%
     if (isNaN(royalty.pct) || royalty.pct < 0 || royalty.pct > MAXIMUM_ROYALTY_PERCENTAGE) {
-      throw new Error("Invalid royalty %")
+      throw new OrditSDKError("Invalid royalty %")
     }
 
     royalty.pct = +new Intl.NumberFormat("en", {
@@ -50,7 +51,7 @@ export async function publishCollection({
 
 export async function mintFromCollection(options: MintFromCollectionOptions) {
   if (!options.collectionOutpoint || !options.inscriptionIid || !options.destinationAddress) {
-    throw new Error("Invalid options supplied.")
+    throw new OrditSDKError("Invalid options supplied.")
   }
 
   const [colTxId, colVOut] = options.collectionOutpoint.split(":").map((v, i) => {
@@ -61,12 +62,12 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
   }) as [string, number | false]
 
   if (!colTxId || colVOut === false) {
-    throw new Error("Invalid collection outpoint supplied.")
+    throw new OrditSDKError("Invalid collection outpoint supplied.")
   }
   const datasource = options.datasource || new JsonRpcDatasource({ network: options.network })
   const collection = await datasource.getInscription({ id: options.collectionOutpoint })
   if (!collection) {
-    throw new Error("Invalid collection")
+    throw new OrditSDKError("Invalid collection")
   }
 
   const colMeta = collection.meta
@@ -83,7 +84,7 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
   }
 
   if (!validInscription) {
-    throw new Error("Invalid inscription iid supplied.")
+    throw new OrditSDKError("Invalid inscription iid supplied.")
   }
 
   const meta: any = {
@@ -101,7 +102,7 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
   const validSignature = verifyMessage({ address: meta.publ, message: message, signature: options.signature })
 
   if (!validSignature) {
-    throw new Error("Invalid signature supplied.")
+    throw new OrditSDKError("Invalid signature supplied.")
   }
 
   meta.sig = options.signature

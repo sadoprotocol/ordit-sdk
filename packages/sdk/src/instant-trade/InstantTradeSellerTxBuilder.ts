@@ -3,6 +3,7 @@ import * as bitcoin from "bitcoinjs-lib"
 import { processInput } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { UTXO } from "../transactions/types"
+import { OrditSDKError } from "../utils/errors"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
 interface InstantTradeSellerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
@@ -36,7 +37,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
 
   private async generatSellerInputs() {
     if (!this.utxo) {
-      throw new Error("UTXO not found")
+      throw new OrditSDKError("UTXO not found")
     }
 
     const input = await processInput({
@@ -85,13 +86,13 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
 
   private validateOwnership() {
     if (this.inscription?.owner !== this.address) {
-      throw new Error(`Inscription does not belong to the address: ${this.address}`)
+      throw new OrditSDKError(`Inscription does not belong to the address: ${this.address}`)
     }
   }
 
   async build() {
     if (isNaN(this.price) || this.price < MINIMUM_AMOUNT_IN_SATS) {
-      throw new Error("Invalid price")
+      throw new OrditSDKError("Invalid price")
     }
 
     this.utxo = await this.verifyAndFindInscriptionUTXO()

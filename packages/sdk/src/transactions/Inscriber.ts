@@ -13,6 +13,7 @@ import {
 } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import { OrditSDKError } from "../utils/errors"
 import { NestedObject } from "../utils/types"
 import { PSBTBuilder } from "./PSBTBuilder"
 import { SkipStrictSatsCheckOptions, UTXOLimited } from "./types"
@@ -66,7 +67,7 @@ export class Inscriber extends PSBTBuilder {
       autoAdjustment: false
     })
     if (!publicKey || !changeAddress || !mediaContent) {
-      throw new Error("Invalid options provided")
+      throw new OrditSDKError("Invalid options provided")
     }
 
     this.destinationAddress = destinationAddress
@@ -96,7 +97,7 @@ export class Inscriber extends PSBTBuilder {
 
   async build() {
     if (!this.suitableUnspent || !this.payment) {
-      throw new Error("Failed to build PSBT. Transaction not ready")
+      throw new OrditSDKError("Failed to build PSBT. Transaction not ready")
     }
 
     this.inputs = [
@@ -140,7 +141,7 @@ export class Inscriber extends PSBTBuilder {
 
   private isBuilt() {
     if (!this.commitAddress || !this.fee) {
-      throw new Error("Invalid tx! Make sure you generate commit address or recover and finally build")
+      throw new OrditSDKError("Invalid tx! Make sure you generate commit address or recover and finally build")
     }
   }
 
@@ -189,7 +190,7 @@ export class Inscriber extends PSBTBuilder {
         : getDummyP2TRInput()
 
       if (this.recovery && !this.suitableUnspent) {
-        throw new Error("No UTXO found to recover")
+        throw new OrditSDKError("No UTXO found to recover")
       }
 
       this.ready = true
@@ -205,7 +206,7 @@ export class Inscriber extends PSBTBuilder {
 
   private restrictUsageInPreviewMode() {
     if (this.previewMode) {
-      throw new Error("Unable to process request in preview mode")
+      throw new OrditSDKError("Unable to process request in preview mode")
     }
   }
 
@@ -273,13 +274,13 @@ export class Inscriber extends PSBTBuilder {
 
     // Output to be paid to user
     if (amount < MINIMUM_AMOUNT_IN_SATS) {
-      throw new Error("Requested output amount is lower than minimum dust amount")
+      throw new OrditSDKError("Requested output amount is lower than minimum dust amount")
     }
 
     const utxos = await this.retrieveSelectedUTXOs(this.commitAddress!, amount)
 
     if (utxos.length === 0) {
-      throw new Error("No selected utxos retrieved")
+      throw new OrditSDKError("No selected utxos retrieved")
     }
 
     this.suitableUnspent = utxos[0]

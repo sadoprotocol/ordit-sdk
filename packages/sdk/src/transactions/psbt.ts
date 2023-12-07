@@ -4,6 +4,7 @@ import { BIP32Factory } from "bip32"
 import { Network } from "../config/types"
 import { BaseDatasource, JsonRpcDatasource } from "../modules"
 import { createTransaction, getNetwork, toXOnly } from "../utils"
+import { OrditSDKError } from "../utils/errors"
 import { OnOffUnion } from "../wallet"
 import { PSBTBuilder } from "./PSBTBuilder"
 import { Output, UTXO, UTXOLimited } from "./types"
@@ -19,7 +20,7 @@ export async function createPsbt({
   enableRBF = true
 }: CreatePsbtOptions) {
   if (!outputs.length) {
-    throw new Error("Invalid request")
+    throw new OrditSDKError("Invalid request")
   }
 
   const psbt = new PSBTBuilder({
@@ -63,7 +64,7 @@ export async function processInput({
       return generateLegacyInput({ utxo, sighashType, network, pubKey, datasource })
 
     default:
-      throw new Error("invalid script pub type")
+      throw new OrditSDKError("invalid script pub type")
   }
 }
 
@@ -75,7 +76,7 @@ function generateTaprootInput({ utxo, pubKey, network, sighashType, witness }: P
   const xOnlyPubKey = toXOnly(key.publicKey)
 
   if (!utxo.scriptPubKey.hex) {
-    throw new Error("Unable to process p2tr input")
+    throw new OrditSDKError("Unable to process p2tr input")
   }
 
   return {
@@ -94,7 +95,7 @@ function generateTaprootInput({ utxo, pubKey, network, sighashType, witness }: P
 
 function generateSegwitInput({ utxo, sighashType }: Omit<ProcessInputOptions, "pubKey" | "network">): SegwitInputType {
   if (!utxo.scriptPubKey.hex) {
-    throw new Error("Unable to process Segwit input")
+    throw new OrditSDKError("Unable to process Segwit input")
   }
 
   return {
@@ -112,7 +113,7 @@ function generateSegwitInput({ utxo, sighashType }: Omit<ProcessInputOptions, "p
 function generateNestedSegwitInput({ utxo, pubKey, network, sighashType }: ProcessInputOptions): NestedSegwitInputType {
   const p2sh = createTransaction(Buffer.from(pubKey, "hex"), "p2sh", network)
   if (!p2sh || !p2sh.output || !p2sh.redeem) {
-    throw new Error("Unable to process Segwit input")
+    throw new OrditSDKError("Unable to process Segwit input")
   }
 
   return {
@@ -137,7 +138,7 @@ async function generateLegacyInput({
 }: ProcessInputOptions & Required<Pick<ProcessInputOptions, "datasource">>): Promise<LegacyInputType> {
   const { rawTx } = await datasource.getTransaction({ txId: utxo.txid, hex: true })
   if (!rawTx) {
-    throw new Error("Unable to process legacy input")
+    throw new OrditSDKError("Unable to process legacy input")
   }
 
   const p2pkh = createTransaction(Buffer.from(pubKey, "hex"), "p2pkh", network)

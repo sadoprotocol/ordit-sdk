@@ -6,6 +6,7 @@ import ECPairFactory from "ecpair"
 import { AddressFormats, AddressTypes, addressTypeToName } from "../addresses/formats"
 import { Network } from "../config/types"
 import { UTXO } from "../transactions/types"
+import { OrditSDKError } from "./errors"
 import {
   BufferOrHex,
   EncodeDecodeObjectOptions,
@@ -78,7 +79,7 @@ export function tweakSigner(signer: bitcoin.Signer, opts: any = {}): bitcoin.Sig
   // @ts-ignore
   let privateKey: Uint8Array | undefined = signer.privateKey!
   if (!privateKey) {
-    throw new Error("Private key is required for tweaking signer!")
+    throw new OrditSDKError("Private key is required for tweaking signer!")
   }
   if (signer.publicKey[0] === 3) {
     privateKey = ecc.privateNegate(privateKey)
@@ -86,7 +87,7 @@ export function tweakSigner(signer: bitcoin.Signer, opts: any = {}): bitcoin.Sig
 
   const tweakedPrivateKey = ecc.privateAdd(privateKey, tapTweakHash(toXOnly(signer.publicKey), opts.tweakHash))
   if (!tweakedPrivateKey) {
-    throw new Error("Invalid tweaked private key!")
+    throw new OrditSDKError("Invalid tweaked private key!")
   }
 
   return ECPair.fromPrivateKey(Buffer.from(tweakedPrivateKey), {
@@ -105,7 +106,7 @@ function encodeDecodeObject(obj: NestedObject, { encode, depth = 0 }: EncodeDeco
   const maxDepth = 5
 
   if (depth > maxDepth) {
-    throw new Error("Object too deep")
+    throw new OrditSDKError("Object too deep")
   }
 
   for (const key in obj) {
@@ -148,14 +149,14 @@ export function decodePSBT({ hex, base64, buffer }: OneOfAllDataFormats): bitcoi
   if (base64) return bitcoin.Psbt.fromBase64(base64)
   if (buffer) return bitcoin.Psbt.fromBuffer(buffer)
 
-  throw new Error("Invalid options")
+  throw new OrditSDKError("Invalid options")
 }
 
 export function decodeTx({ hex, buffer }: BufferOrHex): bitcoin.Transaction {
   if (hex) return bitcoin.Transaction.fromHex(hex)
   if (buffer) return bitcoin.Transaction.fromBuffer(buffer)
 
-  throw new Error("Invalid options")
+  throw new OrditSDKError("Invalid options")
 }
 
 function isPaymentFactory(payment: bitcoin.PaymentCreator, network: Network) {
@@ -236,7 +237,7 @@ export function getScriptType(script: Buffer, network: Network): GetScriptTypeRe
     }
   }
 
-  throw new Error("Unsupported input")
+  throw new OrditSDKError("Unsupported input")
 }
 
 export function getDummyP2TRInput(): UTXO {

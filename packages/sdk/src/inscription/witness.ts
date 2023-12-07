@@ -2,11 +2,12 @@ import * as ecc from "@bitcoinerlab/secp256k1"
 import * as bitcoin from "bitcoinjs-lib"
 
 import { MAXIMUM_SCRIPT_ELEMENT_SIZE } from "../constants"
+import { OrditSDKError } from "../utils/errors"
 
 export function buildWitnessScript({ recover = false, ...options }: WitnessScriptOptions) {
   bitcoin.initEccLib(ecc)
   if (!options.mediaType || !options.mediaContent || !options.xkey) {
-    throw new Error("Failed to build witness script")
+    throw new OrditSDKError("Failed to build witness script")
   }
 
   if (recover) {
@@ -61,7 +62,7 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
 function opPush(data: string | Buffer) {
   const buff = Buffer.isBuffer(data) ? data : Buffer.from(data, "utf8")
   if (buff.byteLength > MAXIMUM_SCRIPT_ELEMENT_SIZE)
-    throw new Error("Data is too large to push. Use chunkContent to split data into smaller chunks")
+    throw new OrditSDKError("Data is too large to push. Use chunkContent to split data into smaller chunks")
 
   return Buffer.concat([buff])
 }

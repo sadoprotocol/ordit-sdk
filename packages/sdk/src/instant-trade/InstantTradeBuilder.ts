@@ -1,6 +1,7 @@
 import { Inscription } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { PSBTBuilder, PSBTBuilderOptions } from "../transactions/PSBTBuilder"
+import { OrditSDKError } from "../utils/errors"
 
 export interface InstantTradeBuilderArgOptions
   extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address" | "autoAdjustment" | "feeRate" | "datasource"> {
@@ -90,18 +91,18 @@ export default class InstantTradeBuilder extends PSBTBuilder {
 
   protected async verifyAndFindInscriptionUTXO() {
     if (!this.inscriptionOutpoint) {
-      throw new Error("set inscription outpoint to the class")
+      throw new OrditSDKError("set inscription outpoint to the class")
     }
 
     const inscriptions = await this.datasource.getInscriptions({ outpoint: this.inscriptionOutpoint })
     this.inscription = inscriptions.find((inscription) => inscription.outpoint === this.inscriptionOutpoint)
     if (!this.inscription) {
-      throw new Error("Inscription not found")
+      throw new OrditSDKError("Inscription not found")
     }
 
     const utxo = await this.datasource.getInscriptionUTXO({ id: this.inscription.genesis })
     if (!utxo) {
-      throw new Error(`Unable to find UTXO: ${this.inscription.outpoint}`)
+      throw new OrditSDKError(`Unable to find UTXO: ${this.inscription.outpoint}`)
     }
 
     this.postage = utxo.sats
@@ -110,7 +111,7 @@ export default class InstantTradeBuilder extends PSBTBuilder {
 
   protected validatePrice(price: number) {
     if (isNaN(price) || price < MINIMUM_AMOUNT_IN_SATS) {
-      throw new Error("Invalid price")
+      throw new OrditSDKError("Invalid price")
     }
   }
 }

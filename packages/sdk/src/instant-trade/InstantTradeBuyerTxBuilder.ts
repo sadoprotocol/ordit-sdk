@@ -4,6 +4,7 @@ import reverseBuffer from "buffer-reverse"
 import { decodePSBT, generateTxUniqueIdentifier, getScriptType, INSTANT_BUY_SELLER_INPUT_INDEX } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { InjectableInput, InjectableOutput } from "../transactions/PSBTBuilder"
+import { OrditSDKError } from "../utils/errors"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
 
 interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
@@ -46,13 +47,13 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
 
     const [input] = this.sellerPSBT.data.inputs
     if (!input?.witnessUtxo) {
-      throw new Error("invalid seller psbt")
+      throw new OrditSDKError("invalid seller psbt")
     }
 
     const data = getScriptType(input.witnessUtxo.script, this.network)
     this.sellerAddress = data.payload && data.payload.address ? data.payload.address : undefined
     if (!this.sellerAddress) {
-      throw new Error("invalid seller psbt")
+      throw new OrditSDKError("invalid seller psbt")
     }
   }
 
@@ -126,7 +127,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
 
     // 3 = 2 refundables + (at least) 1 to cover for purchase
     if (utxos.length < 3) {
-      throw new Error("No suitable UTXOs found")
+      throw new OrditSDKError("No suitable UTXOs found")
     }
 
     // bind minimum utxos. PSBTBuilder will add more if needed
@@ -135,7 +136,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
 
   private async isEligible() {
     if (!this.inscriptionOutpoint) {
-      throw new Error("decode seller PSBT to check eligiblity")
+      throw new OrditSDKError("decode seller PSBT to check eligiblity")
     }
 
     const [utxos, [inscription]] = await Promise.all([
@@ -143,7 +144,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
       this.datasource.getInscriptions({ outpoint: this.inscriptionOutpoint })
     ])
     if (!inscription) {
-      throw new Error("Inscription no longer available for trade")
+      throw new OrditSDKError("Inscription no longer available for trade")
     }
     const inscriptionUTXO = await this.datasource.getInscriptionUTXO({ id: inscription.id })
     this.postage = inscriptionUTXO.sats
@@ -163,7 +164,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   async build() {
     const eligible = await this.isEligible()
     if (!eligible) {
-      throw new Error("Not eligible")
+      throw new OrditSDKError("Not eligible")
     }
 
     this.decodePrice()

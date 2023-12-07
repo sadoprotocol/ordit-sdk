@@ -15,6 +15,7 @@ import {
 } from "../api/types"
 import { Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
+import { OrditSDKError } from "../utils/errors"
 import { BaseDatasource, DatasourceUtility } from "."
 import { JsonRpcPagination } from "./types"
 
@@ -29,7 +30,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
 
   async getBalance({ address }: GetBalanceOptions) {
     if (!address) {
-      throw new Error("Invalid request")
+      throw new OrditSDKError("Invalid request")
     }
 
     return rpc[this.network].call<number>("Address.GetBalance", { address }, rpc.id)
@@ -37,7 +38,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
 
   async getInscription({ id, decodeMetadata }: GetInscriptionOptions) {
     if (!id) {
-      throw new Error("Invalid request")
+      throw new OrditSDKError("Invalid request")
     }
 
     id = id.includes(":") ? id.replace(":", "i") : !id.includes("i") ? `${id}i0` : id
@@ -52,7 +53,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
 
   async getInscriptionUTXO({ id }: GetInscriptionUTXOOptions) {
     if (!id) {
-      throw new Error("Invalid request")
+      throw new OrditSDKError("Invalid request")
     }
 
     id = id.includes(":") ? id.replace(":", "i") : !id.includes("i") ? `${id}i0` : id
@@ -100,7 +101,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     type = "spendable"
   }: GetSpendablesOptions) {
     if (!address || isNaN(value) || !value) {
-      throw new Error("Invalid request")
+      throw new OrditSDKError("Invalid request")
     }
 
     return rpc[this.network].call<UTXOLimited[]>(
@@ -119,7 +120,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
 
   async getTransaction({ txId, ordinals = true, hex = false, witness = true, decodeMetadata = true }: GetTxOptions) {
     if (!txId) {
-      throw new Error("Invalid request")
+      throw new OrditSDKError("Invalid request")
     }
 
     const tx = await rpc[this.network].call<Transaction>(
@@ -157,7 +158,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     next = null
   }: GetUnspentsOptions): Promise<GetUnspentsResponse> {
     if (!address) {
-      throw new Error("Invalid request")
+      throw new OrditSDKError("Invalid request")
     }
 
     let utxos: UTXO[] = []
@@ -191,11 +192,11 @@ export default class JsonRpcDatasource extends BaseDatasource {
 
   async relay({ hex, maxFeeRate, validate = true }: RelayOptions) {
     if (!hex) {
-      throw new Error("Invalid request")
+      throw new OrditSDKError("Invalid request")
     }
 
     if (maxFeeRate && (maxFeeRate < 0 || isNaN(maxFeeRate))) {
-      throw new Error("Invalid max fee rate")
+      throw new OrditSDKError("Invalid max fee rate")
     }
 
     return rpc[this.network].call<string>("Transactions.Relay", { hex, maxFeeRate, validate }, rpc.id)

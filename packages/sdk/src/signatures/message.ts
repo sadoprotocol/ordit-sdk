@@ -4,13 +4,14 @@ import { sign, verify } from "bitcoinjs-message"
 import { Network } from "../config/types"
 import { getDerivedNode } from "../keys"
 import { createTransaction, getNetwork } from "../utils"
+import { OrditSDKError } from "../utils/errors"
 
 export async function signMessage(options: SignMessageOptions) {
   const network = getNetwork(options.network)
   options.format = "core"
 
   if (!options.message || !(options.bip39 || options.seed)) {
-    throw new Error("Invalid options provided.")
+    throw new OrditSDKError("Invalid options provided.")
   }
 
   const seedValue = options.bip39 || options.seed
@@ -31,7 +32,7 @@ export async function signMessage(options: SignMessageOptions) {
       address
     }
   } catch (error) {
-    throw new Error("Unable to sign message.")
+    throw new OrditSDKError("Unable to sign message.")
   }
 }
 

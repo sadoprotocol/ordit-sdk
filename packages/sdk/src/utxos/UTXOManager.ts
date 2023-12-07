@@ -1,5 +1,6 @@
 import { processInput, PSBTBuilder } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import { OrditSDKError } from "../utils/errors"
 import { UTXOManagerOptions } from "./types"
 
 export default class UTXOManager extends PSBTBuilder {
@@ -19,7 +20,7 @@ export default class UTXOManager extends PSBTBuilder {
       address: this.address
     })
     if (!totalUTXOs) {
-      throw new Error("No UTXOs found")
+      throw new OrditSDKError("No UTXOs found")
     }
 
     const utxo = spendableUTXOs.sort((a, b) => b.sats - a.sats)[0] // Largest UTXO
@@ -37,7 +38,7 @@ export default class UTXOManager extends PSBTBuilder {
       const remainingAmount = utxo.sats - usedAmount
       const amount = remainingAmount - MINIMUM_AMOUNT_IN_SATS
       if (amount < MINIMUM_AMOUNT_IN_SATS) {
-        throw new Error(
+        throw new OrditSDKError(
           `Not enough sats to generate ${totalOutputs} UTXOs with at least ${MINIMUM_AMOUNT_IN_SATS} sats per UTXO. Try decreasing the count or deposit more BTC`
         )
       }
