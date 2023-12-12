@@ -130,10 +130,11 @@ export class Inscriber extends PSBTBuilder {
     }
 
     if (this.recovery) {
-      this.outputs.push({
+      // when in recovery mode, there will only be 1 refund output
+      this.outputs = [{
         address: this.changeAddress || this.address,
         value: this.suitableUnspent.sats - this.fee
-      })
+      }]
     }
 
     await this.prepare() // prepare PSBT using PSBTBuilder
