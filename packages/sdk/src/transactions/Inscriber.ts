@@ -32,6 +32,7 @@ export class Inscriber extends PSBTBuilder {
   private payment: bitcoin.payments.Payment | null = null
   private suitableUnspent: UTXOLimited | null = null
   private recovery = false
+  private recoverAmount: number = 0
   private safeMode: OnOffUnion
   private encodeMetadata: boolean
   private previewMode = false
@@ -130,10 +131,11 @@ export class Inscriber extends PSBTBuilder {
     }
 
     if (this.recovery) {
-      // when in recovery mode, there will only be 1 refund output
+      this.recoverAmount = this.suitableUnspent.sats - this.fee
+      // when in recovery mode, there will only be 1 output
       this.outputs = [{
         address: this.changeAddress || this.address,
-        value: this.suitableUnspent.sats - this.fee
+        value: this.recoverAmount
       }]
     }
 
@@ -247,6 +249,12 @@ export class Inscriber extends PSBTBuilder {
     this.commitAddress = this.payment.address!
 
     await this.calculateNetworkFeeUsingPreviewMode()
+
+    return {
+      recoverAddress: this.changeAddress || this.address,
+      recoverAmount: this.recoverAmount - this.fee, // need to minus this.fee again because the first time, fee is 0
+      recoverFee: this.fee
+    }
   }
 
   async isReady({ skipStrictSatsCheck, customAmount }: SkipStrictSatsCheckOptions = {}) {
