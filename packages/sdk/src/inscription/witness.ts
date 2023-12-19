@@ -1,5 +1,6 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
 import * as bitcoin from "bitcoinjs-lib"
+import CBOR from "cbor-js"
 
 import { MAXIMUM_SCRIPT_ELEMENT_SIZE } from "../constants"
 import { OrditSDKError } from "../utils/errors"
@@ -15,28 +16,21 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
   }
 
   const contentChunks = chunkContent(options.mediaContent, !options.mediaType.includes("text") ? "base64" : "utf8")
-  const contentStackElements = contentChunks.map(opPush)
+  const contentStackElements: (number | Buffer)[] = contentChunks.map(opPush)
   const metaStackElements: (number | Buffer)[] = []
 
   if (typeof options.meta === "object") {
-    metaStackElements.push(
-      ...[
-        bitcoin.opcodes.OP_FALSE,
-        bitcoin.opcodes.OP_IF,
-        opPush("ord"),
-        1,
-        1,
-        opPush("application/json;charset=utf-8"),
-        bitcoin.opcodes.OP_0
-      ]
-    )
-    const metaChunks = chunkContent(JSON.stringify(options.meta))
+    const encoded = Buffer.from(new Uint8Array(CBOR.encode(options.meta))).toString("hex")
+    const metaChunks = chunkContent(encoded, "hex")
 
     metaChunks &&
       metaChunks.forEach((chunk) => {
+        metaStackElements.push(1)
+        metaStackElements.push(5)
         metaStackElements.push(opPush(chunk))
       })
-    metaChunks && metaStackElements.push(bitcoin.opcodes.OP_ENDIF)
+
+    metaChunks && metaStackElements.push(bitcoin.opcodes.OP_0)
   }
 
   const baseStackElements = [
@@ -47,15 +41,15 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
     opPush("ord"),
     1,
     1,
-    opPush(options.mediaType),
-    bitcoin.opcodes.OP_0
+    opPush(options.mediaType)
   ]
 
   return bitcoin.script.compile([
     ...baseStackElements,
-    ...contentStackElements,
-    bitcoin.opcodes.OP_ENDIF,
-    ...metaStackElements
+    ...metaStackElements,
+    ...(contentStackElements.length
+      ? contentStackElements.concat(bitcoin.opcodes.OP_ENDIF)
+      : [bitcoin.opcodes.OP_ENDIF])
   ])
 }
 
