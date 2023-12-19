@@ -95,6 +95,7 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
     iid: options.inscriptionIid,
     publ: colMeta?.publ[options.publisherIndex],
     nonce: options.nonce,
+    minter: options.includeMintAddress ? options.destinationAddress : undefined,
     traits: options.traits
   }
 
@@ -178,6 +179,8 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   encodeMetadata?: boolean
   enableRBF?: boolean
   datasource?: BaseDatasource
+  // temporary flag for backward compatibility
+  includeMintAddress?: boolean
 }
 
 type Outputs = Array<{ address: string; value: number }>
