@@ -12,7 +12,11 @@
     "instant-buy": "node instant-buy",
     "publish-collection": "node collections",
     "build-psbt": "node build-psbt",
-    "split-utxo": "node split-utxo"
+    "split-utxo": "node split-utxo",
+    "brc20-deploy": "node brc-20-deploy",
+    "brc20-mint": "node brc-20-mint",
+    "brc20-transfer-generator": "node brc-20-transfer-generator",
+    "brc20-transfer-executor": "node brc-20-transfer-executor"
   },
   "author": "",
   "license": "ISC",

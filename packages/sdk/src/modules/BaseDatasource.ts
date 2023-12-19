@@ -2,16 +2,22 @@ import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
 import { Inscription } from ".."
 import {
+  GetAddressTokensOptions,
+  GetAddressTokensResponse,
   GetBalanceOptions,
   GetInscriptionOptions,
   GetInscriptionsOptions,
   GetInscriptionUTXOOptions,
   GetSpendablesOptions,
+  GetTokenOptions,
+  GetTransfersOptions,
+  GetTransfersResponse,
   GetTxOptions,
   GetUnspentsOptions,
   GetUnspentsResponse,
   RelayOptions
 } from "../api/types"
+import { BRC20TokenAttributes } from "../brc20/types"
 import { Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
 
@@ -57,4 +63,11 @@ export default abstract class BaseDatasource {
   abstract getUnspents({ address, type, rarity, sort, limit, next }: GetUnspentsOptions): Promise<GetUnspentsResponse>
 
   abstract relay({ hex, maxFeeRate, validate }: RelayOptions): Promise<string>
+
+  // BRC-20 methods
+  abstract getToken({ tick }: GetTokenOptions): Promise<BRC20TokenAttributes>
+
+  abstract getTransfers({ filter, pagination }: GetTransfersOptions): Promise<GetTransfersResponse>
+
+  abstract getAddressTokens({ address }: GetAddressTokensOptions): Promise<GetAddressTokensResponse[]>
 }

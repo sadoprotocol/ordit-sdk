@@ -3,16 +3,22 @@ import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 import { Inscription } from ".."
 import { rpc } from "../api/jsonrpc"
 import {
+  GetAddressTokensOptions,
+  GetAddressTokensResponse,
   GetBalanceOptions,
   GetInscriptionOptions,
   GetInscriptionsOptions,
   GetInscriptionUTXOOptions,
   GetSpendablesOptions,
+  GetTokenOptions,
+  GetTransfersOptions,
+  GetTransfersResponse,
   GetTxOptions,
   GetUnspentsOptions,
   GetUnspentsResponse,
   RelayOptions
 } from "../api/types"
+import { BRC20TokenAttributes } from "../brc20/types"
 import { Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
 import { OrditSDKError } from "../utils/errors"
@@ -200,5 +206,45 @@ export default class JsonRpcDatasource extends BaseDatasource {
     }
 
     return rpc[this.network].call<string>("Transactions.Relay", { hex, maxFeeRate, validate }, rpc.id)
+  }
+
+  // BRC-20 methods
+  async getToken({ tick }: GetTokenOptions): Promise<BRC20TokenAttributes> {
+    if (!tick) {
+      throw new Error("Invalid request")
+    }
+
+    return rpc[this.network].call<BRC20TokenAttributes>("Brc20.GetToken", { tick }, rpc.id)
+  }
+
+  async getTransfers({ filter, pagination }: GetTransfersOptions): Promise<GetTransfersResponse> {
+    if (!filter) {
+      throw new Error("Invalid request")
+    }
+
+    const { transfers, pagination: _pagination } = await rpc[this.network].call<{
+      transfers: GetTransfersResponse["transfers"]
+      pagination: JsonRpcPagination
+    }>(
+      "Brc20.GetTransfers",
+      {
+        filter,
+        pagination
+      },
+      rpc.id
+    )
+
+    return {
+      transfers,
+      pagination: _pagination
+    }
+  }
+
+  async getAddressTokens({ address }: GetAddressTokensOptions): Promise<GetAddressTokensResponse[]> {
+    if (!address) {
+      throw new Error("Invalid request")
+    }
+
+    return rpc[this.network].call<GetAddressTokensResponse[]>("Brc20.Address.GetTokens", { address }, rpc.id)
   }
 }

@@ -3,6 +3,7 @@ import * as bitcoin from "bitcoinjs-lib"
 import { Tapleaf } from "bitcoinjs-lib/src/types"
 
 import {
+  BaseDatasource,
   buildWitnessScript,
   createTransaction,
   encodeObject,
@@ -25,10 +26,10 @@ export class Inscriber extends PSBTBuilder {
   protected mediaContent: string
   protected meta?: NestedObject
   protected postage: number
+  protected destinationAddress: string
 
   private ready = false
   private commitAddress: string | null = null
-  private destinationAddress: string
   private payment: bitcoin.payments.Payment | null = null
   private suitableUnspent: UTXOLimited | null = null
   private recovery = false
@@ -43,6 +44,7 @@ export class Inscriber extends PSBTBuilder {
   }
   private taprootTree!: [Tapleaf, Tapleaf]
 
+  // TODO: bind datasource to constructor options
   constructor({
     network,
     address,
@@ -56,7 +58,8 @@ export class Inscriber extends PSBTBuilder {
     outputs = [],
     encodeMetadata = false,
     safeMode,
-    meta
+    meta,
+    datasource
   }: InscriberArgOptions) {
     super({
       address,
@@ -65,6 +68,7 @@ export class Inscriber extends PSBTBuilder {
       network,
       publicKey,
       outputs,
+      datasource,
       autoAdjustment: false
     })
     if (!publicKey || !changeAddress || !mediaContent) {
@@ -90,6 +94,11 @@ export class Inscriber extends PSBTBuilder {
       outputAmount: this.outputAmount,
       postage: this.postage
     }
+  }
+
+  set media({ content, type }: SetContentOptions) {
+    this.mediaContent = content
+    this.mediaType = type
   }
 
   private getMetadata() {
@@ -312,6 +321,12 @@ export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   meta?: NestedObject
   outputs?: Outputs
   encodeMetadata?: boolean
+  datasource?: BaseDatasource
+}
+
+interface SetContentOptions {
+  content: string
+  type: string
 }
 
 type Outputs = Array<{ address: string; value: number }>
