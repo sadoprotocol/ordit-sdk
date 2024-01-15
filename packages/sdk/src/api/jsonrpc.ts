@@ -2,7 +2,7 @@ import fetch from "cross-fetch"
 
 import { apiConfig } from "../config"
 
-class JsonRpc {
+export class JsonRpc {
   constructor(readonly url: string) {}
 
   /**

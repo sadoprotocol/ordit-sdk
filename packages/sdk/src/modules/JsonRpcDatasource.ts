@@ -1,6 +1,6 @@
 import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
-import { Inscription } from ".."
+import { GetTransactionsOption, Inscription, Transactions } from ".."
 import { rpc } from "../api/jsonrpc"
 import {
   GetBalanceOptions,
@@ -8,7 +8,7 @@ import {
   GetInscriptionsOptions,
   GetInscriptionUTXOOptions,
   GetSpendablesOptions,
-  GetTxOptions,
+  GetTransactionOption,
   GetUnspentsOptions,
   GetUnspentsResponse,
   RelayOptions
@@ -70,7 +70,8 @@ export default class JsonRpcDatasource extends BaseDatasource {
     decodeMetadata,
     sort = "asc",
     limit = 25,
-    next = null
+    next = null,
+    includePostage = false // return postage for each inscription
   }: GetInscriptionsOptions) {
     let inscriptions: Inscription[] = []
     do {
@@ -82,7 +83,8 @@ export default class JsonRpcDatasource extends BaseDatasource {
         {
           filter: { creator, owner, mimeType, mimeSubType, outpoint },
           sort: { number: sort },
-          pagination: { limit, next }
+          pagination: { limit, next },
+          include: includePostage ? ["value"] : undefined
         },
         rpc.id
       )
@@ -118,7 +120,13 @@ export default class JsonRpcDatasource extends BaseDatasource {
     )
   }
 
-  async getTransaction({ txId, ordinals = true, hex = false, witness = true, decodeMetadata = true }: GetTxOptions) {
+  async getTransaction({
+    txId,
+    ordinals = true,
+    hex = false,
+    witness = true,
+    decodeMetadata = true
+  }: GetTransactionOption) {
     if (!txId) {
       throw new OrditSDKError("Invalid request")
     }
@@ -146,6 +154,43 @@ export default class JsonRpcDatasource extends BaseDatasource {
     return {
       tx,
       rawTx: hex && tx.hex ? BTCTransaction.fromHex(tx.hex) : undefined
+    }
+  }
+
+  async getTransactions({
+    address,
+    ordinals = true,
+    hex = false,
+    witness = false,
+    limit = 10,
+    next
+  }: GetTransactionsOption) {
+    if (!address) {
+      throw new OrditSDKError("Invalid address")
+    }
+
+    const response = await rpc[this.network].call<Transactions>(
+      "Address.GetTransactions",
+      {
+        address,
+        options: {
+          ord: ordinals,
+          hex,
+          witness
+        },
+        pagination: {
+          limit,
+          next
+        }
+      },
+      rpc.id
+    )
+
+    return {
+      transactions: response.transactions,
+      pagination: {
+        next: response.pagination.next
+      }
     }
   }
 

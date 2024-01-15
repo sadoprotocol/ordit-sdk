@@ -7,7 +7,7 @@ import {
   GetInscriptionsOptions,
   GetInscriptionUTXOOptions,
   GetSpendablesOptions,
-  GetTxOptions,
+  GetTransactionOption,
   GetUnspentsOptions,
   GetUnspentsResponse,
   RelayOptions
@@ -52,7 +52,7 @@ export default abstract class BaseDatasource {
     hex,
     witness,
     decodeMetadata
-  }: GetTxOptions): Promise<{ tx: Transaction; rawTx?: BTCTransaction }>
+  }: GetTransactionOption): Promise<{ tx: Transaction; rawTx?: BTCTransaction }>
 
   abstract getUnspents({ address, type, rarity, sort, limit, next }: GetUnspentsOptions): Promise<GetUnspentsResponse>
 
