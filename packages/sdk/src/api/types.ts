@@ -19,7 +19,7 @@ export interface GetUnspentsResponse {
   unspendableUTXOs: UTXO[]
 }
 
-export interface GetTransactionOption {
+export interface GetTransactionOptions {
   txId: string
   ordinals?: boolean
   hex?: boolean
@@ -27,7 +27,7 @@ export interface GetTransactionOption {
   decodeMetadata?: boolean
 }
 
-export interface GetTransactionsOption {
+export interface GetTransactionsOptions {
   address: string
   ordinals?: boolean
   hex?: boolean

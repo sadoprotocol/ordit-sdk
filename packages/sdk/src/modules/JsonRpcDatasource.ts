@@ -1,6 +1,6 @@
 import { Transaction as BTCTransaction } from "bitcoinjs-lib"
 
-import { GetTransactionsOption, Inscription, Transactions } from ".."
+import { GetTransactionsOptions, Inscription, Transactions } from ".."
 import { rpc } from "../api/jsonrpc"
 import {
   GetBalanceOptions,
@@ -8,7 +8,7 @@ import {
   GetInscriptionsOptions,
   GetInscriptionUTXOOptions,
   GetSpendablesOptions,
-  GetTransactionOption,
+  GetTransactionOptions,
   GetUnspentsOptions,
   GetUnspentsResponse,
   RelayOptions
@@ -126,7 +126,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     hex = false,
     witness = true,
     decodeMetadata = true
-  }: GetTransactionOption) {
+  }: GetTransactionOptions) {
     if (!txId) {
       throw new OrditSDKError("Invalid request")
     }
@@ -164,7 +164,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
     witness = false,
     limit = 10,
     next
-  }: GetTransactionsOption) {
+  }: GetTransactionsOptions) {
     if (!address) {
       throw new OrditSDKError("Invalid address")
     }
