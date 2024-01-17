@@ -51,23 +51,10 @@ export type Transaction = {
 }
 
 // used in Address.GetTransactions RPC, needed due to response not matching Transaction type (ex. blockhash vs blockHash)
-export type TransactionV2 = {
-  hex?: string
-  txid: string
-  hash: string
-  size: number
-  vsize: number
-  version: number
-  locktime: number
-  vin: Vin[]
-  vout: Vout[]
+export type TransactionV2 = Omit<Transaction, 'blockhash' | 'blockheight' | 'blocktime'> & {
   blockHash: string
   blockHeight: number
   blockTime: number
-  confirmations: number
-  time: number
-  weight: number
-  fee: number
 }
 
 export type Transactions = {
