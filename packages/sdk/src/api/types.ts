@@ -19,12 +19,21 @@ export interface GetUnspentsResponse {
   unspendableUTXOs: UTXO[]
 }
 
-export interface GetTxOptions {
+export interface GetTransactionOptions {
   txId: string
   ordinals?: boolean
   hex?: boolean
   witness?: boolean
   decodeMetadata?: boolean
+}
+
+export interface GetTransactionsOptions {
+  address: string
+  ordinals?: boolean
+  hex?: boolean
+  witness?: boolean
+  limit?: number
+  next?: string | null
 }
 
 export interface FetchTxResponse {
@@ -47,6 +56,7 @@ export type GetInscriptionsOptions = RequireAtLeastOne<{
   limit?: number
   next?: string | null
   decodeMetadata?: boolean
+  includePostage?: boolean
 }
 
 export interface GetInscriptionOptions {

@@ -1,4 +1,5 @@
 import { Inscription, Ordinal } from "../inscription/types"
+import { JsonRpcPagination } from "../modules"
 
 export type Vout = {
   value: number
@@ -6,13 +7,14 @@ export type Vout = {
   ordinals: Ordinal[]
   inscriptions: Inscription[]
   spent: string | false
+  sats: number
   scriptPubKey: {
     asm: string
     desc: string
     hex: string
     reqSigs?: number
     type: string
-    addresses: string[]
+    addresses?: string[]
     address?: string
   }
 }
@@ -24,8 +26,9 @@ export type Vin = {
     asm: string
     hex: string
   }
-  txinwitness: string[]
+  txinwitness?: string[]
   sequence: number
+  value: number
 }
 
 export type Transaction = {
@@ -39,12 +42,29 @@ export type Transaction = {
   vin: Vin[]
   vout: Vout[]
   blockhash: string
+  blockheight: number
+  blocktime: number
   confirmations: number
   time: number
-  blocktime: number
   weight: number
   fee: number
-  blockheight: number
+}
+
+// used in Address.GetTransactions RPC, needed due to response not matching Transaction type (ex. blockhash vs blockHash)
+export type TransactionV2 = Omit<Transaction, 'blockhash' | 'blockheight' | 'blocktime'> & {
+  blockHash: string
+  blockHeight: number
+  blockTime: number
+}
+
+export type Transactions = {
+  transactions: TransactionV2[]
+  options: {
+    ord: boolean
+    hex: boolean
+    witness: boolean
+  }
+  pagination: JsonRpcPagination
 }
 
 export interface ScriptPubKey {

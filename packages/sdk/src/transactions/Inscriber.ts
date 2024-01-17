@@ -32,7 +32,7 @@ export class Inscriber extends PSBTBuilder {
   private payment: bitcoin.payments.Payment | null = null
   private suitableUnspent: UTXOLimited | null = null
   private recovery = false
-  private recoverAmount: number = 0
+  private recoverAmount = 0
   private safeMode: OnOffUnion
   private encodeMetadata: boolean
   private previewMode = false
