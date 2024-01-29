@@ -1,7 +1,14 @@
-declare interface Window {
-  unisat: Unisat
-  satsConnect: any
-  ethereum: MetaMask
+import { BitcoinProvider } from "sats-connect"
+
+import { Coin98 } from "./browser-wallets/coin98/types"
+
+declare global {
+  interface Window {
+    unisat: Unisat
+    coin98: { bitcoin: Coin98 }
+    BitcoinProvider: BitcoinProvider
+    ethereum: MetaMask
+  }
 }
 
 type Unisat = {
