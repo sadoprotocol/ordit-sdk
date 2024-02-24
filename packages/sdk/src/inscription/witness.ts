@@ -4,7 +4,7 @@ import * as bitcoin from "bitcoinjs-lib"
 import { MAXIMUM_SCRIPT_ELEMENT_SIZE } from "../constants"
 import { OrditSDKError } from "../utils/errors"
 import { InscriptionID, InscriptionFieldTag } from "./types"
-import { encodeNumber, encodeInscriptionID, encodeJSON } from './encode'
+import { encodeNumber, encodeInscriptionID, encodeJSONAsCBORBuffer } from './encode'
 
 export function buildWitnessScript({ recover = false, ...options }: WitnessScriptOptions) {
   bitcoin.initEccLib(ecc)
@@ -41,7 +41,7 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
 
   // push field: metadata
   if (typeof options.meta === "object") {
-    const metaChunks = encodeJSON(options.meta)
+    const metaChunks = encodeJSONAsCBORBuffer(options.meta)
 
     metaChunks &&
       metaChunks.forEach((chunk) => {

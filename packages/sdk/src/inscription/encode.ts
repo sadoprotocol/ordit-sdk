@@ -40,7 +40,7 @@ export function encodeInscriptionID(inscriptionID: InscriptionID): Buffer {
   return Buffer.concat([reversedTxidBuffer, trimmedIndexBuffer]);
 }
 
-export function encodeJSON(json: any): Buffer[] {
+export function encodeJSONAsCBORBuffer(json: any): Buffer[] {
   // Encode the JSON object into CBOR format
   const cborEncoded = cbor.encode(json);
 

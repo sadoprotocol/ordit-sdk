@@ -1,6 +1,6 @@
 import * as cbor from 'cbor';
 import { InscriptionID } from "./types";
-import { encodeNumber, encodeInscriptionID, encodeJSON } from './encode';
+import { encodeNumber, encodeInscriptionID, encodeJSONAsCBORBuffer } from './encode';
 
 describe('encodeNumber', () => {
   it('should encode a positive number correctly', () => {
@@ -82,10 +82,10 @@ describe('encodeInscriptionID', () => {
   });
 });
 
-describe('encodeJSON', () => {
+describe('encodeJSONAsCBORBuffer', () => {
   test('encodes a JSON object into a single CBOR buffer if under 520 bytes', () => {
     const json = { key: 'value' };
-    const encodedBuffers = encodeJSON(json);
+    const encodedBuffers = encodeJSONAsCBORBuffer(json);
     expect(encodedBuffers).toHaveLength(1);
     expect(Buffer.isBuffer(encodedBuffers[0])).toBe(true);
     expect(encodedBuffers[0].length).toBeLessThanOrEqual(520);
@@ -94,7 +94,7 @@ describe('encodeJSON', () => {
 
   test('splits CBOR buffer into multiple parts if over 520 bytes', () => {
     const largeJson = { longKey: 'a'.repeat(1000) }; // Adjust size to ensure it's over 520 bytes when encoded
-    const encodedBuffers = encodeJSON(largeJson);
+    const encodedBuffers = encodeJSONAsCBORBuffer(largeJson);
     expect(encodedBuffers.length).toBeGreaterThan(1);
     encodedBuffers.forEach(buffer => {
       expect(Buffer.isBuffer(buffer)).toBe(true);
@@ -106,7 +106,7 @@ describe('encodeJSON', () => {
 
   test('handles edge case where CBOR encoding is exactly 520 bytes', () => {
     const edgeCaseJson = { exactSizeKey: 'b'.repeat(512) }; // Adjust the repeat count to get an exact 520-byte output
-    const encodedBuffers = encodeJSON(edgeCaseJson);
+    const encodedBuffers = encodeJSONAsCBORBuffer(edgeCaseJson);
     expect(encodedBuffers).toHaveLength(2);
     expect(encodedBuffers[0].length).toEqual(520);
     const combinedBuffer = Buffer.concat(encodedBuffers);
