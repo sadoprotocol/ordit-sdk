@@ -37,6 +37,11 @@ async function main() {
     postage: 1500 // base value of the inscription in sats
   })
 
+  transaction.withParent({
+    txid: '17541f6adf6eb160d52bc6eb0a3546c7c1d2adfe607b1a3cddc72cc0619526ad',
+    index: 0
+  })
+  
   // generate deposit address and fee for inscription
   const revealed = await transaction.generateCommit();
   console.log(revealed) // deposit revealFee to address

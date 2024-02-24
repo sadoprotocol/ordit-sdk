@@ -42,6 +42,22 @@ export interface Inscription {
   value?: number // postage
 }
 
+export interface InscriptionID {
+  txid: string,
+  index: number
+}
+
+export enum InscriptionFieldTag {
+  Body = 0,
+  ContentType = 1,
+  Pointer = 2,
+  Parent = 3,
+  Metadata = 5,
+  Metaprotocol = 7,
+  ContentEncoding = 9,
+  Delegate = 11
+}
+
 export interface InputsToSign {
   address: string
   signingIndexes: number[]

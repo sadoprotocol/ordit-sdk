@@ -6,7 +6,7 @@
   "bugs": "https://github.com/sadoprotocol/ordit-sdk/issues",
   "license": "MIT",
   "scripts": {
-    "prepare": "husky install && chmod ug+x .husky/*",
+    "prepare": "husky && chmod ug+x .husky/*",
     "publish": "node ./scripts/publish.js",
     "local": "turbo run local",
     "build": "turbo run build",

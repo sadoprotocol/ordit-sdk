@@ -22,7 +22,7 @@
     "**/Thumbs.db": true
   },
   "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "vscode.typescript-language-features"
   },
   "search.exclude": {
     "**/dist": true,
