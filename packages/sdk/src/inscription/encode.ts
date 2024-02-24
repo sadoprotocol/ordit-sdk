@@ -41,28 +41,28 @@ export function encodeInscriptionID(inscriptionID: InscriptionID): Buffer {
 }
 
 export function encodeJSON(json: any): Buffer[] {
-  // 将JSON对象编码为CBOR格式
+  // Encode the JSON object into CBOR format
   const cborEncoded = cbor.encode(json);
 
-  // 检查编码后的CBOR数据是否超过520字节
+  // Check if the encoded CBOR data exceeds 520 bytes
   if (cborEncoded.length <= 520) {
-    // 如果没有超过520字节，直接返回包含一个Buffer的数组
+    // If it does not exceed 520 bytes, directly return an array containing one Buffer
     return [cborEncoded];
   } else {
-    // 如果超过520字节，需要分割Buffer
+    // If it exceeds 520 bytes, the Buffer needs to be split
     const parts: Buffer[] = [];
     let startIndex = 0;
 
     while (startIndex < cborEncoded.length) {
-      // 计算分割的长度，最多520字节
+      // Calculate the length of the split, up to 520 bytes
       const length = Math.min(520, cborEncoded.length - startIndex);
-      // 创建一个新的Buffer用于存储分割的部分
+      // Create a new Buffer to store the split part
       const part = Buffer.alloc(length);
-      // 将CBOR数据的一部分复制到新的Buffer中
+      // Copy a portion of the CBOR data into the new Buffer
       cborEncoded.copy(part, 0, startIndex, startIndex + length);
-      // 将分割的部分添加到数组中
+      // Add the split part to the array
       parts.push(part);
-      // 更新起始索引
+      // Update the starting index
       startIndex += length;
     }
 
