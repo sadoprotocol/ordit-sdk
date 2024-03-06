@@ -2,7 +2,7 @@ import { Psbt } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
 import { decodePSBT, generateTxUniqueIdentifier, getScriptType, INSTANT_BUY_SELLER_INPUT_INDEX } from ".."
-import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
+import { MINIMUM_AMOUNT_IN_SATS, SECONDARY_FEE_PERCENTAGE } from "../constants"
 import { InjectableInput, InjectableOutput } from "../transactions/PSBTBuilder"
 import { OrditSDKError } from "../utils/errors"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
@@ -10,12 +10,16 @@ import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTra
 interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
   sellerPSBT: string
   receiveAddress?: string
+  minSecondaryFee?: number
+  secondaryFeeAddress?: string
 }
 
 export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   private receiveAddress?: string
   private sellerPSBT!: Psbt
   private sellerAddress?: string
+  private minSecondaryFee?: number
+  private secondaryFeeAddress?: string
 
   constructor({
     address,
@@ -24,7 +28,9 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     receiveAddress,
     sellerPSBT,
     feeRate,
-    datasource
+    datasource,
+    minSecondaryFee,
+    secondaryFeeAddress
   }: InstantTradeBuyerTxBuilderArgOptions) {
     super({
       address,
@@ -35,6 +41,8 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     })
 
     this.receiveAddress = receiveAddress
+    this.minSecondaryFee = minSecondaryFee
+    this.secondaryFeeAddress = secondaryFeeAddress
     this.decodeSellerPSBT(sellerPSBT)
   }
 
@@ -88,6 +96,22 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
       address: this.receiveAddress || this.address,
       value: this.postage
     })
+  }
+
+  private bindSecondaryFeeOutput() {
+    if (!this.secondaryFeeAddress || !this.minSecondaryFee) return;
+
+    let secondaryFee = Math.ceil(this.price * SECONDARY_FEE_PERCENTAGE)
+    secondaryFee = Math.max(secondaryFee, this.minSecondaryFee) // get the higher value as fee
+
+    if (secondaryFee < MINIMUM_AMOUNT_IN_SATS) return;
+
+    this.outputs.push({
+      address: this.secondaryFeeAddress,
+      value: secondaryFee
+    })
+
+    this.setSecondaryFee(secondaryFee);
   }
 
   private mergePSBTs() {
@@ -171,6 +195,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     this.decodeRoyalty()
     this.bindRefundableOutput()
     this.bindInscriptionOutput()
+    this.bindSecondaryFeeOutput()
     this.mergePSBTs()
 
     await this.prepare()

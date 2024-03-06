@@ -24,6 +24,7 @@ export default class InstantTradeBuilder extends PSBTBuilder {
     percentage: 0,
     receiver: null
   }
+  protected secondaryFee?: number
 
   constructor({
     address,
@@ -75,6 +76,11 @@ export default class InstantTradeBuilder extends PSBTBuilder {
     }
   }
 
+  setSecondaryFee(value: number) {
+    if (value < MINIMUM_AMOUNT_IN_SATS) return
+    this.secondaryFee = value
+  }
+
   get data() {
     return {
       fee: this.fee,
@@ -85,7 +91,8 @@ export default class InstantTradeBuilder extends PSBTBuilder {
       outputAmount: this.outputAmount,
       price: this.price,
       royalty: this.royalty,
-      postage: this.postage
+      postage: this.postage,
+      secondaryFee: this.secondaryFee
     }
   }
 

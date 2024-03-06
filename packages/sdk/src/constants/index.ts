@@ -10,3 +10,6 @@ export const MAXIMUM_SCRIPT_ELEMENT_SIZE = 520
 
 // Maximum royalty percentage
 export const MAXIMUM_ROYALTY_PERCENTAGE = 0.2
+
+// Secondary fee percentage charged on top of selling price 
+export const SECONDARY_FEE_PERCENTAGE = 0.01 // 1%
