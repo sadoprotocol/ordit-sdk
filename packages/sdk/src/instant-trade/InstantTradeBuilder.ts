@@ -85,7 +85,7 @@ export default class InstantTradeBuilder extends PSBTBuilder {
       outputAmount: this.outputAmount,
       price: this.price,
       royalty: this.royalty,
-      postage: this.postage,
+      postage: this.postage
     }
   }
 
