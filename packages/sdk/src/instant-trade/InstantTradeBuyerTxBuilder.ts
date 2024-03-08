@@ -17,6 +17,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   private receiveAddress?: string
   private sellerPSBT!: Psbt
   private sellerAddress?: string
+  private outs?: Output[]
 
   constructor({
     address,
@@ -38,7 +39,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
 
     this.receiveAddress = receiveAddress
     this.decodeSellerPSBT(sellerPSBT)
-    this.outputs = outputs ?? []
+    this.outs = outputs ?? []
   }
 
   private decodeSellerPSBT(hex: string) {
@@ -78,10 +79,10 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   }
 
   private bindRefundableOutput() {
-    this.outputs.push({
+    this.outputs = [{
         address: this.address,
         value: this.utxos.reduce((acc, curr, index) => (acc += [0, 1].includes(index) ? curr.sats : 0), 0)
-    })
+    }]
   }
 
   private bindInscriptionOutput() {
@@ -89,6 +90,12 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
       address: this.receiveAddress || this.address,
       value: this.postage
     })
+  }
+
+  private bindIncomingOutputs() {
+    if (!!this.outs) {
+      this.outputs = [...this.outputs, ...this.outs]
+    }
   }
 
   private mergePSBTs() {
@@ -172,6 +179,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     this.decodeRoyalty()
     this.bindRefundableOutput()
     this.bindInscriptionOutput()
+    this.bindIncomingOutputs()
     this.mergePSBTs()
 
     await this.prepare()
