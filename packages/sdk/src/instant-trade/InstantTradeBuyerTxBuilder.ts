@@ -1,7 +1,7 @@
 import { Psbt } from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
-import { decodePSBT, generateTxUniqueIdentifier, getScriptType, INSTANT_BUY_SELLER_INPUT_INDEX } from ".."
+import { decodePSBT, generateTxUniqueIdentifier, getScriptType, INSTANT_BUY_SELLER_INPUT_INDEX, Output } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { InjectableInput, InjectableOutput } from "../transactions/PSBTBuilder"
 import { OrditSDKError } from "../utils/errors"
@@ -10,12 +10,14 @@ import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTra
 interface InstantTradeBuyerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
   sellerPSBT: string
   receiveAddress?: string
+  outputs?: Output[]
 }
 
 export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   private receiveAddress?: string
   private sellerPSBT!: Psbt
   private sellerAddress?: string
+  private incomingOutputs?: Output[]
 
   constructor({
     address,
@@ -24,18 +26,20 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     receiveAddress,
     sellerPSBT,
     feeRate,
-    datasource
+    datasource,
+    outputs
   }: InstantTradeBuyerTxBuilderArgOptions) {
     super({
       address,
       datasource,
       network,
       publicKey,
-      feeRate
+      feeRate,
     })
 
     this.receiveAddress = receiveAddress
     this.decodeSellerPSBT(sellerPSBT)
+    this.incomingOutputs = outputs ?? []
   }
 
   private decodeSellerPSBT(hex: string) {
@@ -75,12 +79,10 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   }
 
   private bindRefundableOutput() {
-    this.outputs = [
-      {
+    this.outputs = [{
         address: this.address,
         value: this.utxos.reduce((acc, curr, index) => (acc += [0, 1].includes(index) ? curr.sats : 0), 0)
-      }
-    ]
+    }]
   }
 
   private bindInscriptionOutput() {
@@ -88,6 +90,12 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
       address: this.receiveAddress || this.address,
       value: this.postage
     })
+  }
+
+  private bindIncomingOutputs() {
+    if (!!this.incomingOutputs) {
+      this.outputs = [...this.outputs, ...this.incomingOutputs]
+    }
   }
 
   private mergePSBTs() {
@@ -171,6 +179,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     this.decodeRoyalty()
     this.bindRefundableOutput()
     this.bindInscriptionOutput()
+    this.bindIncomingOutputs()
     this.mergePSBTs()
 
     await this.prepare()
