@@ -17,7 +17,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   private receiveAddress?: string
   private sellerPSBT!: Psbt
   private sellerAddress?: string
-  private outs?: Output[]
+  private incomingOutputs?: Output[]
 
   constructor({
     address,
@@ -39,7 +39,7 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
 
     this.receiveAddress = receiveAddress
     this.decodeSellerPSBT(sellerPSBT)
-    this.outs = outputs ?? []
+    this.incomingOutputs = outputs ?? []
   }
 
   private decodeSellerPSBT(hex: string) {
@@ -93,8 +93,8 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   }
 
   private bindIncomingOutputs() {
-    if (!!this.outs) {
-      this.outputs = [...this.outputs, ...this.outs]
+    if (!!this.incomingOutputs) {
+      this.outputs = [...this.outputs, ...this.incomingOutputs]
     }
   }
 
