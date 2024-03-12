@@ -8,6 +8,12 @@ export function encodeNumber(num: number): Buffer {
   return buffer;
 }
 
+export function encodeTag(tag: number): Buffer {
+  const buffer = Buffer.alloc(1)
+  buffer.writeInt8(tag);
+  return buffer;
+}
+
 function reverseBufferByteChunks(src: Buffer): Buffer {
   const buffer = Buffer.alloc(src.length);
   for (let i = 0, j = src.length - 1; i <= j; i++, j--) {

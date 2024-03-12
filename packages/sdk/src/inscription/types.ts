@@ -48,7 +48,6 @@ export interface InscriptionID {
 }
 
 export enum InscriptionFieldTag {
-  Body = 0,
   ContentType = 1,
   Pointer = 2,
   Parent = 3,

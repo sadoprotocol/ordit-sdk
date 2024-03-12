@@ -4,7 +4,7 @@ import * as bitcoin from "bitcoinjs-lib"
 import { MAXIMUM_SCRIPT_ELEMENT_SIZE } from "../constants"
 import { OrditSDKError } from "../utils/errors"
 import { InscriptionID, InscriptionFieldTag } from "./types"
-import { encodeNumber, encodeInscriptionID, encodeJSONAsCBORBuffer } from './encode'
+import { encodeNumber, encodeTag, encodeInscriptionID, encodeJSONAsCBORBuffer } from './encode'
 
 export function buildWitnessScript({ recover = false, ...options }: WitnessScriptOptions) {
   bitcoin.initEccLib(ecc)
@@ -29,13 +29,13 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
 
   // push field: pointer
   if (options.pointer) {
-    fieldStackElements.push(InscriptionFieldTag.Pointer)
+    fieldStackElements.push(encodeTag(InscriptionFieldTag.Pointer))
     fieldStackElements.push(encodeNumber(options.pointer))
   }
 
   // push field: parent
   if (options.parent) {
-    fieldStackElements.push(InscriptionFieldTag.Parent)
+    fieldStackElements.push(encodeTag(InscriptionFieldTag.Parent))
     fieldStackElements.push(encodeInscriptionID(options.parent))
   }
 
@@ -45,26 +45,26 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
 
     metaChunks &&
       metaChunks.forEach((chunk) => {
-        fieldStackElements.push(InscriptionFieldTag.Metadata)
+        fieldStackElements.push(encodeTag(InscriptionFieldTag.Metadata))
         fieldStackElements.push(opPush(chunk))
       })
   }
 
   // push field: metaprotocol
   if (options.metaprotocol) {
-    fieldStackElements.push(InscriptionFieldTag.Metaprotocol)
+    fieldStackElements.push(encodeTag(InscriptionFieldTag.Metaprotocol))
     fieldStackElements.push(opPush(options.metaprotocol))
   }
 
   // push field: content_encoding
   if (options.contentEncoding) {
-    fieldStackElements.push(InscriptionFieldTag.ContentEncoding)
+    fieldStackElements.push(encodeTag(InscriptionFieldTag.ContentEncoding))
     fieldStackElements.push(opPush(options.contentEncoding))
   }
 
   // push field: delegate
   if (options.delegate) {
-    fieldStackElements.push(InscriptionFieldTag.Delegate)
+    fieldStackElements.push(encodeTag(InscriptionFieldTag.Delegate))
     fieldStackElements.push(encodeInscriptionID(options.delegate))
   }
 
@@ -73,11 +73,11 @@ export function buildWitnessScript({ recover = false, ...options }: WitnessScrip
 
   if (options.mediaType && options.mediaContent) {
     // push field: content-type
-    fieldStackElements.push(InscriptionFieldTag.ContentType)
+    fieldStackElements.push(encodeTag(InscriptionFieldTag.ContentType))
     fieldStackElements.push(opPush(options.mediaType))
 
     // push content-body
-    contentStackElements.push(InscriptionFieldTag.Body)
+    contentStackElements.push(bitcoin.opcodes.OP_0)
     const contentChunks = chunkContent(options.mediaContent, !options.mediaType.includes("text") ? "base64" : "utf8")
     contentChunks.forEach((chunk) => {
       contentStackElements.push(opPush(chunk))
