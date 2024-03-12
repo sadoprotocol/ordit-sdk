@@ -3,6 +3,7 @@ import * as bitcoin from "bitcoinjs-lib"
 import { Tapleaf } from "bitcoinjs-lib/src/types"
 
 import {
+  InscriptionID,
   buildWitnessScript,
   createTransaction,
   encodeObject,
@@ -21,8 +22,8 @@ import { SkipStrictSatsCheckOptions, UTXOLimited } from "./types"
 bitcoin.initEccLib(ecc)
 
 export class Inscriber extends PSBTBuilder {
-  protected mediaType: string
-  protected mediaContent: string
+  protected mediaType?: string
+  protected mediaContent?: string
   protected meta?: NestedObject
   protected postage: number
 
@@ -36,6 +37,11 @@ export class Inscriber extends PSBTBuilder {
   private safeMode: OnOffUnion
   private encodeMetadata: boolean
   private previewMode = false
+  private pointer?: number
+  private parent?: InscriptionID
+  private metaprotocol?: string
+  private contentEncoding?: string
+  private delegate?: InscriptionID
 
   private witnessScripts: Record<"inscription" | "recovery", Buffer | null> = {
     inscription: null,
@@ -67,7 +73,7 @@ export class Inscriber extends PSBTBuilder {
       outputs,
       autoAdjustment: false
     })
-    if (!publicKey || !changeAddress || !mediaContent) {
+    if (!publicKey || !changeAddress) {
       throw new OrditSDKError("Invalid options provided")
     }
 
@@ -94,6 +100,31 @@ export class Inscriber extends PSBTBuilder {
 
   private getMetadata() {
     return this.meta && this.encodeMetadata ? encodeObject(this.meta) : this.meta
+  }
+
+  withPointer(pointer: number): Inscriber {
+    this.pointer = pointer
+    return this
+  }
+
+  withParent(parent: InscriptionID): Inscriber {
+    this.parent = parent
+    return this
+  }
+
+  withMetaProtocol(metaprotocol: string): Inscriber {
+    this.metaprotocol = metaprotocol
+    return this
+  }
+
+  withContentEncoding(contentEncoding: string): Inscriber {
+    this.contentEncoding = contentEncoding
+    return this
+  }
+
+  withDelegate(delegate: InscriptionID): Inscriber {
+    this.delegate = delegate
+    return this
   }
 
   async build() {
@@ -154,7 +185,12 @@ export class Inscriber extends PSBTBuilder {
         mediaContent: this.mediaContent,
         mediaType: this.mediaType,
         meta: this.getMetadata(),
-        xkey: this.xKey
+        xkey: this.xKey,
+        pointer: this.pointer,
+        parent: this.parent,
+        metaprotocol: this.metaprotocol,
+        contentEncoding: this.contentEncoding,
+        delegate: this.delegate
       }),
       recovery: buildWitnessScript({
         mediaContent: this.mediaContent,
@@ -278,8 +314,8 @@ export class Inscriber extends PSBTBuilder {
     const amount = this.recovery
       ? this.outputAmount - this.fee
       : skipStrictSatsCheck && customAmount && !isNaN(customAmount)
-      ? customAmount
-      : this.outputAmount + this.fee
+        ? customAmount
+        : this.outputAmount + this.fee
 
     // Output to be paid to user
     if (amount < MINIMUM_AMOUNT_IN_SATS) {
@@ -306,8 +342,8 @@ export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   publicKey: string
   feeRate: number
   postage: number
-  mediaType: string
-  mediaContent: string
+  mediaType?: string
+  mediaContent?: string
   changeAddress: string
   meta?: NestedObject
   outputs?: Outputs
