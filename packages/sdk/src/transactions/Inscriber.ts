@@ -3,6 +3,7 @@ import * as bitcoin from "bitcoinjs-lib"
 import { Tapleaf } from "bitcoinjs-lib/src/types"
 
 import {
+  BaseDatasource,
   buildWitnessScript,
   createTransaction,
   encodeObject,
@@ -56,7 +57,8 @@ export class Inscriber extends PSBTBuilder {
     outputs = [],
     encodeMetadata = false,
     safeMode,
-    meta
+    meta,
+    datasource
   }: InscriberArgOptions) {
     super({
       address,
@@ -65,7 +67,8 @@ export class Inscriber extends PSBTBuilder {
       network,
       publicKey,
       outputs,
-      autoAdjustment: false
+      autoAdjustment: false,
+      datasource
     })
     if (!publicKey || !changeAddress || !mediaContent) {
       throw new OrditSDKError("Invalid options provided")
@@ -133,10 +136,12 @@ export class Inscriber extends PSBTBuilder {
     if (this.recovery) {
       this.recoverAmount = this.suitableUnspent.sats - this.fee
       // when in recovery mode, there will only be 1 output
-      this.outputs = [{
-        address: this.changeAddress || this.address,
-        value: this.recoverAmount
-      }]
+      this.outputs = [
+        {
+          address: this.changeAddress || this.address,
+          value: this.recoverAmount
+        }
+      ]
     }
 
     await this.prepare() // prepare PSBT using PSBTBuilder
@@ -278,8 +283,8 @@ export class Inscriber extends PSBTBuilder {
     const amount = this.recovery
       ? this.outputAmount - this.fee
       : skipStrictSatsCheck && customAmount && !isNaN(customAmount)
-      ? customAmount
-      : this.outputAmount + this.fee
+        ? customAmount
+        : this.outputAmount + this.fee
 
     // Output to be paid to user
     if (amount < MINIMUM_AMOUNT_IN_SATS) {
@@ -312,6 +317,7 @@ export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   meta?: NestedObject
   outputs?: Outputs
   encodeMetadata?: boolean
+  datasource?: BaseDatasource
 }
 
 type Outputs = Array<{ address: string; value: number }>
