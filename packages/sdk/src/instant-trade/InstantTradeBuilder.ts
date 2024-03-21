@@ -100,9 +100,9 @@ export default class InstantTradeBuilder extends PSBTBuilder {
       throw new OrditSDKError("Inscription not found")
     }
 
-    const utxo = await this.datasource.getInscriptionUTXO({ id: this.inscription.genesis })
+    const utxo = await this.datasource.getInscriptionUTXO({ id: this.inscription.id })
     if (!utxo) {
-      throw new OrditSDKError(`Unable to find UTXO: ${this.inscription.outpoint}`)
+      throw new OrditSDKError(`Unable to find UTXO: ${this.inscription.id}`)
     }
 
     this.postage = utxo.sats

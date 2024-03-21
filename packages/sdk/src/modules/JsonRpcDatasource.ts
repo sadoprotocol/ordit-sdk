@@ -41,8 +41,6 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new OrditSDKError("Invalid request")
     }
 
-    id = id.includes(":") ? id.replace(":", "i") : !id.includes("i") ? `${id}i0` : id
-
     let inscription = await rpc[this.network].call<Inscription>("Ordinals.GetInscription", { id }, rpc.id)
     if (decodeMetadata) {
       inscription = DatasourceUtility.transformInscriptions([inscription])[0]
@@ -55,8 +53,6 @@ export default class JsonRpcDatasource extends BaseDatasource {
     if (!id) {
       throw new OrditSDKError("Invalid request")
     }
-
-    id = id.includes(":") ? id.replace(":", "i") : !id.includes("i") ? `${id}i0` : id
 
     return rpc[this.network].call<UTXO>("Ordinals.GetInscriptionUtxo", { id }, rpc.id)
   }

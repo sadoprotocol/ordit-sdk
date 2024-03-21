@@ -50,22 +50,12 @@ export async function publishCollection({
 }
 
 export async function mintFromCollection(options: MintFromCollectionOptions) {
-  if (!options.collectionOutpoint || !options.inscriptionIid || !options.destinationAddress) {
+  if (!options.collectionInscriptionId || !options.inscriptionIid || !options.destinationAddress) {
     throw new OrditSDKError("Invalid options supplied.")
   }
 
-  const [colTxId, colVOut] = options.collectionOutpoint.split(":").map((v, i) => {
-    if (i === 0) return v
-
-    const value = parseInt(v)
-    return isNaN(value) || (!value && value !== 0) ? false : value
-  }) as [string, number | false]
-
-  if (!colTxId || colVOut === false) {
-    throw new OrditSDKError("Invalid collection outpoint supplied.")
-  }
   const datasource = options.datasource || new JsonRpcDatasource({ network: options.network })
-  const collection = await datasource.getInscription({ id: options.collectionOutpoint })
+  const collection = await datasource.getInscription({ id: options.collectionInscriptionId })
   if (!collection) {
     throw new OrditSDKError("Invalid collection")
   }
@@ -167,7 +157,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   mediaContent: string
   destinationAddress: string
   changeAddress: string
-  collectionOutpoint: string
+  collectionInscriptionId: string
   inscriptionIid: string
   nonce: number
   publisherIndex: number
