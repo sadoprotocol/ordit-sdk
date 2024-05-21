@@ -8,11 +8,13 @@ import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTra
 
 interface InstantTradeSellerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
   receiveAddress?: string
+  injectRoyalty?: { address: string; pct: number } // pct is in percentage 0 - 1, 1 being 100%
 }
 
 export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
   private receiveAddress?: string
   private utxo?: UTXO
+  private readonly injectRoyalty
 
   constructor({
     address,
@@ -20,7 +22,8 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     network,
     publicKey,
     inscriptionOutpoint,
-    receiveAddress
+    receiveAddress,
+    injectRoyalty
   }: InstantTradeSellerTxBuilderArgOptions) {
     super({
       address,
@@ -33,6 +36,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     })
 
     this.receiveAddress = receiveAddress
+    this.injectRoyalty = injectRoyalty
   }
 
   private async generatSellerInputs() {
@@ -65,6 +69,21 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
   }
 
   private async calculateRoyalty() {
+    if (this.injectRoyalty) {
+      if (this.injectRoyalty.pct <= 0) {
+        throw new OrditSDKError("Invalid royalty percentage")
+      }
+      if (!this.injectRoyalty.address) {
+        throw new OrditSDKError("Invalid royalty address")
+      }
+      this.setRoyalty({
+        price: this.price,
+        amount: Math.ceil(this.injectRoyalty.pct * this.price),
+        receiver: this.injectRoyalty.address,
+        percentage: this.injectRoyalty.pct
+      })
+      return
+    }
     if (!this.inscription || !this.inscription.meta?.col) {
       return
     }
