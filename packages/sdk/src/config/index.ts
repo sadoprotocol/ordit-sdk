@@ -15,6 +15,11 @@ export const apiConfig = {
       batter: "https://testnet.ordit.io/",
       orderbook: "tb1qfnw26753j7kqu3q099sd48htvtk5wm4e0enmru",
       ipfs: "http://ipfs-gateway.ordit.io/"
+    },
+    signet: {
+      batter: "https://signet.ordit.io/",
+      orderbook: "tb1qfnw26753j7kqu3q099sd48htvtk5wm4e0enmru",
+      ipfs: "http://ipfs-gateway.ordit.io/"
     }
   }
 }

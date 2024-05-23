@@ -71,6 +71,7 @@ export const rpc = {
   },
   mainnet: new JsonRpc(getRpcUrl(apiConfig.apis.mainnet.batter)),
   testnet: new JsonRpc(getRpcUrl(apiConfig.apis.testnet.batter)),
+  signet: new JsonRpc(getRpcUrl(apiConfig.apis.signet.batter)),
   regtest: new JsonRpc(getRpcUrl(apiConfig.apis.regtest.batter))
 } as const
 
