@@ -1,1 +1,1 @@
-export type Network = "mainnet" | "testnet" | "regtest"
+export type Network = "mainnet" | "testnet" | "regtest" | "signet"

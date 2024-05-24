@@ -18,7 +18,10 @@ import {
 
 export function getNetwork(value: Network) {
   if (value === "mainnet") {
-    return bitcoin.networks["bitcoin"]
+    return bitcoin.networks.bitcoin
+  }
+  if (value === "signet") {
+    return bitcoin.networks.testnet
   }
 
   return bitcoin.networks[value]
