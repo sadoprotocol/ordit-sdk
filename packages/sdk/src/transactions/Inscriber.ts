@@ -186,6 +186,7 @@ export class Inscriber extends PSBTBuilder {
     this.buildWitness()
     switch (this.taptreeVersion) {
       case "2":
+        // v2 allows for inscription only minting (without meta) and remains unique based on the meta (OIP-2 specs)
         this.taprootTree = [
           [{ output: this.witnessScripts.recovery! }, { output: this.witnessScripts.inscription! }],
           { output: this.witnessScripts.inscriptionOnly! }
@@ -193,6 +194,7 @@ export class Inscriber extends PSBTBuilder {
         break
       case "1":
       default:
+        // v1 allows for inscription (with meta) and recovery minting (OIP-2 specs)
         this.taprootTree = [{ output: this.witnessScripts.inscription! }, { output: this.witnessScripts.recovery! }]
         break
     }
