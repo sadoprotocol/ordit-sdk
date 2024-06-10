@@ -171,6 +171,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   datasource?: BaseDatasource
   // temporary flag for backward compatibility
   includeMintAddress?: boolean
+  taprootTreeVersion?: string
 }
 
 type Outputs = Array<{ address: string; value: number }>

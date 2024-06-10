@@ -1,6 +1,6 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
 import * as bitcoin from "bitcoinjs-lib"
-import { Tapleaf } from "bitcoinjs-lib/src/types"
+import { Taptree } from "bitcoinjs-lib/src/types"
 
 import {
   BaseDatasource,
@@ -25,6 +25,7 @@ export class Inscriber extends PSBTBuilder {
   protected mediaType: string
   protected mediaContent: string
   protected meta?: NestedObject
+  protected taptreeVersion? = "1"
   protected postage: number
 
   private ready = false
@@ -38,11 +39,12 @@ export class Inscriber extends PSBTBuilder {
   private encodeMetadata: boolean
   private previewMode = false
 
-  private witnessScripts: Record<"inscription" | "recovery", Buffer | null> = {
+  private witnessScripts: Record<"inscription" | "recovery" | "inscriptionOnly", Buffer | null> = {
     inscription: null,
+    inscriptionOnly: null,
     recovery: null
   }
-  private taprootTree!: [Tapleaf, Tapleaf]
+  private taprootTree!: Taptree
 
   constructor({
     network,
@@ -58,6 +60,7 @@ export class Inscriber extends PSBTBuilder {
     encodeMetadata = false,
     safeMode,
     meta,
+    taptreeVersion,
     datasource
   }: InscriberArgOptions) {
     super({
@@ -78,6 +81,7 @@ export class Inscriber extends PSBTBuilder {
     this.mediaType = mediaType
     this.mediaContent = mediaContent
     this.meta = meta
+    this.taptreeVersion = taptreeVersion
     this.postage = postage
     this.safeMode = !safeMode ? "on" : safeMode
     this.encodeMetadata = encodeMetadata
@@ -161,6 +165,12 @@ export class Inscriber extends PSBTBuilder {
         meta: this.getMetadata(),
         xkey: this.xKey
       }),
+      inscriptionOnly: buildWitnessScript({
+        mediaContent: this.mediaContent,
+        mediaType: this.mediaType,
+        meta: false, // do not pass in metadata for v2
+        xkey: this.xKey
+      }),
       recovery: buildWitnessScript({
         mediaContent: this.mediaContent,
         mediaType: this.mediaType,
@@ -173,12 +183,40 @@ export class Inscriber extends PSBTBuilder {
 
   buildTaprootTree() {
     this.buildWitness()
-    this.taprootTree = [{ output: this.witnessScripts.inscription! }, { output: this.witnessScripts.recovery! }]
+    switch (this.taptreeVersion) {
+      case "2":
+        this.taprootTree = [
+          [{ output: this.witnessScripts.recovery! }, { output: this.witnessScripts.inscription! }],
+          { output: this.witnessScripts.inscriptionOnly! }
+        ]
+        break
+      case "1":
+      default:
+        this.taprootTree = [{ output: this.witnessScripts.inscription! }, { output: this.witnessScripts.recovery! }]
+        break
+    }
+  }
+
+  getReedemScript(): bitcoin.payments.Payment["redeem"] {
+    switch (this.taptreeVersion) {
+      case "2":
+        return this.getInscriptionOnlyRedeemScript()
+      case "1":
+      default:
+        return this.getInscriptionRedeemScript()
+    }
   }
 
   getInscriptionRedeemScript(): bitcoin.payments.Payment["redeem"] {
     return {
       output: this.witnessScripts.inscription!,
+      redeemVersion: 192
+    }
+  }
+
+  getInscriptionOnlyRedeemScript(): bitcoin.payments.Payment["redeem"] {
+    return {
+      output: this.witnessScripts.inscriptionOnly!,
       redeemVersion: 192
     }
   }
@@ -230,7 +268,7 @@ export class Inscriber extends PSBTBuilder {
       internalPubkey: Buffer.from(this.xKey, "hex"),
       network: getNetwork(this.network),
       scriptTree: this.taprootTree,
-      redeem: this.getInscriptionRedeemScript()
+      redeem: this.getReedemScript()
     })
     this.witness = this.payment.witness
 
@@ -315,6 +353,7 @@ export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   mediaContent: string
   changeAddress: string
   meta?: NestedObject
+  taptreeVersion?: string
   outputs?: Outputs
   encodeMetadata?: boolean
   datasource?: BaseDatasource
