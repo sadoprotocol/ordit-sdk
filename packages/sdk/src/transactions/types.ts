@@ -51,7 +51,7 @@ export type Transaction = {
 }
 
 // used in Address.GetTransactions RPC, needed due to response not matching Transaction type (ex. blockhash vs blockHash)
-export type TransactionV2 = Omit<Transaction, 'blockhash' | 'blockheight' | 'blocktime'> & {
+export type TransactionV2 = Omit<Transaction, "blockhash" | "blockheight" | "blocktime"> & {
   blockHash: string
   blockHeight: number
   blockTime: number
@@ -95,3 +95,5 @@ export interface SkipStrictSatsCheckOptions {
   skipStrictSatsCheck?: boolean
   customAmount?: number
 }
+
+export type TaptreeVersion = "1" | "2"
