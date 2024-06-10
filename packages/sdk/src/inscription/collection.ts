@@ -1,4 +1,4 @@
-import { BaseDatasource, GetWalletOptions, Inscriber, JsonRpcDatasource, verifyMessage } from ".."
+import { BaseDatasource, GetWalletOptions, Inscriber, JsonRpcDatasource, TaptreeVersion, verifyMessage } from ".."
 import { Network } from "../config/types"
 import { MAXIMUM_ROYALTY_PERCENTAGE } from "../constants"
 import { OrditSDKError } from "../utils/errors"
@@ -171,7 +171,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   datasource?: BaseDatasource
   // temporary flag for backward compatibility
   includeMintAddress?: boolean
-  taprootTreeVersion?: string
+  taptreeVersion?: TaptreeVersion
 }
 
 type Outputs = Array<{ address: string; value: number }>

@@ -10,7 +10,7 @@ import {
   getDummyP2TRInput,
   getNetwork,
   GetWalletOptions,
-  OnOffUnion
+  OnOffUnion, TaptreeVersion
 } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
@@ -25,7 +25,7 @@ export class Inscriber extends PSBTBuilder {
   protected mediaType: string
   protected mediaContent: string
   protected meta?: NestedObject
-  protected taptreeVersion? = "1"
+  protected taptreeVersion?:TaptreeVersion = "1"
   protected postage: number
 
   private ready = false
@@ -353,7 +353,7 @@ export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   mediaContent: string
   changeAddress: string
   meta?: NestedObject
-  taptreeVersion?: string
+  taptreeVersion?: TaptreeVersion
   outputs?: Outputs
   encodeMetadata?: boolean
   datasource?: BaseDatasource
