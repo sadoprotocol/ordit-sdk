@@ -143,18 +143,19 @@ export function getAccountDataFromHdNode({
   return accountData
 }
 
-export function getAllAccountsFromHdNode({ hdNode, network = "testnet" }: GetAllAccountsFromHDNodeOptions) {
+export function getAllAccountsFromHdNode({ hdNode, network = "testnet", account = 0, addressIndex = 0 }: GetAllAccountsFromHDNodeOptions) {
   const accounts: Account[] = []
   const addressTypesList = Object.values(addressTypeToName) as AddressFormats[]
 
   addressTypesList.forEach((addrType) => {
-    const account = getAccountDataFromHdNode({
+    const walletAccount = getAccountDataFromHdNode({
       hdNode,
       format: addrType,
-      network
+      network,
+      account, addressIndex
     })
 
-    accounts.push(account)
+    accounts.push(walletAccount)
   })
 
   return accounts

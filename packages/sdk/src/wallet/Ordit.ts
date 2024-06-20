@@ -37,7 +37,7 @@ export class Ordit {
   selectedAddressType: AddressFormats | undefined
   selectedAddress: string | undefined
 
-  constructor({ wif, seed, privateKey, bip39, network = "testnet", type = "legacy" }: WalletOptions) {
+  constructor({ wif, seed, privateKey, bip39, network = "testnet", type = "legacy", account = 0, addressIndex = 0 }: WalletOptions) {
     this.#network = network
     const networkObj = getNetwork(network)
     const format = addressNameToType[type]
@@ -65,7 +65,7 @@ export class Ordit {
 
       this.#hdNode = hdNode
 
-      const accounts = getAllAccountsFromHdNode({ hdNode, network })
+      const accounts = getAllAccountsFromHdNode({ hdNode, network, account, addressIndex })
 
       const pkBuf = Buffer.from(accounts[0].priv, "hex")
       this.#keyPair = ECPair.fromPrivateKey(pkBuf, { network: networkObj })
@@ -79,7 +79,7 @@ export class Ordit {
 
       this.#hdNode = hdNode
 
-      const accounts = getAllAccountsFromHdNode({ hdNode, network })
+      const accounts = getAllAccountsFromHdNode({ hdNode, network, account, addressIndex })
       this.#keyPair = accounts[0].child
 
       this.publicKey = this.#keyPair.publicKey.toString("hex")
@@ -266,6 +266,8 @@ export type WalletOptions = {
   bip39?: string
   network?: Network
   type?: AddressFormats
+  account?: number;
+  addressIndex?: number;
 }
 
 export type Address = ReturnType<typeof getAddressesFromPublicKey>[0]
