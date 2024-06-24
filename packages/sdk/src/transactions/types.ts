@@ -96,4 +96,4 @@ export interface SkipStrictSatsCheckOptions {
   customAmount?: number
 }
 
-export type TaptreeVersion = "1" | "2"
+export type TaptreeVersion = "1" | "2" | "3"

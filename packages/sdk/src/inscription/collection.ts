@@ -1,7 +1,17 @@
-import { BaseDatasource, GetWalletOptions, Inscriber, JsonRpcDatasource, TaptreeVersion, verifyMessage } from ".."
+import {
+  BaseDatasource,
+  EnvelopeOpts,
+  GetWalletOptions,
+  Inscriber,
+  InscriberV2,
+  JsonRpcDatasource,
+  TaptreeVersion,
+  verifyMessage
+} from ".."
 import { Network } from "../config/types"
 import { MAXIMUM_ROYALTY_PERCENTAGE } from "../constants"
 import { OrditSDKError } from "../utils/errors"
+import { buildMeta } from "./meta"
 
 export async function publishCollection({
   title,
@@ -101,6 +111,76 @@ export async function mintFromCollection(options: MintFromCollectionOptions) {
   return new Inscriber({ ...options, meta })
 }
 
+export async function bulkMintFromCollection({
+  inscriptions,
+  collectionGenesis,
+  publisherAddress,
+  address,
+  publicKey,
+  feeRate,
+  datasource,
+  network,
+  outputs,
+  changeAddress,
+  taptreeVersion
+}: BulkMintFromCollectionOptions) {
+  let currentPointer = 0
+
+  const { metaList, inscriptionList } = inscriptions.reduce<{
+    metaList: EnvelopeOpts[]
+    inscriptionList: EnvelopeOpts[]
+  }>(
+    (acc, insc) => {
+      const { nonce, mediaContent, mediaType, receiverAddress, postage, iid,signature } = insc
+
+      const meta = buildMeta({
+        collectionGenesis,
+        iid,
+        publisher: publisherAddress,
+        nonce,
+        receiverAddress,
+        signature
+      })
+
+      const metaEnvelope: EnvelopeOpts = {
+        mediaContent: JSON.stringify(meta),
+        mediaType: "application/json;charset=utf-8",
+        receiverAddress,
+        postage
+      }
+
+      const inscriptionEnvelope: EnvelopeOpts = {
+        mediaContent,
+        mediaType,
+        pointer: currentPointer === 0 ? undefined : currentPointer.toString(),
+        receiverAddress,
+        postage
+      }
+
+      currentPointer += postage
+
+      return {
+        metaList: [...acc.metaList, metaEnvelope],
+        inscriptionList: [...acc.inscriptionList, inscriptionEnvelope]
+      }
+    },
+    { metaList: [], inscriptionList: [] }
+  )
+
+  return new InscriberV2({
+    address,
+    publicKey,
+    feeRate,
+    datasource,
+    network,
+    outputs,
+    changeAddress,
+    taptreeVersion,
+    metaInscriptions: metaList,
+    inscriptions: inscriptionList
+  })
+}
+
 function validateInscriptions(inscriptions: CollectionInscription[] = []) {
   if (!inscriptions.length) return false
 
@@ -172,6 +252,31 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   // temporary flag for backward compatibility
   includeMintAddress?: boolean
   taptreeVersion?: TaptreeVersion
+}
+
+export type BulkMintFromCollectionOptions = {
+  feeRate: number
+  changeAddress: string
+  address: string
+  publicKey: string
+  network: Network
+  inscriptions: InscriptionsToMint[]
+  outputs?: Outputs
+  enableRBF?: boolean
+  datasource?: BaseDatasource
+  taptreeVersion?: TaptreeVersion
+  collectionGenesis: string
+  publisherAddress: string
+}
+
+type InscriptionsToMint = {
+  nonce: number
+  mediaContent: string
+  mediaType: string
+  receiverAddress: string
+  postage: number
+  iid: string
+  signature?: string // deprecated only used for backward compatibility
 }
 
 type Outputs = Array<{ address: string; value: number }>
