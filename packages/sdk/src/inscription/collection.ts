@@ -269,7 +269,7 @@ export type BulkMintFromCollectionOptions = {
   publisherAddress: string
 }
 
-type InscriptionsToMint = {
+export type InscriptionsToMint = {
   nonce: number
   mediaContent: string
   mediaType: string
