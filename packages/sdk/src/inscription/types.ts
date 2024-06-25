@@ -47,3 +47,12 @@ export interface InputsToSign {
   signingIndexes: number[]
   sigHash?: number
 }
+
+export interface EnvelopeOpts {
+  mediaContent?: string
+  mediaType?: string
+  pointer?: string
+  delegateInscriptionId?: string
+  receiverAddress: string
+  postage: number
+}
