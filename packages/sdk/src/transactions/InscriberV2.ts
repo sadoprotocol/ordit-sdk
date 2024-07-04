@@ -4,69 +4,60 @@ import { Taptree } from "bitcoinjs-lib/src/types"
 
 import {
   BaseDatasource,
+  buildRecoverWitnessScript,
   buildWitnessScript,
+  buildWitnessScriptV2,
   createTransaction,
-  encodeObject,
+  EnvelopeOpts,
   getDummyP2TRInput,
   getNetwork,
-  GetWalletOptions,
-  OnOffUnion,
   TaptreeVersion
 } from ".."
 import { Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { OrditSDKError } from "../utils/errors"
-import { NestedObject } from "../utils/types"
 import { PSBTBuilder } from "./PSBTBuilder"
 import { SkipStrictSatsCheckOptions, UTXOLimited } from "./types"
 
 bitcoin.initEccLib(ecc)
 
-/**
- * @deprecated please use InscriberV2
- */
-export class Inscriber extends PSBTBuilder {
-  protected mediaType: string
-  protected mediaContent: string
-  protected meta?: NestedObject
-  protected taptreeVersion?: TaptreeVersion = "1"
-  protected postage: number
+export class InscriberV2 extends PSBTBuilder {
+  protected taptreeVersion?: TaptreeVersion = "3"
 
   private ready = false
   private commitAddress: string | null = null
-  private destinationAddress: string
   private payment: bitcoin.payments.Payment | null = null
   private suitableUnspent: UTXOLimited | null = null
   private recovery = false
   private recoverAmount = 0
-  private safeMode: OnOffUnion
-  private encodeMetadata: boolean
   private previewMode = false
+  readonly metaInscriptions: EnvelopeOpts[]
+  readonly inscriptions: EnvelopeOpts[]
 
-  private witnessScripts: Record<"inscription" | "recovery" | "inscriptionOnly", Buffer | null> = {
-    inscription: null,
-    inscriptionOnly: null,
+  private witnessScripts: Record<
+    "recovery" | "inscriptions" | "metaInscriptions" | "inscriptionLegacy" | "metaInscriptionLegacy",
+    Buffer | null
+  > = {
+    inscriptions: null,
+    metaInscriptions: null,
+    inscriptionLegacy: null,
+    metaInscriptionLegacy: null,
     recovery: null
   }
   private taprootTree!: Taptree
 
   constructor({
     network,
-    address,
     changeAddress,
-    destinationAddress,
+    address,
     publicKey,
     feeRate,
-    postage,
-    mediaContent,
-    mediaType,
     outputs = [],
-    encodeMetadata = false,
-    safeMode,
-    meta,
     taptreeVersion,
-    datasource
-  }: InscriberArgOptions) {
+    datasource,
+    metaInscriptions,
+    inscriptions
+  }: InscriberV2ArgOptions) {
     super({
       address,
       changeAddress,
@@ -77,18 +68,12 @@ export class Inscriber extends PSBTBuilder {
       autoAdjustment: false,
       datasource
     })
-    if (!publicKey || !changeAddress || !mediaContent) {
+    if (!publicKey || !changeAddress || !feeRate || !network) {
       throw new OrditSDKError("Invalid options provided")
     }
-
-    this.destinationAddress = destinationAddress
-    this.mediaType = mediaType
-    this.mediaContent = mediaContent
-    this.meta = meta
     this.taptreeVersion = taptreeVersion
-    this.postage = postage
-    this.safeMode = !safeMode ? "on" : safeMode
-    this.encodeMetadata = encodeMetadata
+    this.metaInscriptions = metaInscriptions ?? []
+    this.inscriptions = inscriptions ?? []
   }
 
   get data() {
@@ -98,18 +83,17 @@ export class Inscriber extends PSBTBuilder {
       weight: this.weight,
       changeAmount: this.changeAmount,
       inputAmount: this.inputAmount,
-      outputAmount: this.outputAmount,
-      postage: this.postage
+      outputAmount: this.outputAmount
     }
-  }
-
-  private getMetadata() {
-    return this.meta && this.encodeMetadata ? encodeObject(this.meta) : this.meta
   }
 
   async build() {
     if (!this.suitableUnspent || !this.payment) {
       throw new OrditSDKError("Failed to build PSBT. Transaction not ready")
+    }
+
+    if ((this.taptreeVersion === "2" || this.taptreeVersion === "1") && this.inscriptions.length > 1) {
+      throw new OrditSDKError("Only 1 inscription is allowed for taptree version 1 and 2")
     }
 
     this.inputs = [
@@ -134,10 +118,10 @@ export class Inscriber extends PSBTBuilder {
 
     if (!this.recovery) {
       this.outputs = [
-        {
-          address: this.destinationAddress || this.address,
-          value: this.postage
-        }
+        ...this.inscriptions.map((inscription) => ({
+          address: inscription.receiverAddress,
+          value: inscription.postage
+        }))
       ].concat(this.outputs)
     }
 
@@ -163,25 +147,27 @@ export class Inscriber extends PSBTBuilder {
 
   buildWitness() {
     this.witnessScripts = {
-      inscription: buildWitnessScript({
-        mediaContent: this.mediaContent,
-        mediaType: this.mediaType,
-        meta: this.getMetadata(),
-        xkey: this.xKey
-      }),
-      inscriptionOnly: buildWitnessScript({
-        mediaContent: this.mediaContent,
-        mediaType: this.mediaType,
-        meta: false, // do not pass in metadata for taptreeVersion v2
-        xkey: this.xKey
-      }),
-      recovery: buildWitnessScript({
-        mediaContent: this.mediaContent,
-        mediaType: this.mediaType,
-        meta: this.getMetadata(),
+      inscriptions: buildWitnessScriptV2({
         xkey: this.xKey,
-        recover: true
-      })
+        envelopes: this.inscriptions
+      }),
+      metaInscriptions: buildWitnessScriptV2({
+        xkey: this.xKey,
+        envelopes: this.metaInscriptions
+      }),
+      inscriptionLegacy: buildWitnessScript({
+        mediaContent: this.inscriptions[0].mediaContent!,
+        mediaType: this.inscriptions[0].mediaType!,
+        meta: false,
+        xkey: this.xKey
+      }),
+      metaInscriptionLegacy: buildWitnessScript({
+        mediaContent: this.inscriptions[0].mediaContent!,
+        mediaType: this.inscriptions[0].mediaType!,
+        meta: JSON.parse(this.metaInscriptions[0].mediaContent!),
+        xkey: this.xKey
+      }),
+      recovery: buildRecoverWitnessScript(this.xKey)
     }
   }
 
@@ -189,45 +175,50 @@ export class Inscriber extends PSBTBuilder {
     this.buildWitness()
     switch (this.taptreeVersion) {
       case "3":
-        throw new OrditSDKError("taptreeVersion 3 is not supported for Inscriber. Please use InscriberV2.")
+        // v3 allows for multiple/single inscription minting (without meta) and remains unique based on the meta (OIP-2 specs)
+        this.taprootTree = [
+          [{ output: this.witnessScripts.recovery! }, { output: this.witnessScripts.metaInscriptions! }],
+          { output: this.witnessScripts.inscriptions! }
+        ]
+        break
       case "2":
         // v2 allows for inscription only minting (without meta) and remains unique based on the meta (OIP-2 specs)
         this.taprootTree = [
-          [{ output: this.witnessScripts.recovery! }, { output: this.witnessScripts.inscription! }],
-          { output: this.witnessScripts.inscriptionOnly! }
+          [{ output: this.witnessScripts.recovery! }, { output: this.witnessScripts.metaInscriptionLegacy! }],
+          { output: this.witnessScripts.inscriptionLegacy! }
         ]
         break
       case "1":
-      default:
         // v1 allows for inscription (with meta) and recovery minting (OIP-2 specs)
-        this.taprootTree = [{ output: this.witnessScripts.inscription! }, { output: this.witnessScripts.recovery! }]
+        this.taprootTree = [
+          { output: this.witnessScripts.metaInscriptionLegacy! },
+          { output: this.witnessScripts.recovery! }
+        ]
         break
+      default:
+        throw new OrditSDKError("Invalid taptreeVersion provided")
     }
   }
 
   getReedemScript(): bitcoin.payments.Payment["redeem"] {
     switch (this.taptreeVersion) {
       case "3":
-        throw new OrditSDKError("taptreeVersion 3 is not supported for Inscriber. Please use InscriberV2.")
+        return {
+          output: this.witnessScripts.inscriptions!,
+          redeemVersion: 192
+        }
       case "2":
-        return this.getInscriptionOnlyRedeemScript()
+        return {
+          output: this.witnessScripts.inscriptionLegacy!,
+          redeemVersion: 192
+        }
       case "1":
+        return {
+          output: this.witnessScripts.metaInscriptionLegacy!,
+          redeemVersion: 192
+        }
       default:
-        return this.getInscriptionRedeemScript()
-    }
-  }
-
-  getInscriptionRedeemScript(): bitcoin.payments.Payment["redeem"] {
-    return {
-      output: this.witnessScripts.inscription!,
-      redeemVersion: 192
-    }
-  }
-
-  getInscriptionOnlyRedeemScript(): bitcoin.payments.Payment["redeem"] {
-    return {
-      output: this.witnessScripts.inscriptionOnly!,
-      redeemVersion: 192
+        throw new OrditSDKError("Invalid taptreeVersion provided")
     }
   }
 
@@ -255,7 +246,8 @@ export class Inscriber extends PSBTBuilder {
       this.initPSBT()
       this.suitableUnspent = null
       this.ready = false
-      this.outputs.shift()
+      // revert inscription outputs
+      this.outputs = this.outputs.slice(this.inscriptions.length)
       this.previewMode = false
     }
   }
@@ -352,20 +344,16 @@ export class Inscriber extends PSBTBuilder {
   }
 }
 
-export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
+export type InscriberV2ArgOptions = {
   network: Network
   address: string
-  destinationAddress: string
   publicKey: string
   feeRate: number
-  postage: number
-  mediaType: string
-  mediaContent: string
   changeAddress: string
-  meta?: NestedObject
+  metaInscriptions: EnvelopeOpts[]
+  inscriptions: EnvelopeOpts[]
   taptreeVersion?: TaptreeVersion
   outputs?: Outputs
-  encodeMetadata?: boolean
   datasource?: BaseDatasource
 }
 
