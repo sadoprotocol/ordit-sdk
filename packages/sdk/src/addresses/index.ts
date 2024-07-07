@@ -38,7 +38,9 @@ export function getAddressType(address: string, network: Network): AddressTypes 
 export function getAddressesFromPublicKey(
   pubKey: string | Buffer,
   network: Network = "testnet",
-  format: AddressTypes | "all" = "all"
+  format: AddressTypes | "all" = "all",
+  accountIndex = 0,
+  addressIndex = 0
 ) {
   if (!Buffer.isBuffer(pubKey)) {
     pubKey = Buffer.from(pubKey, "hex")
@@ -66,7 +68,12 @@ export function getAddressesFromPublicKey(
           address: paymentObj.address,
           xkey: childNodeXOnlyPubkey.toString("hex"),
           format: addressTypeToName[addrType],
-          pub: keys.publicKey.toString("hex")
+          pub: keys.publicKey.toString("hex"),
+          derivationPath: {
+            account: accountIndex,
+            addressIndex,
+            path: getDerivationPath(addressTypeToName[addrType], accountIndex, addressIndex)
+          }
         })
       } else {
         const paymentObj = createTransaction(keys.publicKey, addrType, network)
@@ -74,7 +81,12 @@ export function getAddressesFromPublicKey(
         addresses.push({
           address: paymentObj.address,
           format: addressTypeToName[addrType],
-          pub: keys.publicKey.toString("hex")
+          pub: keys.publicKey.toString("hex"),
+          derivationPath: {
+            account: accountIndex,
+            addressIndex,
+            path: getDerivationPath(addressTypeToName[addrType], accountIndex, addressIndex)
+          }
         })
       }
     })
@@ -86,7 +98,12 @@ export function getAddressesFromPublicKey(
       address: paymentObj.address,
       format: addressTypeToName[format],
       pub: keys.publicKey.toString("hex"),
-      xkey: format === "p2tr" ? childNodeXOnlyPubkey.toString("hex") : undefined
+      xkey: format === "p2tr" ? childNodeXOnlyPubkey.toString("hex") : undefined,
+      derivationPath: {
+        account: accountIndex,
+        addressIndex,
+        path: getDerivationPath(addressTypeToName[format], accountIndex, addressIndex)
+      }
     })
   }
 
@@ -166,6 +183,7 @@ export type Address = {
   xkey?: string
   format: string
   pub: string
+  derivationPath: Derivation
 }
 
 export type Derivation = {

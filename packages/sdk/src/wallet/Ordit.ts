@@ -48,7 +48,7 @@ export class Ordit {
 
       this.publicKey = keyPair.publicKey.toString("hex")
 
-      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format)
+      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format, account, addressIndex)
       this.#initialize(accounts)
     } else if (privateKey) {
       const pkBuffer = Buffer.from(privateKey, "hex")
@@ -57,7 +57,7 @@ export class Ordit {
 
       this.publicKey = keyPair.publicKey.toString("hex")
 
-      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format)
+      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format, account, addressIndex)
       this.#initialize(accounts)
     } else if (seed) {
       const seedBuffer = Buffer.from(seed, "hex")
@@ -98,11 +98,12 @@ export class Ordit {
     this.#network = value
   }
 
-  getAddressByType(type: AddressFormats) {
+  getAddressByType(type: AddressFormats, accountIndex: number, addressIndex: number) {
     if (!this.#initialized || !this.allAddresses.length) {
       throw new OrditSDKError("Wallet not fully initialized.")
     }
-    return this.allAddresses.filter((address) => address.format === type)
+    return this.allAddresses.find((address) => address.format === type && address.derivationPath.account === accountIndex
+      && address.derivationPath.addressIndex === addressIndex);
   }
 
   getAllAddresses() {
@@ -115,15 +116,16 @@ export class Ordit {
 
   setDefaultAddress(type: AddressFormats, accountIndex = 0, addressIndex = 0) {
     if (this.selectedAddressType === type) return
+    let addressToSelect: Account;
 
-    const accounts = this.getAddressByType(type) as Account[]
-    if (accounts.length === 0) {
-      const discoveredAccount = this.generateAddress(type, accountIndex, addressIndex);
-      accounts.push(discoveredAccount);
+    const account = this.getAddressByType(type, accountIndex, addressIndex) as Account
+    if (!account) {
+      addressToSelect = this.generateAddress(type, accountIndex, addressIndex);
       // Push to current list of addresses
-      this.allAddresses.push(discoveredAccount);
+      this.allAddresses.push(addressToSelect);
+    } else {
+      addressToSelect = account;
     }
-    const addressToSelect = accounts[addressIndex];
 
     if (!addressToSelect)
       throw new OrditSDKError("Address not found. Please add an address with the type and try again.")
@@ -233,9 +235,12 @@ export class Ordit {
     return psbt.toHex()
   }
 
-  signMessage(message: string, type?: AddressFormats) {
+  signMessage(message: string, type?: AddressFormats, accountIndex?: number, addressIndex?: number) {
     const addressType = type || this.selectedAddressType
-    const node = this.allAddresses.find((wallet) => wallet.format === addressType) as Account
+    const accountIndexToSign: number = accountIndex === undefined ? 0 : accountIndex;
+    const addressIndexToSign: number = addressIndex === undefined ? 0 : addressIndex;
+    const node = this.allAddresses.find((wallet) => wallet.format === addressType && wallet.derivationPath.account === accountIndexToSign
+      && wallet.derivationPath.addressIndex === addressIndexToSign) as Account
     const signature = AddressUtils.isP2PKH(node.address!)
       ? sign(message, node.child.privateKey!)
       : Signer.sign(node.child.toWIF(), node.address!, message, getNetwork(this.#network))
