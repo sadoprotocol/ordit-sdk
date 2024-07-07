@@ -102,13 +102,7 @@ export class Ordit {
     if (!this.#initialized || !this.allAddresses.length) {
       throw new OrditSDKError("Wallet not fully initialized.")
     }
-    const result = this.allAddresses.filter((address) => address.format === type)
-
-    if (!result) {
-      throw new OrditSDKError(`Address of type ${type} not found in the instance.`)
-    }
-
-    return result
+    return this.allAddresses.filter((address) => address.format === type)
   }
 
   getAllAddresses() {
@@ -119,11 +113,17 @@ export class Ordit {
     return this.allAddresses
   }
 
-  setDefaultAddress(type: AddressFormats, index = 0) {
+  setDefaultAddress(type: AddressFormats, accountIndex = 0, addressIndex = 0) {
     if (this.selectedAddressType === type) return
 
-    const result = this.getAddressByType(type) as Account[]
-    const addressToSelect = result[index]
+    const accounts = this.getAddressByType(type) as Account[]
+    if (accounts.length === 0) {
+      const discoveredAccount = this.generateAddress(type, accountIndex, addressIndex);
+      accounts.push(discoveredAccount);
+      // Push to current list of addresses
+      this.allAddresses.push(discoveredAccount);
+    }
+    const addressToSelect = accounts[addressIndex];
 
     if (!addressToSelect)
       throw new OrditSDKError("Address not found. Please add an address with the type and try again.")
