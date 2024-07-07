@@ -195,7 +195,6 @@ export type Derivation = {
 export type Account = Address & {
   priv: string
   type: AddressTypes
-  derivationPath: Derivation
   child: BIP32Interface
 }
 
