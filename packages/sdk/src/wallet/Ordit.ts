@@ -114,7 +114,7 @@ export class Ordit {
     return this.allAddresses
   }
 
-  setDefaultAddress(type: AddressFormats, accountIndex = 0, addressIndex = 0) {
+  setDefaultAddress(type: AddressFormats, { accountIndex = 0, addressIndex = 0 }: DerivationIndex) {
     if (this.selectedAddressType === type) return
     let addressToSelect: Account;
 
