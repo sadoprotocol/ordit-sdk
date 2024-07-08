@@ -10,13 +10,13 @@ import ECPairFactory, { ECPairInterface } from "ecpair"
 import {
   Account,
   AddressFormats,
-  addressNameToType,
+  addressNameToType, DerivationIndex,
   getAccountDataFromHdNode,
   getAddressesFromPublicKey,
   getAllAccountsFromHdNode,
   getNetwork,
   mintFromCollection,
-  publishCollection,
+  publishCollection, SigningMessageOptions,
   tweakSigner
 } from ".."
 import { Network } from "../config/types"
@@ -37,7 +37,7 @@ export class Ordit {
   selectedAddressType: AddressFormats | undefined
   selectedAddress: string | undefined
 
-  constructor({ wif, seed, privateKey, bip39, network = "testnet", type = "legacy" }: WalletOptions) {
+  constructor({ wif, seed, privateKey, bip39, network = "testnet", type = "legacy", account = 0, addressIndex = 0 }: WalletOptions) {
     this.#network = network
     const networkObj = getNetwork(network)
     const format = addressNameToType[type]
@@ -48,7 +48,7 @@ export class Ordit {
 
       this.publicKey = keyPair.publicKey.toString("hex")
 
-      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format)
+      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format, account, addressIndex)
       this.#initialize(accounts)
     } else if (privateKey) {
       const pkBuffer = Buffer.from(privateKey, "hex")
@@ -57,7 +57,7 @@ export class Ordit {
 
       this.publicKey = keyPair.publicKey.toString("hex")
 
-      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format)
+      const accounts = getAddressesFromPublicKey(keyPair.publicKey, network, format, account, addressIndex)
       this.#initialize(accounts)
     } else if (seed) {
       const seedBuffer = Buffer.from(seed, "hex")
@@ -65,7 +65,7 @@ export class Ordit {
 
       this.#hdNode = hdNode
 
-      const accounts = getAllAccountsFromHdNode({ hdNode, network })
+      const accounts = getAllAccountsFromHdNode({ hdNode, network, account, addressIndex })
 
       const pkBuf = Buffer.from(accounts[0].priv, "hex")
       this.#keyPair = ECPair.fromPrivateKey(pkBuf, { network: networkObj })
@@ -79,7 +79,7 @@ export class Ordit {
 
       this.#hdNode = hdNode
 
-      const accounts = getAllAccountsFromHdNode({ hdNode, network })
+      const accounts = getAllAccountsFromHdNode({ hdNode, network, account, addressIndex })
       this.#keyPair = accounts[0].child
 
       this.publicKey = this.#keyPair.publicKey.toString("hex")
@@ -98,17 +98,12 @@ export class Ordit {
     this.#network = value
   }
 
-  getAddressByType(type: AddressFormats) {
+  getAddressByType(type: AddressFormats, derivationIndex: DerivationIndex) {
     if (!this.#initialized || !this.allAddresses.length) {
       throw new OrditSDKError("Wallet not fully initialized.")
     }
-    const result = this.allAddresses.filter((address) => address.format === type)
-
-    if (!result) {
-      throw new OrditSDKError(`Address of type ${type} not found in the instance.`)
-    }
-
-    return result
+    return this.allAddresses.find((address) => address.format === type && address.derivationPath.account === derivationIndex.accountIndex
+      && address.derivationPath.addressIndex === derivationIndex.addressIndex);
   }
 
   getAllAddresses() {
@@ -119,11 +114,18 @@ export class Ordit {
     return this.allAddresses
   }
 
-  setDefaultAddress(type: AddressFormats, index = 0) {
+  setDefaultAddress(type: AddressFormats, { accountIndex = 0, addressIndex = 0 }: DerivationIndex) {
     if (this.selectedAddressType === type) return
+    let addressToSelect: Account;
 
-    const result = this.getAddressByType(type) as Account[]
-    const addressToSelect = result[index]
+    const account = this.getAddressByType(type, { accountIndex, addressIndex }) as Account
+    if (!account) {
+      addressToSelect = this.generateAddress(type, accountIndex, addressIndex);
+      // Push to current list of addresses
+      this.allAddresses.push(addressToSelect);
+    } else {
+      addressToSelect = account;
+    }
 
     if (!addressToSelect)
       throw new OrditSDKError("Address not found. Please add an address with the type and try again.")
@@ -233,9 +235,11 @@ export class Ordit {
     return psbt.toHex()
   }
 
-  signMessage(message: string, type?: AddressFormats) {
+  signMessage(message: string, type?: AddressFormats, opts?: SigningMessageOptions) {
     const addressType = type || this.selectedAddressType
-    const node = this.allAddresses.find((wallet) => wallet.format === addressType) as Account
+    const accountIndexToSign: number = opts?.accountIndex === undefined ? 0 : opts?.accountIndex;
+    const addressIndexToSign: number = opts?.addressIndex === undefined ? 0 : opts?.addressIndex;
+    const node = this.getAddressByType(addressType!, { accountIndex: accountIndexToSign, addressIndex: addressIndexToSign }) as Account
     const signature = AddressUtils.isP2PKH(node.address!)
       ? sign(message, node.child.privateKey!)
       : Signer.sign(node.child.toWIF(), node.address!, message, getNetwork(this.#network))
@@ -266,6 +270,8 @@ export type WalletOptions = {
   bip39?: string
   network?: Network
   type?: AddressFormats
+  account?: number;
+  addressIndex?: number;
 }
 
 export type Address = ReturnType<typeof getAddressesFromPublicKey>[0]
