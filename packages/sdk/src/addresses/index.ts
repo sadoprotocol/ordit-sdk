@@ -169,7 +169,8 @@ export function getAllAccountsFromHdNode({ hdNode, network = "testnet", account 
       hdNode,
       format: addrType,
       network,
-      account, addressIndex
+      account,
+      addressIndex
     })
 
     accounts.push(walletAccount)

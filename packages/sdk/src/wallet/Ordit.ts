@@ -10,13 +10,13 @@ import ECPairFactory, { ECPairInterface } from "ecpair"
 import {
   Account,
   AddressFormats,
-  addressNameToType,
+  addressNameToType, DerivationIndex,
   getAccountDataFromHdNode,
   getAddressesFromPublicKey,
   getAllAccountsFromHdNode,
   getNetwork,
   mintFromCollection,
-  publishCollection,
+  publishCollection, SigningMessageOptions,
   tweakSigner
 } from ".."
 import { Network } from "../config/types"
@@ -98,12 +98,12 @@ export class Ordit {
     this.#network = value
   }
 
-  getAddressByType(type: AddressFormats, accountIndex: number, addressIndex: number) {
+  getAddressByType(type: AddressFormats, derivationIndex: DerivationIndex) {
     if (!this.#initialized || !this.allAddresses.length) {
       throw new OrditSDKError("Wallet not fully initialized.")
     }
-    return this.allAddresses.find((address) => address.format === type && address.derivationPath.account === accountIndex
-      && address.derivationPath.addressIndex === addressIndex);
+    return this.allAddresses.find((address) => address.format === type && address.derivationPath.account === derivationIndex.accountIndex
+      && address.derivationPath.addressIndex === derivationIndex.addressIndex);
   }
 
   getAllAddresses() {
@@ -118,7 +118,7 @@ export class Ordit {
     if (this.selectedAddressType === type) return
     let addressToSelect: Account;
 
-    const account = this.getAddressByType(type, accountIndex, addressIndex) as Account
+    const account = this.getAddressByType(type, { accountIndex, addressIndex }) as Account
     if (!account) {
       addressToSelect = this.generateAddress(type, accountIndex, addressIndex);
       // Push to current list of addresses
@@ -235,12 +235,11 @@ export class Ordit {
     return psbt.toHex()
   }
 
-  signMessage(message: string, type?: AddressFormats, accountIndex?: number, addressIndex?: number) {
+  signMessage(message: string, type?: AddressFormats, opts?: SigningMessageOptions) {
     const addressType = type || this.selectedAddressType
-    const accountIndexToSign: number = accountIndex === undefined ? 0 : accountIndex;
-    const addressIndexToSign: number = addressIndex === undefined ? 0 : addressIndex;
-    const node = this.allAddresses.find((wallet) => wallet.format === addressType && wallet.derivationPath.account === accountIndexToSign
-      && wallet.derivationPath.addressIndex === addressIndexToSign) as Account
+    const accountIndexToSign: number = opts?.accountIndex === undefined ? 0 : opts?.accountIndex;
+    const addressIndexToSign: number = opts?.addressIndex === undefined ? 0 : opts?.addressIndex;
+    const node = this.getAddressByType(addressType!, { accountIndex: accountIndexToSign, addressIndex: addressIndexToSign }) as Account
     const signature = AddressUtils.isP2PKH(node.address!)
       ? sign(message, node.child.privateKey!)
       : Signer.sign(node.child.toWIF(), node.address!, message, getNetwork(this.#network))

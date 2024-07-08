@@ -9,3 +9,10 @@ export type GetWalletOptions = {
   format: AddressTypes | "all"
   safeMode?: OnOffUnion
 }
+
+export interface DerivationIndex {
+  accountIndex: number
+  addressIndex: number
+}
+
+export type SigningMessageOptions = Partial<DerivationIndex>
