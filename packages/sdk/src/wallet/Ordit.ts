@@ -10,13 +10,15 @@ import ECPairFactory, { ECPairInterface } from "ecpair"
 import {
   Account,
   AddressFormats,
-  addressNameToType, DerivationIndex,
+  addressNameToType,
+  DerivationIndex,
   getAccountDataFromHdNode,
   getAddressesFromPublicKey,
   getAllAccountsFromHdNode,
   getNetwork,
   mintFromCollection,
-  publishCollection, SigningMessageOptions,
+  publishCollection,
+  SigningMessageOptions,
   tweakSigner
 } from ".."
 import { Network } from "../config/types"
@@ -37,7 +39,16 @@ export class Ordit {
   selectedAddressType: AddressFormats | undefined
   selectedAddress: string | undefined
 
-  constructor({ wif, seed, privateKey, bip39, network = "testnet", type = "legacy", account = 0, addressIndex = 0 }: WalletOptions) {
+  constructor({
+    wif,
+    seed,
+    privateKey,
+    bip39,
+    network = "testnet",
+    type = "legacy",
+    account = 0,
+    addressIndex = 0
+  }: WalletOptions) {
     this.#network = network
     const networkObj = getNetwork(network)
     const format = addressNameToType[type]
@@ -102,8 +113,12 @@ export class Ordit {
     if (!this.#initialized || !this.allAddresses.length) {
       throw new OrditSDKError("Wallet not fully initialized.")
     }
-    return this.allAddresses.find((address) => address.format === type && address.derivationPath.account === derivationIndex.accountIndex
-      && address.derivationPath.addressIndex === derivationIndex.addressIndex);
+    return this.allAddresses.find(
+      (address) =>
+        address.format === type &&
+        address.derivationPath.account === derivationIndex.accountIndex &&
+        address.derivationPath.addressIndex === derivationIndex.addressIndex
+    )
   }
 
   getAllAddresses() {
@@ -114,17 +129,20 @@ export class Ordit {
     return this.allAddresses
   }
 
-  setDefaultAddress(type: AddressFormats, { accountIndex = 0, addressIndex = 0 }: DerivationIndex) {
+  setDefaultAddress(
+    type: AddressFormats,
+    { accountIndex, addressIndex }: DerivationIndex = { accountIndex: 0, addressIndex: 0 }
+  ) {
     if (this.selectedAddressType === type) return
-    let addressToSelect: Account;
+    let addressToSelect: Account
 
     const account = this.getAddressByType(type, { accountIndex, addressIndex }) as Account
     if (!account) {
-      addressToSelect = this.generateAddress(type, accountIndex, addressIndex);
+      addressToSelect = this.generateAddress(type, accountIndex, addressIndex)
       // Push to current list of addresses
-      this.allAddresses.push(addressToSelect);
+      this.allAddresses.push(addressToSelect)
     } else {
-      addressToSelect = account;
+      addressToSelect = account
     }
 
     if (!addressToSelect)
@@ -237,9 +255,12 @@ export class Ordit {
 
   signMessage(message: string, type?: AddressFormats, opts?: SigningMessageOptions) {
     const addressType = type || this.selectedAddressType
-    const accountIndexToSign: number = opts?.accountIndex === undefined ? 0 : opts?.accountIndex;
-    const addressIndexToSign: number = opts?.addressIndex === undefined ? 0 : opts?.addressIndex;
-    const node = this.getAddressByType(addressType!, { accountIndex: accountIndexToSign, addressIndex: addressIndexToSign }) as Account
+    const accountIndexToSign: number = opts?.accountIndex === undefined ? 0 : opts?.accountIndex
+    const addressIndexToSign: number = opts?.addressIndex === undefined ? 0 : opts?.addressIndex
+    const node = this.getAddressByType(addressType!, {
+      accountIndex: accountIndexToSign,
+      addressIndex: addressIndexToSign
+    }) as Account
     const signature = AddressUtils.isP2PKH(node.address!)
       ? sign(message, node.child.privateKey!)
       : Signer.sign(node.child.toWIF(), node.address!, message, getNetwork(this.#network))
@@ -270,8 +291,8 @@ export type WalletOptions = {
   bip39?: string
   network?: Network
   type?: AddressFormats
-  account?: number;
-  addressIndex?: number;
+  account?: number
+  addressIndex?: number
 }
 
 export type Address = ReturnType<typeof getAddressesFromPublicKey>[0]

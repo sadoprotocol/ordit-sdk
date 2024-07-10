@@ -31,6 +31,7 @@ export class InscriberV2 extends PSBTBuilder {
   private recovery = false
   private recoverAmount = 0
   private previewMode = false
+  private isStandard = true
   readonly metaInscriptions: EnvelopeOpts[]
   readonly inscriptions: EnvelopeOpts[]
 
@@ -56,7 +57,8 @@ export class InscriberV2 extends PSBTBuilder {
     taptreeVersion,
     datasource,
     metaInscriptions,
-    inscriptions
+    inscriptions,
+    isStandard
   }: InscriberV2ArgOptions) {
     super({
       address,
@@ -74,6 +76,7 @@ export class InscriberV2 extends PSBTBuilder {
     this.taptreeVersion = taptreeVersion
     this.metaInscriptions = metaInscriptions ?? []
     this.inscriptions = inscriptions ?? []
+    this.isStandard = isStandard ?? true
   }
 
   get data() {
@@ -276,6 +279,13 @@ export class InscriberV2 extends PSBTBuilder {
 
     await this.calculateNetworkFeeUsingPreviewMode()
 
+    if (this.isStandard) {
+      // max weight of a tx is 400,000 WU https://github.com/bitcoin/bitcoin/blob/d908877c4774c2456eed09167a5f382758e4a8a6/src/policy/policy.h#L26-L27
+      if (this.weight > 400_000) {
+        throw new OrditSDKError("Transaction exceeds maximum weight")
+      }
+    }
+
     this.commitAddress = this.payment.address!
     return {
       address: this.payment.address!,
@@ -355,6 +365,7 @@ export type InscriberV2ArgOptions = {
   taptreeVersion?: TaptreeVersion
   outputs?: Outputs
   datasource?: BaseDatasource
+  isStandard?: boolean
 }
 
 type Outputs = Array<{ address: string; value: number }>
