@@ -261,11 +261,11 @@ export function getDummyP2TRInput(): UTXO {
 }
 
 export const splitInscriptionId = (inscriptionId: string) => {
-  const [txId, index] = inscriptionId.split(":")
+  const [txId, index] = inscriptionId.split("i")
   if (txId.length !== 64) {
     throw new OrditSDKError(`Invalid inscriptionId: ${inscriptionId}`)
   }
-  const indexNum = parseInt(index, 10)
+  const indexNum = Number(index)
   if (Number.isNaN(indexNum) || indexNum < 0) {
     throw new OrditSDKError(`Invalid inscriptionId: ${inscriptionId}`)
   }

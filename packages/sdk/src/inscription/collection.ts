@@ -131,7 +131,7 @@ export async function bulkMintFromCollection({
     inscriptionList: EnvelopeOpts[]
   }>(
     (acc, insc) => {
-      const { nonce, mediaContent, mediaType, receiverAddress, postage, iid,signature } = insc
+      const { nonce, mediaContent, mediaType, delegateInscriptionId, receiverAddress, postage, iid, signature } = insc
 
       const meta = buildMeta({
         collectionGenesis,
@@ -152,6 +152,7 @@ export async function bulkMintFromCollection({
       const inscriptionEnvelope: EnvelopeOpts = {
         mediaContent,
         mediaType,
+        delegateInscriptionId,
         pointer: currentPointer === 0 ? undefined : currentPointer.toString(),
         receiverAddress,
         postage
@@ -271,8 +272,9 @@ export type BulkMintFromCollectionOptions = {
 
 export type InscriptionsToMint = {
   nonce: number
-  mediaContent: string
-  mediaType: string
+  mediaContent?: string
+  mediaType?: string
+  delegateInscriptionId?: string
   receiverAddress: string
   postage: number
   iid: string
