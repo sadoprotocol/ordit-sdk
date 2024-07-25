@@ -266,7 +266,7 @@ export const splitInscriptionId = (inscriptionId: string) => {
     throw new OrditSDKError(`Invalid inscriptionId: ${inscriptionId}`)
   }
   const indexNum = Number(index)
-  if (Number.isNaN(indexNum) || indexNum < 0) {
+  if (Number.isNaN(indexNum) || indexNum < 0 || index !== "") {
     throw new OrditSDKError(`Invalid inscriptionId: ${inscriptionId}`)
   }
 
