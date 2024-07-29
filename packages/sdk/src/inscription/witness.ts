@@ -132,10 +132,14 @@ export const buildEnvelope = function ({delegateInscriptionId,mediaContent,media
   ]
 
   if (pointer) {
-    baseStackElements.push(
-      INSCRIPTION_FIELD_TAG.Pointer,
-      encodePointer(pointer)
-    )
+    const encodedPointer = encodePointer(pointer)
+    if (!encodedPointer.equals(Buffer.alloc(0))) {
+      // only push pointer tag if it is not 0
+      baseStackElements.push(
+        INSCRIPTION_FIELD_TAG.Pointer,
+        encodedPointer
+      )
+    }
   }
 
   if (delegateInscriptionId) {

@@ -21,6 +21,8 @@ import { SkipStrictSatsCheckOptions, UTXOLimited } from "./types"
 
 bitcoin.initEccLib(ecc)
 
+type BuildWitnessParams = { xKey: string; inscriptions: EnvelopeOpts[]; metaInscriptions: EnvelopeOpts[] }
+
 export class InscriberV2 extends PSBTBuilder {
   protected taptreeVersion?: TaptreeVersion = "3"
 
@@ -35,16 +37,7 @@ export class InscriberV2 extends PSBTBuilder {
   readonly metaInscriptions: EnvelopeOpts[]
   readonly inscriptions: EnvelopeOpts[]
 
-  private witnessScripts: Record<
-    "recovery" | "inscriptions" | "metaInscriptions" | "inscriptionLegacy" | "metaInscriptionLegacy",
-    Buffer | null
-  > = {
-    inscriptions: null,
-    metaInscriptions: null,
-    inscriptionLegacy: null,
-    metaInscriptionLegacy: null,
-    recovery: null
-  }
+  private witnessScripts: ReturnType<typeof this.buildWitnessScripts>
   private taprootTree!: Taptree
 
   constructor({
@@ -77,6 +70,8 @@ export class InscriberV2 extends PSBTBuilder {
     this.metaInscriptions = metaInscriptions ?? []
     this.inscriptions = inscriptions ?? []
     this.isStandard = isStandard ?? true
+
+    this.witnessScripts = this.buildWitnessScripts({ xKey: this.xKey, inscriptions, metaInscriptions })
   }
 
   get data() {
@@ -148,54 +143,57 @@ export class InscriberV2 extends PSBTBuilder {
     }
   }
 
-  buildWitness() {
-    this.witnessScripts = {
-      inscriptions: buildWitnessScriptV2({
-        xkey: this.xKey,
-        envelopes: this.inscriptions
-      }),
-      metaInscriptions: buildWitnessScriptV2({
-        xkey: this.xKey,
-        envelopes: this.metaInscriptions
-      }),
-      inscriptionLegacy: buildWitnessScript({
-        mediaContent: this.inscriptions[0].mediaContent!,
-        mediaType: this.inscriptions[0].mediaType!,
-        meta: false,
-        xkey: this.xKey
-      }),
-      metaInscriptionLegacy: buildWitnessScript({
-        mediaContent: this.inscriptions[0].mediaContent!,
-        mediaType: this.inscriptions[0].mediaType!,
-        meta: JSON.parse(this.metaInscriptions[0].mediaContent!),
-        xkey: this.xKey
-      }),
-      recovery: buildRecoverWitnessScript(this.xKey)
+  buildWitnessScripts({ xKey, inscriptions, metaInscriptions }: BuildWitnessParams) {
+    return {
+      inscriptions: () =>
+        buildWitnessScriptV2({
+          xkey: xKey,
+          envelopes: inscriptions
+        }),
+      metaInscriptions: () =>
+        buildWitnessScriptV2({
+          xkey: xKey,
+          envelopes: metaInscriptions
+        }),
+      inscriptionLegacy: () =>
+        buildWitnessScript({
+          mediaContent: inscriptions[0].mediaContent!,
+          mediaType: inscriptions[0].mediaType!,
+          meta: false,
+          xkey: xKey
+        }),
+      metaInscriptionLegacy: () =>
+        buildWitnessScript({
+          mediaContent: inscriptions[0].mediaContent!,
+          mediaType: inscriptions[0].mediaType!,
+          meta: JSON.parse(metaInscriptions[0].mediaContent!),
+          xkey: xKey
+        }),
+      recovery: () => buildRecoverWitnessScript(xKey)
     }
   }
 
   buildTaprootTree() {
-    this.buildWitness()
     switch (this.taptreeVersion) {
       case "3":
         // v3 allows for multiple/single inscription minting (without meta) and remains unique based on the meta (OIP-2 specs)
         this.taprootTree = [
-          [{ output: this.witnessScripts.recovery! }, { output: this.witnessScripts.metaInscriptions! }],
-          { output: this.witnessScripts.inscriptions! }
+          [{ output: this.witnessScripts.recovery() }, { output: this.witnessScripts.metaInscriptions() }],
+          { output: this.witnessScripts.inscriptions() }
         ]
         break
       case "2":
         // v2 allows for inscription only minting (without meta) and remains unique based on the meta (OIP-2 specs)
         this.taprootTree = [
-          [{ output: this.witnessScripts.recovery! }, { output: this.witnessScripts.metaInscriptionLegacy! }],
-          { output: this.witnessScripts.inscriptionLegacy! }
+          [{ output: this.witnessScripts.recovery() }, { output: this.witnessScripts.metaInscriptionLegacy() }],
+          { output: this.witnessScripts.inscriptionLegacy() }
         ]
         break
       case "1":
         // v1 allows for inscription (with meta) and recovery minting (OIP-2 specs)
         this.taprootTree = [
-          { output: this.witnessScripts.metaInscriptionLegacy! },
-          { output: this.witnessScripts.recovery! }
+          { output: this.witnessScripts.metaInscriptionLegacy() },
+          { output: this.witnessScripts.recovery() }
         ]
         break
       default:
@@ -207,17 +205,17 @@ export class InscriberV2 extends PSBTBuilder {
     switch (this.taptreeVersion) {
       case "3":
         return {
-          output: this.witnessScripts.inscriptions!,
+          output: this.witnessScripts.inscriptions(),
           redeemVersion: 192
         }
       case "2":
         return {
-          output: this.witnessScripts.inscriptionLegacy!,
+          output: this.witnessScripts.inscriptionLegacy(),
           redeemVersion: 192
         }
       case "1":
         return {
-          output: this.witnessScripts.metaInscriptionLegacy!,
+          output: this.witnessScripts.metaInscriptionLegacy(),
           redeemVersion: 192
         }
       default:
@@ -227,7 +225,7 @@ export class InscriberV2 extends PSBTBuilder {
 
   getRecoveryRedeemScript(): bitcoin.payments.Payment["redeem"] {
     return {
-      output: this.witnessScripts.recovery!,
+      output: this.witnessScripts.recovery(),
       redeemVersion: 192
     }
   }

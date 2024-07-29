@@ -8,6 +8,10 @@ export function trimTrailingZeroBytes(buffer: Buffer): Buffer {
       trimmedBuffer = buffer.subarray(0, i + 1)
       break
     }
+    if (i === 0) {
+      // if all bytes are zero, return an empty buffer
+      trimmedBuffer = Buffer.alloc(0)
+    }
   }
   return trimmedBuffer
 }
