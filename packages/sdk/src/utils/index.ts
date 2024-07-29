@@ -43,7 +43,8 @@ export function createTransaction(
   if (type === "p2sh") {
     return bitcoin.payments.p2sh({
       redeem: bitcoin.payments.p2wpkh({ pubkey: key, network: networkObj }),
-      network: networkObj
+      network: networkObj,
+      ...paymentOptions
     })
   }
   if (type === "p2wsh") {
@@ -52,11 +53,12 @@ export function createTransaction(
         redeem: bitcoin.payments.p2wpkh({ pubkey: key, network: networkObj }),
         network: networkObj
       }),
-      network: networkObj
+      network: networkObj,
+      ...paymentOptions
     })
   }
 
-  return bitcoin.payments[type]({ pubkey: key, network: networkObj })
+  return bitcoin.payments[type]({ pubkey: key, network: networkObj, ...paymentOptions })
 }
 
 export function getDerivationPath(formatType: AddressFormats, account = 0, addressIndex = 0) {
@@ -190,10 +192,10 @@ export const isP2PKH = (script: Buffer, network: Network): IsBitcoinPaymentRespo
   }
 }
 export const isP2WSH = (script: Buffer, network: Network): IsBitcoinPaymentResponse => {
-  const p2wpkh = isPaymentFactory(bitcoin.payments.p2wsh, network)(script)
+  const p2wsh = isPaymentFactory(bitcoin.payments.p2wsh, network)(script)
   return {
     type: "p2wsh",
-    payload: p2wpkh
+    payload: p2wsh
   }
 }
 export const isP2WPKH = (script: Buffer, network: Network): IsBitcoinPaymentResponse => {
