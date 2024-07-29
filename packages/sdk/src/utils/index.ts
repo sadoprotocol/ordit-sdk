@@ -46,6 +46,15 @@ export function createTransaction(
       network: networkObj
     })
   }
+  if (type === "p2wsh") {
+    return bitcoin.payments.p2wsh({
+      redeem: bitcoin.payments.p2sh({
+        redeem: bitcoin.payments.p2wpkh({ pubkey: key, network: networkObj }),
+        network: networkObj
+      }),
+      network: networkObj
+    })
+  }
 
   return bitcoin.payments[type]({ pubkey: key, network: networkObj })
 }
@@ -54,6 +63,7 @@ export function getDerivationPath(formatType: AddressFormats, account = 0, addre
   const pathFormat = {
     legacy: `m/44'/0'/${account}'/0/${addressIndex}`,
     "nested-segwit": `m/49'/0'/${account}'/0/${addressIndex}`,
+    "native-segwit": `m/84'/0'/${account}'/0/${addressIndex}`,
     segwit: `m/84'/0'/${account}'/0/${addressIndex}`,
     taproot: `m/86'/0'/${account}'/0/${addressIndex}`
   }
@@ -179,6 +189,13 @@ export const isP2PKH = (script: Buffer, network: Network): IsBitcoinPaymentRespo
     payload: p2pkh
   }
 }
+export const isP2WSH = (script: Buffer, network: Network): IsBitcoinPaymentResponse => {
+  const p2wpkh = isPaymentFactory(bitcoin.payments.p2wsh, network)(script)
+  return {
+    type: "p2wsh",
+    payload: p2wpkh
+  }
+}
 export const isP2WPKH = (script: Buffer, network: Network): IsBitcoinPaymentResponse => {
   const p2wpkh = isPaymentFactory(bitcoin.payments.p2wpkh, network)(script)
   return {
@@ -220,6 +237,14 @@ export function getScriptType(script: Buffer, network: Network): GetScriptTypeRe
   if (p2wpkh.payload) {
     return {
       format: addressTypeToName["p2wpkh"],
+      ...p2wpkh
+    }
+  }
+
+  const p2wsh = isP2WSH(script, network)
+  if (p2wsh.payload) {
+    return {
+      format: addressTypeToName["p2wsh"],
       ...p2wpkh
     }
   }
