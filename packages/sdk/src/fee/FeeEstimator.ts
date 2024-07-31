@@ -132,6 +132,10 @@ export default class FeeEstimator {
       case "taproot":
         return { input: 42, output: 43, txHeader: 10.5, witness: 66 } // witness size is different for non-default sigHash
 
+      case "native-segwit":
+        // based of 1-of-1 multisig (more other config will change the witness)
+        return { input: 42, output: 43, txHeader: 10.5, witness: 112.5 }
+
       case "segwit":
         return { input: 41, output: 31, txHeader: 10.5, witness: 105 }
 
