@@ -247,7 +247,7 @@ export function getScriptType(script: Buffer, network: Network): GetScriptTypeRe
   if (p2wsh.payload) {
     return {
       format: addressTypeToName["p2wsh"],
-      ...p2wpkh
+      ...p2wsh
     }
   }
 
