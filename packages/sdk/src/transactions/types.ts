@@ -84,7 +84,7 @@ export interface UTXO {
   confirmation: number
 }
 
-export type UTXOLimited = Pick<UTXO, "txid" | "n" | "sats" | "scriptPubKey">
+export type UTXOLimited = Pick<UTXO, "txid" | "n" | "sats" | "scriptPubKey" | "confirmation">
 
 export interface Output {
   address: string
