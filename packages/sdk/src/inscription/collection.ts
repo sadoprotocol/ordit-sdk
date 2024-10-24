@@ -8,7 +8,7 @@ import {
   TaptreeVersion,
   verifyMessage
 } from ".."
-import { Network } from "../config/types"
+import { Chain, Network } from "../config/types"
 import { MAXIMUM_ROYALTY_PERCENTAGE } from "../constants"
 import { OrditSDKError } from "../utils/errors"
 import { buildMeta } from "./meta"
@@ -22,11 +22,19 @@ export async function publishCollection({
   royalty,
   publishers,
   inscriptions,
+  chain = "bitcoin",
+  network,
   ...options
 }: PublishCollectionOptions) {
+  if (chain !== "bitcoin" && chain !== "fractal-bitcoin") {
+    throw new OrditSDKError("Invalid chain supplied.")
+  }
+
   if (!validateInscriptions(inscriptions)) {
     throw new OrditSDKError("Invalid inscriptions supplied.")
   }
+
+  network = chain === "fractal-bitcoin" ? "mainnet" : network
 
   if (royalty) {
     // 0 = 0%, 0.1 = 10%
@@ -56,13 +64,19 @@ export async function publishCollection({
     insc: inscriptions
   }
 
-  return new Inscriber({ ...options, meta: collectionMeta })
+  return new Inscriber({ ...options, meta: collectionMeta, network })
 }
 
-export async function mintFromCollection(options: MintFromCollectionOptions) {
+export async function mintFromCollection({ chain = "bitcoin", ...options }: MintFromCollectionOptions) {
   if (!options.collectionInscriptionId || !options.inscriptionIid || !options.destinationAddress) {
     throw new OrditSDKError("Invalid options supplied.")
   }
+
+  if (chain !== "bitcoin" && chain !== "fractal-bitcoin") {
+    throw new OrditSDKError("Invalid chain supplied.")
+  }
+
+  options.network = chain === "fractal-bitcoin" ? "mainnet" : options.network
 
   const datasource = options.datasource || new JsonRpcDatasource({ network: options.network })
   const collection = await datasource.getInscription({ id: options.collectionInscriptionId })
@@ -122,8 +136,15 @@ export async function bulkMintFromCollection({
   network,
   outputs,
   changeAddress,
-  taptreeVersion
+  taptreeVersion,
+  chain = "bitcoin"
 }: BulkMintFromCollectionOptions) {
+  if (chain !== "bitcoin" && chain !== "fractal-bitcoin") {
+    throw new OrditSDKError("Invalid chain supplied.")
+  }
+
+  network = chain === "fractal-bitcoin" ? "mainnet" : network
+
   let currentPointer = 0
 
   const { metaList, inscriptionList } = inscriptions.reduce<{
@@ -222,6 +243,7 @@ export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   outputs?: Outputs
   encodeMetadata?: boolean
   enableRBF?: boolean
+  chain?: Chain
 }
 
 export type CollectionInscription = {
@@ -253,6 +275,7 @@ export type MintFromCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   // temporary flag for backward compatibility
   includeMintAddress?: boolean
   taptreeVersion?: TaptreeVersion
+  chain?: Chain
 }
 
 export type BulkMintFromCollectionOptions = {
@@ -268,6 +291,7 @@ export type BulkMintFromCollectionOptions = {
   taptreeVersion?: TaptreeVersion
   collectionGenesis: string
   publisherAddress: string
+  chain?: Chain
 }
 
 export type InscriptionsToMint = {

@@ -4,7 +4,13 @@ import { OrditSDKError } from "../utils/errors"
 import { UTXOManagerOptions } from "./types"
 
 export default class UTXOManager extends PSBTBuilder {
-  constructor({ address, publicKey, network, feeRate, datasource }: UTXOManagerOptions) {
+  constructor({ address, publicKey, network, feeRate, datasource, chain = "bitcoin" }: UTXOManagerOptions) {
+    if (chain !== "bitcoin" && chain !== "fractal-bitcoin") {
+      throw new OrditSDKError("Invalid chain supplied")
+    }
+
+    network = chain === "fractal-bitcoin" ? "mainnet" : network
+
     super({
       address,
       publicKey,

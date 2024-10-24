@@ -27,14 +27,21 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     sellerPSBT,
     feeRate,
     datasource,
-    outputs
+    outputs,
+    chain = "bitcoin"
   }: InstantTradeBuyerTxBuilderArgOptions) {
+    if (chain !== "bitcoin" && chain !== "fractal-bitcoin") {
+      throw new OrditSDKError("Invalid chain supplied")
+    }
+
+    network = chain === "fractal-bitcoin" ? "mainnet" : network
+
     super({
       address,
       datasource,
       network,
       publicKey,
-      feeRate,
+      feeRate
     })
 
     this.receiveAddress = receiveAddress
@@ -79,10 +86,12 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
   }
 
   private bindRefundableOutput() {
-    this.outputs = [{
+    this.outputs = [
+      {
         address: this.address,
         value: this.utxos.reduce((acc, curr, index) => (acc += [0, 1].includes(index) ? curr.sats : 0), 0)
-    }]
+      }
+    ]
   }
 
   private bindInscriptionOutput() {

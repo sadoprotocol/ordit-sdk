@@ -23,8 +23,15 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     publicKey,
     inscriptionOutpoint,
     receiveAddress,
-    injectRoyalty
+    injectRoyalty,
+    chain = "bitcoin"
   }: InstantTradeSellerTxBuilderArgOptions) {
+    if (chain !== "bitcoin" && chain !== "fractal-bitcoin") {
+      throw new OrditSDKError("Invalid chain supplied")
+    }
+
+    network = chain === "fractal-bitcoin" ? "mainnet" : network
+
     super({
       address,
       datasource,
