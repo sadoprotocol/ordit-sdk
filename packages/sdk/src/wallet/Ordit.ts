@@ -21,7 +21,7 @@ import {
   SigningMessageOptions,
   tweakSigner
 } from ".."
-import { Network } from "../config/types"
+import { Chain, Network } from "../config/types"
 import { OrditSDKError } from "../utils/errors"
 
 bitcoin.initEccLib(ecc)
@@ -47,9 +47,10 @@ export class Ordit {
     network = "testnet",
     type = "legacy",
     account = 0,
-    addressIndex = 0
+    addressIndex = 0,
+    chain = "bitcoin"
   }: WalletOptions) {
-    this.#network = network
+    this.#network = chain === "fractal-bitcoin" ? "mainnet" : network
     const networkObj = getNetwork(network)
     const format = addressNameToType[type]
 
@@ -293,6 +294,7 @@ export type WalletOptions = {
   type?: AddressFormats
   account?: number
   addressIndex?: number
+  chain?: Chain
 }
 
 export type Address = ReturnType<typeof getAddressesFromPublicKey>[0]
