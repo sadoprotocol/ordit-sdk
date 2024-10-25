@@ -13,7 +13,7 @@ import {
   GetUnspentsResponse,
   RelayOptions
 } from "../api/types"
-import { Network } from "../config/types"
+import { Chain, Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
 import { OrditSDKError } from "../utils/errors"
 import { BaseDatasource, DatasourceUtility } from "."
@@ -21,11 +21,12 @@ import { JsonRpcPagination } from "./types"
 
 interface JsonRpcDatasourceOptions {
   network: Network
+  chain?: Chain
 }
 
 export default class JsonRpcDatasource extends BaseDatasource {
-  constructor({ network }: JsonRpcDatasourceOptions) {
-    super({ network })
+  constructor({ chain = "bitcoin", network }: JsonRpcDatasourceOptions) {
+    super({ chain, network })
   }
 
   async getBalance({ address }: GetBalanceOptions) {
@@ -33,7 +34,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new OrditSDKError("Invalid request")
     }
 
-    return rpc[this.network].call<number>("Address.GetBalance", { address }, rpc.id)
+    return rpc[this.chain][this.network].call<number>("Address.GetBalance", { address }, rpc.id)
   }
 
   async getInscription({ id, decodeMetadata }: GetInscriptionOptions) {
@@ -41,7 +42,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new OrditSDKError("Invalid request")
     }
 
-    let inscription = await rpc[this.network].call<Inscription>("Ordinals.GetInscription", { id }, rpc.id)
+    let inscription = await rpc[this.chain][this.network].call<Inscription>("Ordinals.GetInscription", { id }, rpc.id)
     if (decodeMetadata) {
       inscription = DatasourceUtility.transformInscriptions([inscription])[0]
     }
@@ -54,7 +55,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new OrditSDKError("Invalid request")
     }
 
-    return rpc[this.network].call<UTXO>("Ordinals.GetInscriptionUtxo", { id }, rpc.id)
+    return rpc[this.chain][this.network].call<UTXO>("Ordinals.GetInscriptionUtxo", { id }, rpc.id)
   }
 
   async getInscriptions({
@@ -71,7 +72,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
   }: GetInscriptionsOptions) {
     let inscriptions: Inscription[] = []
     do {
-      const { inscriptions: _inscriptions, pagination } = await rpc[this.network].call<{
+      const { inscriptions: _inscriptions, pagination } = await rpc[this.chain][this.network].call<{
         inscriptions: Inscription[]
         pagination: JsonRpcPagination
       }>(
@@ -102,7 +103,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new OrditSDKError("Invalid request")
     }
 
-    return rpc[this.network].call<UTXOLimited[]>(
+    return rpc[this.chain][this.network].call<UTXOLimited[]>(
       "Address.GetSpendables",
       {
         address,
@@ -127,7 +128,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new OrditSDKError("Invalid request")
     }
 
-    const tx = await rpc[this.network].call<Transaction>(
+    const tx = await rpc[this.chain][this.network].call<Transaction>(
       "Transactions.GetTransaction",
       {
         txid: txId,
@@ -165,7 +166,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new OrditSDKError("Invalid address")
     }
 
-    const response = await rpc[this.network].call<Transactions>(
+    const response = await rpc[this.chain][this.network].call<Transactions>(
       "Address.GetTransactions",
       {
         address,
@@ -204,7 +205,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
 
     let utxos: UTXO[] = []
     do {
-      const { unspents, pagination } = await rpc[this.network].call<{
+      const { unspents, pagination } = await rpc[this.chain][this.network].call<{
         unspents: UTXO[]
         pagination: JsonRpcPagination
       }>(
@@ -240,6 +241,6 @@ export default class JsonRpcDatasource extends BaseDatasource {
       throw new OrditSDKError("Invalid max fee rate")
     }
 
-    return rpc[this.network].call<string>("Transactions.Relay", { hex, maxFeeRate, validate }, rpc.id)
+    return rpc[this.chain][this.network].call<string>("Transactions.Relay", { hex, maxFeeRate, validate }, rpc.id)
   }
 }

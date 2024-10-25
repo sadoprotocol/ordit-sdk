@@ -69,10 +69,19 @@ export const rpc = {
   get id() {
     return Math.floor(Math.random() * 100000)
   },
-  mainnet: new JsonRpc(getRpcUrl(apiConfig.apis.mainnet.batter)),
-  testnet: new JsonRpc(getRpcUrl(apiConfig.apis.testnet.batter)),
-  signet: new JsonRpc(getRpcUrl(apiConfig.apis.signet.batter)),
-  regtest: new JsonRpc(getRpcUrl(apiConfig.apis.regtest.batter))
+  bitcoin: {
+    mainnet: new JsonRpc(getRpcUrl(apiConfig.apis.bitcoin.mainnet.batter)),
+    testnet: new JsonRpc(getRpcUrl(apiConfig.apis.bitcoin.testnet.batter)),
+    signet: new JsonRpc(getRpcUrl(apiConfig.apis.bitcoin.signet.batter)),
+    regtest: new JsonRpc(getRpcUrl(apiConfig.apis.bitcoin.regtest.batter))
+  },
+  "fractal-bitcoin": {
+    mainnet: new JsonRpc(getRpcUrl(apiConfig.apis["fractal-bitcoin"].mainnet.batter)),
+    testnet: new JsonRpc(getRpcUrl(apiConfig.apis["fractal-bitcoin"].testnet.batter)),
+    // unused
+    signet: new JsonRpc(getRpcUrl(apiConfig.apis["fractal-bitcoin"].signet.batter)),
+    regtest: new JsonRpc(getRpcUrl(apiConfig.apis["fractal-bitcoin"].regtest.batter))
+  }
 } as const
 
 /*

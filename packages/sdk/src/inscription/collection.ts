@@ -34,8 +34,6 @@ export async function publishCollection({
     throw new OrditSDKError("Invalid inscriptions supplied.")
   }
 
-  network = chain === "fractal-bitcoin" ? "mainnet" : network
-
   if (royalty) {
     // 0 = 0%, 0.1 = 10%
     if (isNaN(royalty.pct) || royalty.pct < 0 || royalty.pct > MAXIMUM_ROYALTY_PERCENTAGE) {
@@ -64,7 +62,7 @@ export async function publishCollection({
     insc: inscriptions
   }
 
-  return new Inscriber({ ...options, meta: collectionMeta, network })
+  return new Inscriber({ ...options, meta: collectionMeta, network, chain })
 }
 
 export async function mintFromCollection({ chain = "bitcoin", ...options }: MintFromCollectionOptions) {
@@ -76,9 +74,7 @@ export async function mintFromCollection({ chain = "bitcoin", ...options }: Mint
     throw new OrditSDKError("Invalid chain supplied.")
   }
 
-  options.network = chain === "fractal-bitcoin" ? "mainnet" : options.network
-
-  const datasource = options.datasource || new JsonRpcDatasource({ network: options.network })
+  const datasource = options.datasource || new JsonRpcDatasource({ network: options.network, chain })
   const collection = await datasource.getInscription({ id: options.collectionInscriptionId })
   if (!collection) {
     throw new OrditSDKError("Invalid collection")
@@ -143,8 +139,6 @@ export async function bulkMintFromCollection({
     throw new OrditSDKError("Invalid chain supplied.")
   }
 
-  network = chain === "fractal-bitcoin" ? "mainnet" : network
-
   let currentPointer = 0
 
   const { metaList, inscriptionList } = inscriptions.reduce<{
@@ -191,6 +185,7 @@ export async function bulkMintFromCollection({
 
   return new InscriberV2({
     address,
+    chain,
     publicKey,
     feeRate,
     datasource,

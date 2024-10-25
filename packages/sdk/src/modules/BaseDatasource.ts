@@ -12,18 +12,22 @@ import {
   GetUnspentsResponse,
   RelayOptions
 } from "../api/types"
-import { Network } from "../config/types"
+import { Network, Chain } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
 
 interface BaseDatasourceOptions {
   network: Network
+  chain?: Chain
 }
 
 export default abstract class BaseDatasource {
   protected readonly network: Network
 
-  constructor({ network }: BaseDatasourceOptions) {
+  protected readonly chain: Chain
+
+  constructor({ chain = "bitcoin", network }: BaseDatasourceOptions) {
     this.network = network
+    this.chain = chain
   }
 
   abstract getBalance({ address }: GetBalanceOptions): Promise<number>

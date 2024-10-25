@@ -13,7 +13,7 @@ import {
   OnOffUnion,
   TaptreeVersion
 } from ".."
-import { Network } from "../config/types"
+import { Chain, Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { OrditSDKError } from "../utils/errors"
 import { NestedObject } from "../utils/types"
@@ -65,7 +65,8 @@ export class Inscriber extends PSBTBuilder {
     safeMode,
     meta,
     taptreeVersion,
-    datasource
+    datasource,
+    chain = "bitcoin"
   }: InscriberArgOptions) {
     super({
       address,
@@ -75,7 +76,8 @@ export class Inscriber extends PSBTBuilder {
       publicKey,
       outputs,
       autoAdjustment: false,
-      datasource
+      datasource,
+      chain
     })
     if (!publicKey || !changeAddress || !mediaContent) {
       throw new OrditSDKError("Invalid options provided")
@@ -276,7 +278,7 @@ export class Inscriber extends PSBTBuilder {
     this.buildTaprootTree()
     this.payment = bitcoin.payments.p2tr({
       internalPubkey: Buffer.from(this.xKey, "hex"),
-      network: getNetwork(this.network),
+      network: getNetwork(this.chain === "fractal-bitcoin" ? "mainnet" : this.network),
       scriptTree: this.taprootTree,
       redeem: this.getReedemScript()
     })
@@ -295,7 +297,9 @@ export class Inscriber extends PSBTBuilder {
     this.recovery = true
     this.buildTaprootTree()
 
-    this.payment = createTransaction(Buffer.from(this.xKey, "hex"), "p2tr", this.network, {
+    const _network = getNetwork(this.chain === "fractal-bitcoin" ? "mainnet" : this.network)
+
+    this.payment = createTransaction(Buffer.from(this.xKey, "hex"), "p2tr", _network, {
       scriptTree: this.taprootTree,
       redeem: this.getRecoveryRedeemScript()
     })
@@ -317,6 +321,7 @@ export class Inscriber extends PSBTBuilder {
       try {
         await this.fetchAndSelectSuitableUnspent({ skipStrictSatsCheck, customAmount })
       } catch (error) {
+        console.log(error)
         return false
       }
     }
@@ -367,6 +372,7 @@ export type InscriberArgOptions = Pick<GetWalletOptions, "safeMode"> & {
   outputs?: Outputs
   encodeMetadata?: boolean
   datasource?: BaseDatasource
+  chain?: Chain
 }
 
 type Outputs = Array<{ address: string; value: number }>

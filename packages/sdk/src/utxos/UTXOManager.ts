@@ -9,8 +9,6 @@ export default class UTXOManager extends PSBTBuilder {
       throw new OrditSDKError("Invalid chain supplied")
     }
 
-    network = chain === "fractal-bitcoin" ? "mainnet" : network
-
     super({
       address,
       publicKey,

@@ -13,7 +13,7 @@ import {
   getNetwork,
   TaptreeVersion
 } from ".."
-import { Network } from "../config/types"
+import { Chain, Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { OrditSDKError } from "../utils/errors"
 import { PSBTBuilder } from "./PSBTBuilder"
@@ -51,7 +51,8 @@ export class InscriberV2 extends PSBTBuilder {
     datasource,
     metaInscriptions,
     inscriptions,
-    isStandard
+    isStandard,
+    chain = "bitcoin"
   }: InscriberV2ArgOptions) {
     super({
       address,
@@ -61,7 +62,8 @@ export class InscriberV2 extends PSBTBuilder {
       publicKey,
       outputs,
       autoAdjustment: false,
-      datasource
+      datasource,
+      chain
     })
     if (!publicKey || !changeAddress || !feeRate || !network) {
       throw new OrditSDKError("Invalid options provided")
@@ -269,7 +271,7 @@ export class InscriberV2 extends PSBTBuilder {
     this.buildTaprootTree()
     this.payment = bitcoin.payments.p2tr({
       internalPubkey: Buffer.from(this.xKey, "hex"),
-      network: getNetwork(this.network),
+      network: getNetwork(this.chain === "fractal-bitcoin" ? "mainnet" : this.network),
       scriptTree: this.taprootTree,
       redeem: this.getReedemScript()
     })
@@ -295,7 +297,8 @@ export class InscriberV2 extends PSBTBuilder {
     this.recovery = true
     this.buildTaprootTree()
 
-    this.payment = createTransaction(Buffer.from(this.xKey, "hex"), "p2tr", this.network, {
+    const _network = this.chain === "fractal-bitcoin" ? "mainnet" : this.network
+    this.payment = createTransaction(Buffer.from(this.xKey, "hex"), "p2tr", _network, {
       scriptTree: this.taprootTree,
       redeem: this.getRecoveryRedeemScript()
     })
@@ -364,6 +367,7 @@ export type InscriberV2ArgOptions = {
   outputs?: Outputs
   datasource?: BaseDatasource
   isStandard?: boolean
+  chain?: Chain
 }
 
 type Outputs = Array<{ address: string; value: number }>

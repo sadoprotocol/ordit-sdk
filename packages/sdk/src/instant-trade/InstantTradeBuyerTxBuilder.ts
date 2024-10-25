@@ -34,8 +34,6 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
       throw new OrditSDKError("Invalid chain supplied")
     }
 
-    network = chain === "fractal-bitcoin" ? "mainnet" : network
-
     super({
       address,
       datasource,
