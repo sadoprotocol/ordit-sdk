@@ -34,7 +34,8 @@ export default class InstantTradeBuilder extends PSBTBuilder {
     network,
     publicKey,
     inscriptionOutpoint,
-    autoAdjustment
+    autoAdjustment,
+    chain = "bitcoin"
   }: InstantTradeBuilderArgOptions) {
     super({
       address,
@@ -44,11 +45,13 @@ export default class InstantTradeBuilder extends PSBTBuilder {
       publicKey,
       outputs: [],
       autoAdjustment,
-      instantTradeMode: true
+      instantTradeMode: true,
+      chain
     })
 
     this.address = address
     this.inscriptionOutpoint = inscriptionOutpoint
+    this.chain = chain
   }
 
   setPrice(value: number) {

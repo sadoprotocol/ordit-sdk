@@ -5,6 +5,7 @@ import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { UTXO } from "../transactions/types"
 import { OrditSDKError } from "../utils/errors"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
+import { Chain } from "../config/types"
 
 interface InstantTradeSellerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
   receiveAddress?: string
@@ -37,11 +38,13 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
       publicKey,
       inscriptionOutpoint,
       autoAdjustment: false, // Prevents PSBTBuilder from adding additional input and change output
-      feeRate: 0 // seller in instant-trade does not pay network fee
+      feeRate: 0, // seller in instant-trade does not pay network fee
+      chain
     })
 
     this.receiveAddress = receiveAddress
     this.injectRoyalty = injectRoyalty
+    this.chain = chain
   }
 
   private async generatSellerInputs() {
@@ -52,7 +55,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     const input = await processInput({
       utxo: this.utxo,
       pubKey: this.publicKey,
-      network: this.network,
+      network: this.chain === "fractal-bitcoin" ? "mainnet" : this.network,
       sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY,
       datasource: this.datasource
     })

@@ -39,12 +39,14 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
       datasource,
       network,
       publicKey,
-      feeRate
+      feeRate,
+      chain
     })
 
     this.receiveAddress = receiveAddress
     this.decodeSellerPSBT(sellerPSBT)
     this.incomingOutputs = outputs ?? []
+    this.chain = chain
   }
 
   private decodeSellerPSBT(hex: string) {
@@ -59,7 +61,9 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
       throw new OrditSDKError("invalid seller psbt")
     }
 
-    const data = getScriptType(input.witnessUtxo.script, this.network)
+    const _network = this.chain === "fractal-bitcoin" ? "mainnet" : this.network
+
+    const data = getScriptType(input.witnessUtxo.script, _network)
     this.sellerAddress = data.payload && data.payload.address ? data.payload.address : undefined
     if (!this.sellerAddress) {
       throw new OrditSDKError("invalid seller psbt")
@@ -76,7 +80,9 @@ export default class InstantTradeBuyerTxBuilder extends InstantTradeBuilder {
     const royaltyOutput = (this.sellerPSBT.data.globalMap.unsignedTx as any).tx.outs[1]
     if (!royaltyOutput) return
 
-    const scriptPayload = getScriptType(royaltyOutput.script, this.network).payload
+    const _network = this.chain === "fractal-bitcoin" ? "mainnet" : this.network
+
+    const scriptPayload = getScriptType(royaltyOutput.script, _network).payload
     const amount = royaltyOutput && royaltyOutput.value >= MINIMUM_AMOUNT_IN_SATS ? royaltyOutput.value : 0
     const receiver = scriptPayload ? scriptPayload.address : null
 

@@ -96,6 +96,7 @@ export class PSBTBuilder extends FeeEstimator {
       network,
       chain
     })
+    this.chain = chain
     this.address = address
     this.changeAddress = changeAddress
     this.datasource = datasource || new JsonRpcDatasource({ chain: this.chain, network: this.network })

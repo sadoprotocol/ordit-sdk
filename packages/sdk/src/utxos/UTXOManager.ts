@@ -15,7 +15,8 @@ export default class UTXOManager extends PSBTBuilder {
       network,
       datasource,
       feeRate,
-      outputs: []
+      outputs: [],
+      chain
     })
   }
 
@@ -31,7 +32,7 @@ export default class UTXOManager extends PSBTBuilder {
     const input = await processInput({
       utxo,
       pubKey: this.publicKey,
-      network: this.network,
+      network: this.chain === "fractal-bitcoin" ? "mainnet" : this.network,
       datasource: this.datasource
     })
     const totalOutputs = 2
