@@ -4,7 +4,7 @@ import * as bitcoin from "bitcoinjs-lib"
 import ECPairFactory from "ecpair"
 
 import { AddressFormats, AddressTypes, addressTypeToName } from "../addresses/formats"
-import { Chain, Network } from "../config/types"
+import { Network } from "../config/types"
 import { UTXO } from "../transactions/types"
 import { OrditSDKError } from "./errors"
 import {

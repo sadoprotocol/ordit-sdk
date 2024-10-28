@@ -1,8 +1,8 @@
 import { Inscription } from ".."
+import { Chain } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { PSBTBuilder, PSBTBuilderOptions } from "../transactions/PSBTBuilder"
 import { OrditSDKError } from "../utils/errors"
-import { Chain } from "../config/types"
 
 export interface InstantTradeBuilderArgOptions
   extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address" | "autoAdjustment" | "feeRate" | "datasource"> {

@@ -12,7 +12,7 @@ import {
   GetUnspentsResponse,
   RelayOptions
 } from "../api/types"
-import { Network, Chain } from "../config/types"
+import { Chain,Network } from "../config/types"
 import { Transaction, UTXO, UTXOLimited } from "../transactions/types"
 
 interface BaseDatasourceOptions {

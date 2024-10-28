@@ -1,5 +1,5 @@
-import { PSBTBuilderOptions } from "../transactions/PSBTBuilder"
 import { Chain } from "../config/types"
+import { PSBTBuilderOptions } from "../transactions/PSBTBuilder"
 
 export type UTXOManagerOptions = Pick<
   PSBTBuilderOptions,
