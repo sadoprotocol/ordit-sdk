@@ -5,7 +5,6 @@ import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { UTXO } from "../transactions/types"
 import { OrditSDKError } from "../utils/errors"
 import InstantTradeBuilder, { InstantTradeBuilderArgOptions } from "./InstantTradeBuilder"
-import { Chain } from "../config/types"
 
 interface InstantTradeSellerTxBuilderArgOptions extends InstantTradeBuilderArgOptions {
   receiveAddress?: string
