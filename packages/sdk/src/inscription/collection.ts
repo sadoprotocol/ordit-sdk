@@ -48,6 +48,8 @@ export async function publishCollection({
     }).format(royalty.pct)
   }
 
+  const datasource = options.datasource || new JsonRpcDatasource({ network: network, chain })
+
   const collectionMeta = {
     p: "vord", // protocol
     v: 1, // version
@@ -62,7 +64,7 @@ export async function publishCollection({
     insc: inscriptions
   }
 
-  return new Inscriber({ ...options, meta: collectionMeta, network, chain })
+  return new Inscriber({ ...options, meta: collectionMeta, network, chain, datasource })
 }
 
 export async function mintFromCollection({ chain = "bitcoin", ...options }: MintFromCollectionOptions) {
@@ -118,7 +120,7 @@ export async function mintFromCollection({ chain = "bitcoin", ...options }: Mint
 
   meta.sig = options.signature
 
-  return new Inscriber({ ...options, meta })
+  return new Inscriber({ ...options, meta, chain })
 }
 
 export async function bulkMintFromCollection({
@@ -239,6 +241,7 @@ export type PublishCollectionOptions = Pick<GetWalletOptions, "safeMode"> & {
   encodeMetadata?: boolean
   enableRBF?: boolean
   chain?: Chain
+  datasource?: BaseDatasource
 }
 
 export type CollectionInscription = {
