@@ -138,7 +138,7 @@ export async function bulkMintFromCollection({
   chain = "bitcoin"
 }: BulkMintFromCollectionOptions) {
   if (chain !== "bitcoin" && chain !== "fractal-bitcoin") {
-    throw new OrditSDKError("Invalid chain supplied.")
+    throw new OrditSDKError("Invalid chain supplied")
   }
 
   let currentPointer = 0
