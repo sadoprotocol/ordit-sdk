@@ -70,17 +70,17 @@ export const rpc = {
     return Math.floor(Math.random() * 100000)
   },
   bitcoin: {
-    mainnet: new JsonRpc(getRpcUrl(apiConfig.apis.bitcoin.mainnet.batter)),
-    testnet: new JsonRpc(getRpcUrl(apiConfig.apis.bitcoin.testnet.batter)),
-    signet: new JsonRpc(getRpcUrl(apiConfig.apis.bitcoin.signet.batter)),
-    regtest: new JsonRpc(getRpcUrl(apiConfig.apis.bitcoin.regtest.batter))
+    mainnet: new JsonRpc(getRpcUrl(apiConfig.apis.bitcoin.mainnet)),
+    testnet: new JsonRpc(getRpcUrl(apiConfig.apis.bitcoin.testnet)),
+    signet: new JsonRpc(getRpcUrl(apiConfig.apis.bitcoin.signet)),
+    regtest: new JsonRpc(getRpcUrl(apiConfig.apis.bitcoin.regtest))
   },
   "fractal-bitcoin": {
-    mainnet: new JsonRpc(getRpcUrl(apiConfig.apis["fractal-bitcoin"].mainnet.batter)),
-    testnet: new JsonRpc(getRpcUrl(apiConfig.apis["fractal-bitcoin"].testnet.batter)),
+    mainnet: new JsonRpc(getRpcUrl(apiConfig.apis["fractal-bitcoin"].mainnet)),
+    testnet: new JsonRpc(getRpcUrl(apiConfig.apis["fractal-bitcoin"].testnet)),
     // unused
-    signet: new JsonRpc(getRpcUrl(apiConfig.apis["fractal-bitcoin"].signet.batter)),
-    regtest: new JsonRpc(getRpcUrl(apiConfig.apis["fractal-bitcoin"].regtest.batter))
+    signet: new JsonRpc(getRpcUrl(apiConfig.apis["fractal-bitcoin"].signet)),
+    regtest: new JsonRpc(getRpcUrl(apiConfig.apis["fractal-bitcoin"].regtest))
   }
 } as const
 
