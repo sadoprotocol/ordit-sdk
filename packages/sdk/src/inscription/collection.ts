@@ -27,7 +27,7 @@ export async function publishCollection({
   ...options
 }: PublishCollectionOptions) {
   if (chain !== "bitcoin" && chain !== "fractal-bitcoin") {
-    throw new OrditSDKError("Invalid chain supplied.")
+    throw new OrditSDKError("Invalid chain supplied")
   }
 
   if (!validateInscriptions(inscriptions)) {
