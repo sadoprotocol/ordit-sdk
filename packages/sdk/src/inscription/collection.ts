@@ -73,7 +73,7 @@ export async function mintFromCollection({ chain = "bitcoin", ...options }: Mint
   }
 
   if (chain !== "bitcoin" && chain !== "fractal-bitcoin") {
-    throw new OrditSDKError("Invalid chain supplied.")
+    throw new OrditSDKError("Invalid chain supplied")
   }
 
   const datasource = options.datasource || new JsonRpcDatasource({ network: options.network, chain })
