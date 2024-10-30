@@ -21,7 +21,7 @@ import {
   SigningMessageOptions,
   tweakSigner
 } from ".."
-import { Network } from "../config/types"
+import { Chain, Network } from "../config/types"
 import { OrditSDKError } from "../utils/errors"
 
 bitcoin.initEccLib(ecc)
@@ -29,6 +29,8 @@ const ECPair = ECPairFactory(ecc)
 const bip32 = BIP32Factory(ecc)
 
 export class Ordit {
+  chain: Chain = "bitcoin"
+
   #network: Network = "testnet"
   //   #config;
   #initialized = false
@@ -47,9 +49,10 @@ export class Ordit {
     network = "testnet",
     type = "legacy",
     account = 0,
-    addressIndex = 0
+    addressIndex = 0,
+    chain = "bitcoin"
   }: WalletOptions) {
-    this.#network = network
+    this.chain = chain
     const networkObj = getNetwork(network)
     const format = addressNameToType[type]
 
@@ -160,17 +163,19 @@ export class Ordit {
   generateAddress(type: AddressFormats, account: number, addressIndex: number) {
     if (!this.#hdNode) throw new OrditSDKError("No HD node found. Please reinitialize with BIP39 words or seed.")
 
+    const _network = this.chain === "fractal-bitcoin" ? "mainnet" : this.#network
+
     return getAccountDataFromHdNode({
       hdNode: this.#hdNode,
       format: type,
-      network: this.#network,
+      network: _network,
       account,
       addressIndex
     })
   }
 
   signPsbt(value: string, { finalize = true, extractTx = true, isRevealTx = false }: SignPSBTOptions = {}) {
-    const networkObj = getNetwork(this.#network)
+    const networkObj = getNetwork(this.chain === "fractal-bitcoin" ? "mainnet" : this.#network)
     let psbt: bitcoin.Psbt | null = null
 
     if (!this.#keyPair || !this.#initialized) {
@@ -263,7 +268,12 @@ export class Ordit {
     }) as Account
     const signature = AddressUtils.isP2PKH(node.address!)
       ? sign(message, node.child.privateKey!)
-      : Signer.sign(node.child.toWIF(), node.address!, message, getNetwork(this.#network))
+      : Signer.sign(
+          node.child.toWIF(),
+          node.address!,
+          message,
+          getNetwork(this.chain === "fractal-bitcoin" ? "mainnet" : this.#network)
+        )
 
     return signature.toString("base64")
   }
@@ -293,6 +303,7 @@ export type WalletOptions = {
   type?: AddressFormats
   account?: number
   addressIndex?: number
+  chain?: Chain
 }
 
 export type Address = ReturnType<typeof getAddressesFromPublicKey>[0]

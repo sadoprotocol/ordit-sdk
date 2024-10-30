@@ -1,4 +1,5 @@
 import { Inscription } from ".."
+import { Chain } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { PSBTBuilder, PSBTBuilderOptions } from "../transactions/PSBTBuilder"
 import { OrditSDKError } from "../utils/errors"
@@ -6,6 +7,7 @@ import { OrditSDKError } from "../utils/errors"
 export interface InstantTradeBuilderArgOptions
   extends Pick<PSBTBuilderOptions, "publicKey" | "network" | "address" | "autoAdjustment" | "feeRate" | "datasource"> {
   inscriptionOutpoint?: string
+  chain?: Chain
 }
 
 interface RoyaltyAttributes {
@@ -32,7 +34,8 @@ export default class InstantTradeBuilder extends PSBTBuilder {
     network,
     publicKey,
     inscriptionOutpoint,
-    autoAdjustment
+    autoAdjustment,
+    chain = "bitcoin"
   }: InstantTradeBuilderArgOptions) {
     super({
       address,
@@ -42,11 +45,13 @@ export default class InstantTradeBuilder extends PSBTBuilder {
       publicKey,
       outputs: [],
       autoAdjustment,
-      instantTradeMode: true
+      instantTradeMode: true,
+      chain
     })
 
     this.address = address
     this.inscriptionOutpoint = inscriptionOutpoint
+    this.chain = chain
   }
 
   setPrice(value: number) {

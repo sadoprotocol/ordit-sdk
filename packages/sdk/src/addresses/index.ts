@@ -1,7 +1,7 @@
 import * as ecc from "@bitcoinerlab/secp256k1"
 import BIP32Factory, { BIP32Interface } from "bip32"
 
-import { Network } from "../config/types"
+import { Chain, Network } from "../config/types"
 import { createTransaction, getDerivationPath, getNetwork, toXOnly } from "../utils"
 import { AddressFormats, addressFormats, addressNameToType, AddressTypes, addressTypeToName } from "./formats"
 
@@ -40,8 +40,11 @@ export function getAddressesFromPublicKey(
   network: Network = "testnet",
   format: AddressTypes | "all" = "all",
   accountIndex = 0,
-  addressIndex = 0
+  addressIndex = 0,
+  chain: Chain = "bitcoin"
 ) {
+  network = chain === "fractal-bitcoin" ? "mainnet" : network
+
   if (!Buffer.isBuffer(pubKey)) {
     pubKey = Buffer.from(pubKey, "hex")
   }
@@ -160,7 +163,12 @@ export function getAccountDataFromHdNode({
   return accountData
 }
 
-export function getAllAccountsFromHdNode({ hdNode, network = "testnet", account = 0, addressIndex = 0 }: GetAllAccountsFromHDNodeOptions) {
+export function getAllAccountsFromHdNode({
+  hdNode,
+  network = "testnet",
+  account = 0,
+  addressIndex = 0
+}: GetAllAccountsFromHDNodeOptions) {
   const accounts: Account[] = []
   const addressTypesList = Object.values(addressTypeToName) as AddressFormats[]
 

@@ -12,7 +12,7 @@ import {
   JsonRpcDatasource,
   toXOnly
 } from ".."
-import { Network } from "../config/types"
+import { Chain, Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import FeeEstimator from "../fee/FeeEstimator"
 import { OrditSDKError } from "../utils/errors"
@@ -29,6 +29,7 @@ export interface PSBTBuilderOptions {
   autoAdjustment?: boolean
   instantTradeMode?: boolean
   datasource?: BaseDatasource
+  chain?: Chain
 }
 
 export type InjectableInput = {
@@ -87,17 +88,20 @@ export class PSBTBuilder extends FeeEstimator {
     publicKey,
     outputs,
     autoAdjustment = true,
-    instantTradeMode = false
+    instantTradeMode = false,
+    chain = "bitcoin"
   }: PSBTBuilderOptions) {
     super({
       feeRate,
-      network
+      network,
+      chain
     })
+    this.chain = chain
     this.address = address
     this.changeAddress = changeAddress
-    this.datasource = datasource || new JsonRpcDatasource({ network: this.network })
+    this.datasource = datasource || new JsonRpcDatasource({ chain: this.chain, network: this.network })
     this.outputs = outputs
-    this.nativeNetwork = getNetwork(network)
+    this.nativeNetwork = getNetwork(this.chain === "fractal-bitcoin" ? "mainnet" : network)
     this.publicKey = publicKey
 
     this.autoAdjustment = autoAdjustment
@@ -154,7 +158,7 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   protected initPSBT() {
-    this.psbt = new Psbt({ network: getNetwork(this.network) }) // create new PSBT
+    this.psbt = new Psbt({ network: getNetwork(this.chain === "fractal-bitcoin" ? "mainnet" : this.network) }) // create new PSBT
     this.psbt.setMaximumFeeRate(this.feeRate)
   }
 
@@ -289,8 +293,8 @@ export class PSBTBuilder extends FeeEstimator {
       amount && amount > 0
         ? amount
         : this.changeAmount < 0
-        ? this.changeAmount * -1
-        : this.outputAmount - this.getRetrievedUTXOsValue()
+          ? this.changeAmount * -1
+          : this.outputAmount - this.getRetrievedUTXOsValue()
 
     if ((amount && this.getRetrievedUTXOsValue() >= amount) || amountToRequest <= 0) return
 

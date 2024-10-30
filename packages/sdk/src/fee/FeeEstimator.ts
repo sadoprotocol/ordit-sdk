@@ -1,7 +1,7 @@
 import { Psbt } from "bitcoinjs-lib"
 
 import { AddressFormats, getNetwork, getScriptType } from ".."
-import { Network } from "../config/types"
+import { Chain, Network } from "../config/types"
 import { MAXIMUM_FEE } from "../constants"
 import { OrditSDKError } from "../utils/errors"
 import { FeeEstimatorOptions } from "./types"
@@ -14,8 +14,9 @@ export default class FeeEstimator {
   protected witness?: Buffer[] = []
   protected virtualSize = 0
   protected weight = 0
+  protected chain: Chain
 
-  constructor({ feeRate, network, psbt, witness }: FeeEstimatorOptions) {
+  constructor({ feeRate, network, psbt, witness, chain = "bitcoin" }: FeeEstimatorOptions) {
     if (feeRate < 0 || !Number.isSafeInteger(feeRate)) {
       throw new OrditSDKError("Invalid feeRate")
     }
@@ -23,7 +24,8 @@ export default class FeeEstimator {
     this.feeRate = +feeRate // convert decimal to whole number that might have passed Number.isSafeInteger check due to precision loss
     this.network = network
     this.witness = witness || []
-    this.psbt = psbt || new Psbt({ network: getNetwork(this.network) })
+    this.psbt = psbt || new Psbt({ network: getNetwork(chain === "fractal-bitcoin" ? "mainnet" : this.network) })
+    this.chain = chain
   }
 
   get data() {

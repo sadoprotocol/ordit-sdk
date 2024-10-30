@@ -23,8 +23,13 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     publicKey,
     inscriptionOutpoint,
     receiveAddress,
-    injectRoyalty
+    injectRoyalty,
+    chain = "bitcoin"
   }: InstantTradeSellerTxBuilderArgOptions) {
+    if (chain !== "bitcoin" && chain !== "fractal-bitcoin") {
+      throw new OrditSDKError("Invalid chain supplied")
+    }
+
     super({
       address,
       datasource,
@@ -32,11 +37,13 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
       publicKey,
       inscriptionOutpoint,
       autoAdjustment: false, // Prevents PSBTBuilder from adding additional input and change output
-      feeRate: 0 // seller in instant-trade does not pay network fee
+      feeRate: 0, // seller in instant-trade does not pay network fee
+      chain
     })
 
     this.receiveAddress = receiveAddress
     this.injectRoyalty = injectRoyalty
+    this.chain = chain
   }
 
   private async generatSellerInputs() {
@@ -47,7 +54,7 @@ export default class InstantTradeSellerTxBuilder extends InstantTradeBuilder {
     const input = await processInput({
       utxo: this.utxo,
       pubKey: this.publicKey,
-      network: this.network,
+      network: this.chain === "fractal-bitcoin" ? "mainnet" : this.network,
       sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY,
       datasource: this.datasource
     })
