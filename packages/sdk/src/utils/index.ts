@@ -15,6 +15,7 @@ import {
   NestedObject,
   OneOfAllDataFormats
 } from "./types"
+import BigNumber from "bignumber.js"
 
 export function getNetwork(value: Network) {
   if (value === "mainnet") {
@@ -146,13 +147,20 @@ export function decodeObject(obj: NestedObject) {
   return encodeDecodeObject(obj, { encode: false })
 }
 
-// Temporary convertors until bignumber.js is integrated
-export function convertSatoshisToBTC(satoshis: number) {
-  return satoshis / 10 ** 8
+/**
+ * Convert satoshis to BTC
+ * @param satoshis
+ * @example
+ * convertSatoshisToBTC(100_000_000) // 1
+ * convertSatoshisToBTC(1_000_000) // 0.01
+ */
+export function convertSatoshisToBTC(satoshis: number): number {
+  return Number(BigNumber(satoshis).div(1e8, 10).toFixed(8))
 }
 
-export function convertBTCToSatoshis(btc: number) {
-  return parseInt((btc * 10 ** 8).toString()) // remove floating point overflow by parseInt
+export function convertBTCToSatoshis(btc: number): number {
+  return BigNumber(btc).times(1e8, 10).toNumber()
+  // return parseInt((btc * 10 ** 8).toString()) // remove floating point overflow by parseInt
 }
 
 export function generateTxUniqueIdentifier(txId: string, index: number) {

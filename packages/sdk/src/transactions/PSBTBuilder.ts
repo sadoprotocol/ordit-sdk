@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-extra-semi */
 import { networks, Psbt, Transaction } from "bitcoinjs-lib"
-import reverseBuffer from "buffer-reverse"
 
 import {
   BaseDatasource,
@@ -25,6 +24,7 @@ export interface PSBTBuilderOptions {
   feeRate: number
   network: Network
   outputs: Output[]
+  inputs?: InputType[]
   publicKey: string
   autoAdjustment?: boolean
   instantTradeMode?: boolean
@@ -87,6 +87,7 @@ export class PSBTBuilder extends FeeEstimator {
     network,
     publicKey,
     outputs,
+    inputs,
     autoAdjustment = true,
     instantTradeMode = false,
     chain = "bitcoin"
@@ -108,6 +109,7 @@ export class PSBTBuilder extends FeeEstimator {
     this.instantTradeMode = instantTradeMode
 
     this.psbt = new Psbt({ network: this.nativeNetwork })
+    this.inputs = inputs || []
   }
 
   toPSBT() {
@@ -184,35 +186,27 @@ export class PSBTBuilder extends FeeEstimator {
     } while (potentialIndex++)
   }
 
-  private async addInputs() {
+  private addInputs() {
     const reservedIndexes = this.injectableInputs.map((input) => input.injectionIndex)
-    const injectedIndexes: number[] = []
 
-    for (let i = 0; i < this.inputs.length; i++) {
-      const indexReserved = reservedIndexes.includes(i)
-      if (indexReserved) {
+    const totalInputsLength = this.inputs.length + this.injectableInputs.length
+
+    let inputIndex = 0
+    for (let i = 0; i < totalInputsLength; i++) {
+      // if current index is reserved => inject input
+      if (reservedIndexes.includes(i)) {
+        // insert injectable input
         const injectable = this.injectableInputs.find((o) => o.injectionIndex === i)!
         this.injectInput(injectable)
-        injectedIndexes.push(injectable.injectionIndex)
+      } else {
+        // else => insert next input
+        const input = this.inputs[inputIndex]
+        this.psbt.addInput(input)
+        // set whether input is RBF or not
+        this.psbt.setInputSequence(i, this.getInputSequence())
+        inputIndex += 1
       }
-
-      const existingInputHashes = this.psbt.txInputs.map((input) => {
-        const hash = reverseBuffer(input.hash) as Buffer
-        return generateTxUniqueIdentifier(hash.toString("hex"), input.index)
-      })
-
-      const input = this.inputs[i]
-      if (existingInputHashes.includes(generateTxUniqueIdentifier(input.hash, input.index))) continue
-
-      this.psbt.addInput(input)
-      this.psbt.setInputSequence(indexReserved ? i + 1 : i, this.getInputSequence())
     }
-
-    this.injectableInputs.forEach((injectable) => {
-      if (injectedIndexes.includes(injectable.injectionIndex)) return
-      this.injectInput(injectable)
-      injectedIndexes.push(injectable.injectionIndex)
-    })
   }
 
   private validateOutputAmount() {
@@ -223,26 +217,26 @@ export class PSBTBuilder extends FeeEstimator {
 
   private addOutputs() {
     const reservedIndexes = this.injectableOutputs.map((o) => o.injectionIndex)
-    const injectedIndexes: number[] = []
 
-    this.outputs.forEach((output, index) => {
-      if (reservedIndexes.includes(index)) {
-        const injectable = this.injectableOutputs.find((o) => o.injectionIndex === index)!
+    const totalOutputLength = this.outputs.length + this.injectableOutputs.length
+
+    let outputIndex = 0
+    for (let i = 0; i < totalOutputLength; i++) {
+      // if current index is reserved => inject output
+      if (reservedIndexes.includes(i)) {
+        // insert injectable output
+        const injectable = this.injectableOutputs.find((o) => o.injectionIndex === i)!
         this.injectOutput(injectable)
-        injectedIndexes.push(injectable.injectionIndex)
+      } else {
+        // else => insert next output
+        const output = this.outputs[outputIndex]
+        this.psbt.addOutput({
+          address: output.address,
+          value: output.value
+        })
+        outputIndex += 1
       }
-
-      this.psbt.addOutput({
-        address: output.address,
-        value: output.value
-      })
-    })
-
-    this.injectableOutputs.forEach((injectable) => {
-      if (injectedIndexes.includes(injectable.injectionIndex)) return
-      this.injectOutput(injectable)
-      injectedIndexes.push(injectable.injectionIndex)
-    })
+    }
 
     if (this.changeAmount >= MINIMUM_AMOUNT_IN_SATS) {
       this.psbt.addOutput({
@@ -279,7 +273,10 @@ export class PSBTBuilder extends FeeEstimator {
   }
 
   private getRetrievedUTXOsValue() {
-    return this.utxos.reduce((acc, utxo) => (acc += utxo.sats), 0)
+    return (
+      this.utxos.reduce((acc, utxo) => (acc += utxo.sats), 0) +
+      this.inputs.reduce((acc, curr) => (acc += curr.witnessUtxo?.value ?? 0), 0)
+    )
   }
 
   private getReservedUTXOs() {
@@ -289,14 +286,16 @@ export class PSBTBuilder extends FeeEstimator {
   private async retrieveUTXOs(address?: string, amount?: number) {
     if (!this.autoAdjustment && !address) return
 
+    const retrievedUTXOsValue = this.getRetrievedUTXOsValue()
+
     const amountToRequest =
       amount && amount > 0
         ? amount
         : this.changeAmount < 0
           ? this.changeAmount * -1
-          : this.outputAmount - this.getRetrievedUTXOsValue()
+          : this.outputAmount - retrievedUTXOsValue
 
-    if ((amount && this.getRetrievedUTXOsValue() >= amount) || amountToRequest <= 0) return
+    if ((amount && retrievedUTXOsValue >= amount) || amountToRequest <= 0) return
 
     const utxos = await this.datasource.getSpendables({
       address: address || this.address,
@@ -340,6 +339,7 @@ export class PSBTBuilder extends FeeEstimator {
     const response = await Promise.all(promises)
 
     this.inputAmount += this.injectableInputs.reduce((acc, curr) => (acc += curr.sats), 0)
+    this.inputAmount += this.inputs.reduce((acc, curr) => (acc += curr.witnessUtxo?.value ?? 0), 0)
     for (const input of response) {
       if (this.usedUTXOs.includes(generateTxUniqueIdentifier(input.hash, input.index))) continue
       this.usedUTXOs.push(generateTxUniqueIdentifier(input.hash, input.index))
@@ -370,7 +370,7 @@ export class PSBTBuilder extends FeeEstimator {
   private async process() {
     this.initPSBT()
 
-    await this.addInputs()
+    this.addInputs()
     this.addOutputs()
 
     this.calculateNetworkFee()
