@@ -1,3 +1,6 @@
+import { AddressType, getAddressInfo } from "bitcoin-address-validation"
+import coinSelect from "bitcoinselect"
+
 import { processInput, PSBTBuilder } from ".."
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { OrditSDKError } from "../utils/errors"
@@ -16,43 +19,79 @@ export default class UTXOManager extends PSBTBuilder {
       datasource,
       feeRate,
       outputs: [],
-      chain
+      chain,
+      autoAdjustment: false // we don't want to auto adjust the outputs -> change is accounted for by coinSelect
     })
   }
 
-  async splitUTXOForInstantTrade(destinationAddress: string) {
+  async splitUTXOIntoRefundable({ n, destinationAddress }: { n: number; destinationAddress?: string }) {
     const { totalUTXOs, spendableUTXOs } = await this.datasource.getUnspents({
-      address: this.address
+      address: this.address,
+      rarity: ["common", "uncommon"],
+      type: "spendable",
+      sort: "desc"
     })
     if (!totalUTXOs) {
       throw new OrditSDKError("No UTXOs found")
     }
 
-    const utxo = spendableUTXOs.sort((a, b) => b.sats - a.sats)[0] // Largest UTXO
-    const input = await processInput({
-      utxo,
-      pubKey: this.publicKey,
-      network: this.chain === "fractal-bitcoin" ? "mainnet" : this.network,
-      datasource: this.datasource
-    })
-    const totalOutputs = 2
-    this.inputs = [input]
-
-    for (let i = 0; i < totalOutputs; i++) {
-      const usedAmount = this.outputs.reduce((acc, curr) => (acc += curr.value), 0)
-      const remainingAmount = utxo.sats - usedAmount
-      const amount = remainingAmount - MINIMUM_AMOUNT_IN_SATS
-      if (amount < MINIMUM_AMOUNT_IN_SATS) {
-        throw new OrditSDKError(
-          `Not enough sats to generate ${totalOutputs} UTXOs with at least ${MINIMUM_AMOUNT_IN_SATS} sats per UTXO. Try decreasing the count or deposit more BTC`
-        )
-      }
-
-      this.outputs.push({
-        address: destinationAddress || this.address,
-        value: MINIMUM_AMOUNT_IN_SATS
+    const coinSelectUTXOs = await Promise.all(
+      spendableUTXOs.map(async (utxo) => {
+        const input = await processInput({
+          utxo,
+          pubKey: this.publicKey,
+          network: this.chain === "fractal-bitcoin" ? "mainnet" : this.network,
+          datasource: this.datasource
+        })
+        return {
+          ...input,
+          txid: utxo.txid,
+          vout: utxo.n,
+          value: utxo.sats,
+          isTaproot: getAddressInfo(utxo.scriptPubKey.address).type === AddressType.p2tr
+        }
       })
+    )
+
+    // create array of n refundable UTXOs
+    const refundableUTXOsOutput = new Array(n).fill({}).map(() => ({
+      address: destinationAddress ?? this.address,
+      value: MINIMUM_AMOUNT_IN_SATS
+    }))
+
+    const res = coinSelect(coinSelectUTXOs, refundableUTXOsOutput, this.feeRate)
+
+    if (!res) {
+      throw new OrditSDKError("Not enough sats to generate refundable UTXOs")
     }
+    if (!res.inputs || res.inputs?.length === 0) {
+      throw new OrditSDKError("Not enough sats to generate refundable UTXOs")
+    }
+    if (!res.outputs || res.outputs?.length === 0) {
+      throw new OrditSDKError("Not enough sats to generate refundable UTXOs")
+    }
+
+    this.inputs = await Promise.all(
+      res.inputs.map((input) => {
+        const spendableUTXOSelected = spendableUTXOs.find((utxo) => utxo.txid === input.txid && utxo.n === input.vout)
+        if (!spendableUTXOSelected) {
+          throw new OrditSDKError("UTXO not found")
+        }
+        return processInput({
+          utxo: spendableUTXOSelected,
+          pubKey: this.publicKey,
+          network: this.network,
+          datasource: this.datasource
+        })
+      })
+    )
+
+    this.outputs = res.outputs.map((output) => {
+      return {
+        address: output.address ?? this.changeAddress ?? this.address, // address will be empty if it's a change output
+        value: output.value!
+      }
+    })
 
     await this.prepare()
   }

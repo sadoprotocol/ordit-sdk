@@ -194,7 +194,7 @@ export default class JsonRpcDatasource extends BaseDatasource {
   async getUnspents({
     address,
     type = "spendable",
-    rarity = ["common"],
+    rarity = ["common", "uncommon"],
     sort = "desc",
     limit = 50,
     next = null
