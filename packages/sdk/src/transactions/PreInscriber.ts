@@ -1,16 +1,29 @@
 import { Psbt } from "bitcoinjs-lib"
+import * as bitcoin from "bitcoinjs-lib"
 import reverseBuffer from "buffer-reverse"
 
-import { BaseDatasource, decodePSBT, getScriptType, Output } from ".."
+import { BaseDatasource, decodePSBT, getNetwork, getScriptType, Output, processInput } from ".."
+import { Chain, Network } from "../config/types"
 import { MINIMUM_AMOUNT_IN_SATS } from "../constants"
 import { OrditSDKError } from "../utils/errors"
-import { PSBTBuilder } from "./PSBTBuilder"
-import { InjectableInput, InjectableOutput } from "./PSBTBuilder"
+import { InjectableInput, InjectableOutput, PSBTBuilder } from "./PSBTBuilder"
 
-interface DecodeInscriptionPsbtsResponse {
+interface DecodeInscriptionPSBTsResponse {
   inscriptionPsbts: Psbt[]
   inscriptionOutpoints: string[]
   inscriptionOutputs: Output[]
+}
+
+interface CreateInscriptionPSBTParams {
+  inscriptionId: string
+  sellerPublicKey: string
+  sellerAddress: string
+  receivePaymentAddress: string
+  inscriptionPrice: number
+  escrowPublicKey: string
+  datasource: BaseDatasource
+  network: Network
+  chain: Chain
 }
 
 export class PreInscriber extends PSBTBuilder {
@@ -56,7 +69,7 @@ export class PreInscriber extends PSBTBuilder {
     this.extraOutputs = extraOutputs
 
     // decode all base64 inscription psbts
-    const decodedPsbts = this.decodeInscriptionPsbts(inscriptionB64Psbts)
+    const decodedPsbts = this.decodeInscriptionPSBTSs(inscriptionB64Psbts)
     this.inscriptionPsbts = decodedPsbts.inscriptionPsbts
     this.inscriptionOutpoints = decodedPsbts.inscriptionOutpoints
     this.inscriptionOutputs = decodedPsbts.inscriptionOutputs
@@ -64,10 +77,10 @@ export class PreInscriber extends PSBTBuilder {
     this.rbf = false
   }
 
-  private decodeInscriptionPsbts(inscriptionB64Strings: string[]): DecodeInscriptionPsbtsResponse {
+  private decodeInscriptionPSBTSs(inscriptionB64Strings: string[]): DecodeInscriptionPSBTsResponse {
     const inscriptionPsbts = inscriptionB64Strings.map((b64) => decodePSBT({ base64: b64 }))
     const inscriptionOutpoints = inscriptionPsbts.map((psbt) => {
-      return `${reverseBuffer(psbt.txInputs[0].hash).toString("hex")}:${psbt.txInputs[0].index}` // TODO: check reversebuffer
+      return `${reverseBuffer(psbt.txInputs[0].hash).toString("hex")}:${psbt.txInputs[0].index}`
     })
     const inscriptionOutputs: Output[] = []
 
@@ -75,7 +88,6 @@ export class PreInscriber extends PSBTBuilder {
     inscriptionPsbts.forEach((psbt) => {
       const [input] = psbt.data.inputs
 
-      // TODO: check
       if (!input.witnessUtxo) {
         throw new OrditSDKError("invalid seller psbt")
       }
@@ -111,8 +123,6 @@ export class PreInscriber extends PSBTBuilder {
           ...psbt.data.inputs[0], // assumption: only 1 inputs in each psbt
           hash,
           index: inputIndex
-          // type: "taproot", // CHECK: can assume is taproot?
-          // tapInternalKey: psbt.data.inputs[0].tapInternalKey!
         },
         txInput: (psbt.data.globalMap.unsignedTx as any).tx.ins[0],
         sats: psbt.data.inputs[0].witnessUtxo!.value,
@@ -166,7 +176,7 @@ export class PreInscriber extends PSBTBuilder {
 
   async build() {
     // check if inscriptions in seller psbt are valid
-    this.validateInscriptions(this.inscriptionOutpoints)
+    await this.validateInscriptions(this.inscriptionOutpoints)
 
     // check if buyer has atleast (inscriptions + 1) refundable utxos (min sat utxo)
     // First inscription requires 2 refundable utxos, next inscription adds 1 more refundable utxo and so on
@@ -196,5 +206,59 @@ export class PreInscriber extends PSBTBuilder {
     this.injectableOutputs = injectables.injectableOutputs
 
     await this.prepare()
+  }
+
+  /**
+   * Create a PSBT for the inscription, to be signed by the seller and used to create the final transaction
+   * @param inscriptionId
+   * @param sellerPublicKey
+   * @param sellerAddress
+   * @param receivePaymentAddress
+   * @param inscriptionPrice
+   * @param datasource
+   * @param network
+   * @param chain
+   */
+  static async createInscriptionPSBT({
+    inscriptionId,
+    sellerPublicKey,
+    sellerAddress,
+    receivePaymentAddress,
+    inscriptionPrice,
+    datasource,
+    network,
+    chain
+  }: CreateInscriptionPSBTParams) {
+    const inscriptionUtxo = await datasource.getInscriptionUTXO({
+      id: inscriptionId
+    })
+
+    // validate inscriptionUtxo
+    if (!inscriptionUtxo) {
+      throw new OrditSDKError(`Inscription ${inscriptionId} not found`)
+    }
+    if (inscriptionUtxo.scriptPubKey.address !== sellerAddress) {
+      throw new OrditSDKError(`Inscription ${inscriptionId} does not belong to seller`)
+    }
+
+    const input = await processInput({
+      utxo: inscriptionUtxo,
+      pubKey: sellerPublicKey,
+      network: network,
+      sighashType: bitcoin.Transaction.SIGHASH_SINGLE | bitcoin.Transaction.SIGHASH_ANYONECANPAY,
+      datasource: datasource
+    })
+
+    // send payment to seller address
+    const output = { address: receivePaymentAddress, value: inscriptionPrice }
+
+    const psbt = new Psbt({ network: getNetwork(chain === "fractal-bitcoin" ? "mainnet" : network) })
+    psbt.addInput(input)
+    psbt.addOutput(output)
+
+    return {
+      hex: psbt.toHex(),
+      base64: psbt.toBase64()
+    }
   }
 }

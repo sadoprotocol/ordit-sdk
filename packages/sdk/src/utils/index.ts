@@ -158,9 +158,15 @@ export function convertSatoshisToBTC(satoshis: number): number {
   return Number(BigNumber(satoshis).div(1e8, 10).toFixed(8))
 }
 
+/**
+ * Convert BTC to satoshis
+ * @param btc
+ * @example
+ * convertBTCToSatoshis(1) // 100_000_000
+ * convertBTCToSatoshis(0.01) // 1_000_000
+ */
 export function convertBTCToSatoshis(btc: number): number {
   return BigNumber(btc).times(1e8, 10).toNumber()
-  // return parseInt((btc * 10 ** 8).toString()) // remove floating point overflow by parseInt
 }
 
 export function generateTxUniqueIdentifier(txId: string, index: number) {
