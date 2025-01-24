@@ -31,7 +31,7 @@ const bip32 = BIP32Factory(ecc)
 export class Ordit {
   chain: Chain = "bitcoin"
 
-  #network: Network = "testnet"
+  #network: Network = "signet"
   //   #config;
   #initialized = false
   #keyPair: ECPairInterface | BIP32Interface
@@ -46,7 +46,7 @@ export class Ordit {
     seed,
     privateKey,
     bip39,
-    network = "testnet",
+    network = "signet",
     type = "legacy",
     account = 0,
     addressIndex = 0,
@@ -55,6 +55,7 @@ export class Ordit {
     this.chain = chain
     const networkObj = getNetwork(network)
     const format = addressNameToType[type]
+    this.#network = network;
 
     if (wif) {
       const keyPair = ECPair.fromWIF(wif, networkObj)
