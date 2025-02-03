@@ -1,28 +1,32 @@
-import { JsonRpcDatasource } from "@sadoprotocol/ordit-sdk";
-import { Ordit } from "@sadoprotocol/ordit-sdk";
-import { UTXOManager } from "@sadoprotocol/ordit-sdk";
+import { JsonRpcDatasource } from "@sadoprotocol/ordit-sdk"
+import { Ordit } from "@sadoprotocol/ordit-sdk"
+import { UTXOManager } from "@sadoprotocol/ordit-sdk"
 
-const network  = 'testnet'
+const MNEMONIC = "<mnemonic>"
+
+const network = "regtest"
 const wallet = new Ordit({
-  bip39: '<mnemonic>',
+  bip39: MNEMONIC,
   network
 })
-wallet.setDefaultAddress('taproot')
+wallet.setDefaultAddress("segwit", { addressIndex: 0, accountIndex: 0 })
 
-async function main() {
+async function splitUTXOIntoRefundable() {
   const datasource = new JsonRpcDatasource({ network })
   const utxoManager = new UTXOManager({
     address: wallet.selectedAddress,
     network,
+    datasource,
     publicKey: wallet.publicKey,
     feeRate: 3
   })
+  await utxoManager.splitUTXOIntoRefundable({ n: 3 })
 
-  await utxoManager.splitUTXOForInstantTrade()
   const hex = utxoManager.toHex()
   const signedTxHex = wallet.signPsbt(hex)
-  const txId = await datasource.relay({ hex: signedTxHex })
-  console.log({ txId })
+  console.log({ signedTxHex })
+  // const txId = await datasource.relay({ hex: signedTxHex })
+  // console.log({ txId })
 }
 
-main()
+splitUTXOIntoRefundable()

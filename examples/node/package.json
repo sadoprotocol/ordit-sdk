@@ -18,6 +18,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sadoprotocol/ordit-sdk": "workspace"
+    "@sadoprotocol/ordit-sdk": "workspace:*"
   }
 }
